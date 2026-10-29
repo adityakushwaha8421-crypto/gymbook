@@ -1,12 +1,14 @@
 /* GymBook service worker: keeps the app shell available offline.
    Data never goes through here; it lives in IndexedDB. */
 const VERSION = 'gymbook-shell-v1'
-const SHELL = ['/', '/manifest.webmanifest', '/favicon.svg', '/icon-192.png', '/icon-512.png']
-// Filled in by scripts/inject-sw.mjs after `vite build`.
+// The app may live under a sub-path (GitHub Pages project sites), so everything is relative to the scope.
+const BASE = new URL(self.registration.scope).pathname
+const SHELL = ['', 'manifest.webmanifest', 'favicon.svg', 'icon-192.png', 'icon-512.png'].map((p) => BASE + p)
+// Filled in by scripts/inject-sw.mjs after `vite build` (paths relative to BASE).
 const PRECACHE = []
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(VERSION).then((c) => c.addAll([...SHELL, ...PRECACHE])).then(() => self.skipWaiting()))
+  event.waitUntil(caches.open(VERSION).then((c) => c.addAll([...SHELL, ...PRECACHE.map((p) => BASE + p)])).then(() => self.skipWaiting()))
 })
 
 self.addEventListener('activate', (event) => {
@@ -27,16 +29,16 @@ self.addEventListener('fetch', (event) => {
       fetch(req)
         .then((res) => {
           const copy = res.clone()
-          caches.open(VERSION).then((c) => c.put('/', copy))
+          caches.open(VERSION).then((c) => c.put(BASE, copy))
           return res
         })
-        .catch(() => caches.match('/')),
+        .catch(() => caches.match(BASE)),
     )
     return
   }
 
   // Hashed build assets and fonts: cache first (they never change under the same name).
-  if (url.pathname.startsWith('/assets/')) {
+  if (url.pathname.startsWith(BASE + 'assets/')) {
     event.respondWith(
       caches.match(req).then((hit) => hit || fetch(req).then((res) => {
         const copy = res.clone()

@@ -53,6 +53,7 @@ function Gate() {
   )
 }
 
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '')
 export const router = createBrowserRouter([
   {
     element: <Root />,
@@ -86,7 +87,7 @@ export const router = createBrowserRouter([
       { path: '*', element: <NotFound /> },
     ],
   },
-])
+], { basename })
 
 export function App() {
   return <RouterProvider router={router} />
