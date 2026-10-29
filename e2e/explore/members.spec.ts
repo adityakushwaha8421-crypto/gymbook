@@ -347,7 +347,7 @@ test.describe('3. photo upload', () => {
     const [m] = await readStore<MemberRec>(page, 'members')
     expect(m.photoDataUrl).toMatch(/^data:image\/jpeg;base64,/)
     expect(m.photoDataUrl!.length).toBeLessThan(400_000)
-    await expect(page.locator('img').first()).toHaveAttribute('src', m.photoDataUrl!)
+    await expect(page.getByRole('main').locator('img').first()).toHaveAttribute('src', m.photoDataUrl!)
 
     // junk bytes claiming to be an image are refused and nothing is set
     await page.goto('/members/new')

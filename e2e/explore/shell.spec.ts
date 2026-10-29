@@ -84,7 +84,7 @@ const counts = async (page: Page) => {
 
 /* ======================================================================== */
 test.describe('1. onboarding', () => {
-  test('blank name falls back to My Gym, timezone is kept, Start empty gives empty states with live CTAs, never shown again', async ({ page }) => {
+  test('blank name falls back to the branded default, timezone is kept, Start empty gives empty states with live CTAs, never shown again', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByRole('heading', { name: 'Welcome to RK Gym' })).toBeVisible()
     await expect(page.getByLabel('Gym name')).toBeFocused()
@@ -100,7 +100,7 @@ test.describe('1. onboarding', () => {
     expect(s.gymName).toBe('R.K. Gym Fitness Centre')
     expect(s.timezone).toBe('Asia/Dubai')
     expect(s.dataMode).toBe('empty')
-    await expect(page.getByRole('complementary', { name: 'Sidebar' })).toContainText('My Gym')
+    await expect(page.getByRole('complementary', { name: 'Sidebar' })).toContainText('R.K. Gym Fitness Centre')
     for (const store of STORES) if (store !== 'settings') expect((await readStore(page, store)).length, store).toBe(0)
 
     // Empty states and their CTAs on every list page.
@@ -247,7 +247,7 @@ test.describe('2. settings form', () => {
     await onboard(page, 'empty')
     await page.goto('/settings')
     const rev0 = (await settingsRow(page)).rev
-    await expect(page.getByText('No logo')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Change logo' })).toBeVisible() // the branded default logo
     await page.locator('input[type=file][accept="image/*"]').setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: tinyPng() })
     const img = page.getByRole('main').locator('img[src^="data:image/"]').first()
     await expect(img).toBeVisible()
@@ -594,7 +594,7 @@ test.describe('4. sample data', () => {
     await expect(page).toHaveURL(/\/$/)
     expect(await readStore(page, 'members')).toEqual([])
     expect(await readStore(page, 'settings')).toEqual([])
-    await expect(page.getByLabel('Gym name')).toHaveValue('')
+    await expect(page.getByLabel('Gym name')).toHaveValue('R.K. Gym Fitness Centre')
     await page.reload()
     await expect(page.getByRole('heading', { name: 'Welcome to RK Gym' })).toBeVisible()
   })
