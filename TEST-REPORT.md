@@ -131,3 +131,16 @@ Findings fixed during the pass:
 - Light-mode `--c-faint` fell to 4.45:1 on the new canvas; darkened to 102 103 110 (5.16:1 on canvas, 4.98:1 on sunken).
 - Theme exploratory test asserted the old canvas colours and `theme-color` meta; updated to the new tokens.
 - Tab strip showed a horizontal scrollbar on phones; hidden with `.scrollbar-none`.
+
+## Branding and GitHub Pages deploy (2026-10-29)
+
+Branded for R.K. Gym Fitness Centre (name, address, phone, RK invoice prefix, RK monogram logo, crimson palette) and deployed to GitHub Pages at https://adityakushwaha8421-crypto.github.io/gymbook/ via `.github/workflows/pages.yml`.
+
+| Check | Result |
+| --- | --- |
+| Vitest | 124 passed |
+| Playwright main + features + shell + members | 85 passed (79 first run, 6 fixed and rerun) |
+| Pages simulation (dist served under `/gymbook/`, 404 fallback) | deep links, back/forward, sample data, SW scope OK |
+| Live site in headless Chromium | deep link `/gymbook/settings` renders, SW scope `/gymbook/`, offline reload of `/members` shows 12 sample members, no page errors |
+
+Test fixes in this pass were all branding follow-through: default gym name, prefilled onboarding name, "Change logo" as the initial state, invoice numbers `RK-…`, and a photo-upload locator scoped to `main` so it ignores the new sidebar logo.
