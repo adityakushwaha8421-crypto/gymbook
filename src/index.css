@@ -1,0 +1,272 @@
+@import '@fontsource-variable/inter/index.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- Design tokens ------------------------------------------------------ */
+:root {
+  --c-canvas: 244 245 247;
+  --c-surface: 255 255 255;
+  --c-raised: 255 255 255;
+  --c-sunken: 240 241 244;
+  --c-ink: 23 23 26;
+  --c-muted: 100 101 108;
+  --c-faint: 102 103 110;
+  --c-line: 226 227 232;
+  --c-line-strong: 200 201 208;
+  --c-accent: 200 30 46;
+  --c-accent-hover: 170 22 38;
+  --c-accent-soft: 253 232 234;
+  --c-accent-ink: 158 18 34;
+  --c-accent-fg: 255 255 255;
+  --c-danger: 186 60 10;
+  --c-danger-soft: 253 236 228;
+  --c-warn: 170 83 0;
+  --c-warn-soft: 255 243 224;
+  --c-info: 29 93 160;
+  --c-info-soft: 232 241 251;
+
+  --shadow-card: 0 1px 2px rgb(23 23 26 / 0.03), 0 12px 32px -16px rgb(23 23 26 / 0.12);
+  --shadow-pop: 0 24px 56px -16px rgb(23 23 26 / 0.22), 0 2px 8px rgb(23 23 26 / 0.05);
+  --shadow-sheet: 0 -16px 48px rgb(23 23 26 / 0.16);
+
+  --press-scale: 0.97;
+  --press-duration: 100ms;
+  /* Glass: bars (chrome), cards (content) and pops (overlays) get increasing opacity. */
+  --glass-blur: 20px;
+  --glass-alpha: 0.72;
+  --glass-card-alpha: 0.62;
+  --glass-pop-alpha: 0.8;
+  --glass-highlight: 255 255 255;
+  --glass-highlight-alpha: 0.65;
+  --glass-line-alpha: 0.75;
+  /* Ambient colour washes behind the glass. */
+  --wash-1: 200 30 46;
+  --wash-2: 29 93 160;
+  --wash-3: 214 135 24;
+  --wash-alpha: 0.18;
+  --sidebar-w: 236px;
+  --sidebar-w-collapsed: 64px;
+
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --c-canvas: 11 12 15;
+  --c-surface: 24 25 30;
+  --c-raised: 31 32 38;
+  --c-sunken: 32 33 39;
+  --c-ink: 236 237 240;
+  --c-muted: 158 160 168;
+  --c-faint: 140 142 150;
+  --c-line: 44 46 54;
+  --c-line-strong: 66 68 78;
+  --c-accent: 240 86 98;
+  --c-accent-hover: 246 112 122;
+  --c-accent-soft: 62 22 28;
+  --c-accent-ink: 255 150 158;
+  --c-accent-fg: 40 8 12;
+  --c-danger: 250 140 90;
+  --c-danger-soft: 60 32 20;
+  --c-warn: 245 177 72;
+  --c-warn-soft: 54 39 14;
+  --c-info: 104 168 240;
+  --c-info-soft: 22 36 58;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.35), 0 16px 40px -20px rgb(0 0 0 / 0.5);
+  --shadow-pop: 0 28px 64px -16px rgb(0 0 0 / 0.7), 0 2px 8px rgb(0 0 0 / 0.3);
+  --shadow-sheet: 0 -16px 48px rgb(0 0 0 / 0.6);
+  --glass-alpha: 0.7;
+  --glass-card-alpha: 0.55;
+  --glass-pop-alpha: 0.82;
+  --glass-highlight-alpha: 0.07;
+  --glass-line-alpha: 0.9;
+  --wash-1: 240 86 98;
+  --wash-2: 104 168 240;
+  --wash-3: 245 177 72;
+  --wash-alpha: 0.22;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --c-canvas: 11 12 15;
+    --c-surface: 24 25 30;
+    --c-raised: 31 32 38;
+    --c-sunken: 32 33 39;
+    --c-ink: 236 237 240;
+    --c-muted: 158 160 168;
+    --c-faint: 140 142 150;
+    --c-line: 44 46 54;
+    --c-line-strong: 66 68 78;
+    --c-accent: 240 86 98;
+    --c-accent-hover: 246 112 122;
+    --c-accent-soft: 62 22 28;
+    --c-accent-ink: 255 150 158;
+    --c-accent-fg: 40 8 12;
+    --c-danger: 250 140 90;
+    --c-danger-soft: 60 32 20;
+    --c-warn: 245 177 72;
+    --c-warn-soft: 54 39 14;
+    --c-info: 104 168 240;
+    --c-info-soft: 22 36 58;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.35), 0 16px 40px -20px rgb(0 0 0 / 0.5);
+    --shadow-pop: 0 28px 64px -16px rgb(0 0 0 / 0.7), 0 2px 8px rgb(0 0 0 / 0.3);
+    --shadow-sheet: 0 -16px 48px rgb(0 0 0 / 0.6);
+    --glass-alpha: 0.7;
+    --glass-card-alpha: 0.55;
+    --glass-pop-alpha: 0.82;
+    --glass-highlight-alpha: 0.07;
+    --glass-line-alpha: 0.9;
+    --wash-1: 240 86 98;
+    --wash-2: 104 168 240;
+    --wash-3: 245 177 72;
+    --wash-alpha: 0.22;
+    color-scheme: dark;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --c-muted: 70 70 66;
+    --c-faint: 100 100 95;
+    --c-line: 180 180 174;
+    --c-line-strong: 130 130 124;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root { --glass-blur: 0px; --glass-alpha: 1; --glass-card-alpha: 1; --glass-pop-alpha: 1; --wash-alpha: 0; }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root { --glass-alpha: 0.98; --glass-card-alpha: 0.92; --glass-pop-alpha: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root { --press-scale: 1; --press-duration: 0ms; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---- Base --------------------------------------------------------------- */
+@layer base {
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  body {
+    @apply bg-canvas text-ink font-sans antialiased text-base;
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
+    overflow-x: hidden;
+    min-width: 320px;
+  }
+  /* Ambient colour wash the glass surfaces blur. Fixed pseudo-element rather than
+     background-attachment so it also works on iOS. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(42rem 32rem at 8% -6%, rgb(var(--wash-1) / var(--wash-alpha)), transparent 65%),
+      radial-gradient(40rem 30rem at 100% 18%, rgb(var(--wash-2) / var(--wash-alpha)), transparent 65%),
+      radial-gradient(36rem 28rem at 55% 110%, rgb(var(--wash-3) / calc(var(--wash-alpha) * 0.8)), transparent 65%);
+  }
+  h1, h2, h3 { @apply font-semibold; }
+  :focus-visible { @apply outline-none ring-2 ring-accent/70 ring-offset-2 ring-offset-canvas; }
+  [hidden] { display: none !important; }
+  input[type='search']::-webkit-search-cancel-button { -webkit-appearance: none; }
+  ::placeholder { @apply text-faint; }
+  input[type='date'], input[type='time'], input[type='datetime-local'] { color-scheme: inherit; }
+  ::selection { background: rgb(var(--c-accent) / 0.25); }
+}
+
+@layer components {
+  .pressable {
+    transition: transform var(--press-duration) ease-out, background-color 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out, box-shadow 150ms ease-out, opacity 150ms ease-out;
+    transform: translateZ(0);
+  }
+  .pressable:active:not(:disabled):not([aria-disabled='true']) { transform: scale(var(--press-scale)) translateZ(0); }
+  /* Chrome: top bar, tab bar, sidebar. */
+  .glass {
+    background-color: rgb(var(--c-surface) / var(--glass-alpha));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+    backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+  }
+  /* Content cards. */
+  .glass-card {
+    background-color: rgb(var(--c-surface) / var(--glass-card-alpha));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+    backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+    border: 1px solid rgb(var(--c-line) / var(--glass-line-alpha));
+    box-shadow: inset 0 1px 0 rgb(var(--glass-highlight) / var(--glass-highlight-alpha)), var(--shadow-card);
+  }
+  /* Overlays: dialogs, palette, menus, toasts. */
+  .glass-pop {
+    background-color: rgb(var(--c-raised) / var(--glass-pop-alpha));
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 8px)) saturate(170%);
+    backdrop-filter: blur(calc(var(--glass-blur) + 8px)) saturate(170%);
+    border: 1px solid rgb(var(--c-line) / var(--glass-line-alpha));
+    box-shadow: inset 0 1px 0 rgb(var(--glass-highlight) / var(--glass-highlight-alpha)), var(--shadow-pop);
+  }
+  .glass-inset {
+    background-color: rgb(var(--c-sunken) / 0.6);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+  .tabular { font-variant-numeric: tabular-nums; }
+  .kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 20px;
+    min-width: 20px;
+    padding: 0 6px;
+    border-radius: 6px;
+    border: 1px solid rgb(var(--c-line));
+    background: rgb(var(--c-surface));
+    box-shadow: 0 1px 0 rgb(var(--c-line));
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    line-height: 1;
+    color: rgb(var(--c-muted));
+  }
+  .scrollbar-thin { scrollbar-width: thin; scrollbar-color: rgb(var(--c-line-strong)) transparent; }
+  .scrollbar-none { scrollbar-width: none; }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+  .sidebar-transition { transition: width 200ms cubic-bezier(0.2, 0, 0, 1); }
+}
+
+@media print {
+  body { background: white !important; color: black !important; }
+  body::before { display: none; }
+  .glass, .glass-card, .glass-pop, .glass-inset { background: white !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; box-shadow: none !important; }
+  [role='tablist'], #page-header-actions, nav { display: none !important; }
+  .rounded-2xl { box-shadow: none !important; break-inside: avoid; }
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+}
+.print-only { display: none; }
+
+/* Control heights: compact on pointer devices, 44px on touch screens. */
+.h-control { height: 36px; }
+.h-control-sm { height: 32px; }
+.h-control-lg { height: 44px; }
+@media (pointer: coarse) {
+  .h-control { height: 44px; }
+  .h-control-sm { height: 40px; }
+  .h-control-lg { height: 48px; }
+}
+
+/* ---- Mobile ------------------------------------------------------------- */
+@media (pointer: coarse) {
+  /* 16px stops iOS Safari from zooming into focused fields. */
+  input, select, textarea { font-size: 16px !important; }
+  [role='tab'] { height: 40px; }
+  [role='option'] { min-height: 44px; }
+}
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.tabbar-h { height: calc(56px + env(safe-area-inset-bottom)); }
+/* Space for the fixed bottom tab bar and floating actions on small screens. */
+@media (max-width: 1023.98px) {
+  .main-mobile-pad { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+}

@@ -1,0 +1,65 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  darkMode: ['selector', '[data-theme="dark"]'],
+  theme: {
+    extend: {
+      colors: {
+        canvas: 'rgb(var(--c-canvas) / <alpha-value>)',
+        surface: 'rgb(var(--c-surface) / <alpha-value>)',
+        raised: 'rgb(var(--c-raised) / <alpha-value>)',
+        sunken: 'rgb(var(--c-sunken) / <alpha-value>)',
+        ink: 'rgb(var(--c-ink) / <alpha-value>)',
+        muted: 'rgb(var(--c-muted) / <alpha-value>)',
+        faint: 'rgb(var(--c-faint) / <alpha-value>)',
+        line: 'rgb(var(--c-line) / <alpha-value>)',
+        'line-strong': 'rgb(var(--c-line-strong) / <alpha-value>)',
+        accent: {
+          DEFAULT: 'rgb(var(--c-accent) / <alpha-value>)',
+          hover: 'rgb(var(--c-accent-hover) / <alpha-value>)',
+          soft: 'rgb(var(--c-accent-soft) / <alpha-value>)',
+          ink: 'rgb(var(--c-accent-ink) / <alpha-value>)',
+          fg: 'rgb(var(--c-accent-fg) / <alpha-value>)',
+        },
+        danger: { DEFAULT: 'rgb(var(--c-danger) / <alpha-value>)', soft: 'rgb(var(--c-danger-soft) / <alpha-value>)' },
+        warn: { DEFAULT: 'rgb(var(--c-warn) / <alpha-value>)', soft: 'rgb(var(--c-warn-soft) / <alpha-value>)' },
+        info: { DEFAULT: 'rgb(var(--c-info) / <alpha-value>)', soft: 'rgb(var(--c-info-soft) / <alpha-value>)' },
+      },
+      fontFamily: {
+        sans: ['"Inter Variable"', 'Inter', 'ui-sans-serif', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+      },
+      fontSize: {
+        '2xs': ['11px', { lineHeight: '16px' }],
+        xs: ['12px', { lineHeight: '16px' }],
+        sm: ['13px', { lineHeight: '20px' }],
+        base: ['14px', { lineHeight: '20px' }],
+        md: ['15px', { lineHeight: '22px' }],
+        lg: ['17px', { lineHeight: '24px' }],
+        xl: ['20px', { lineHeight: '28px', letterSpacing: '-0.01em' }],
+        '2xl': ['24px', { lineHeight: '30px', letterSpacing: '-0.02em' }],
+        '3xl': ['30px', { lineHeight: '36px', letterSpacing: '-0.02em' }],
+      },
+      boxShadow: {
+        card: 'var(--shadow-card)',
+        pop: 'var(--shadow-pop)',
+        sheet: 'var(--shadow-sheet)',
+        ring: '0 0 0 1px rgb(var(--c-line))',
+        glow: '0 8px 20px -8px rgb(var(--c-accent) / 0.55)',
+      },
+      borderRadius: {
+        md: '8px',
+        lg: '10px',
+        xl: '14px',
+        '2xl': '18px',
+        '3xl': '24px',
+      },
+      transitionDuration: { 150: '150ms', 200: '200ms', 250: '250ms' },
+      keyframes: {
+        shimmer: { '0%': { opacity: '0.55' }, '50%': { opacity: '1' }, '100%': { opacity: '0.55' } },
+      },
+      animation: { shimmer: 'shimmer 1.6s ease-in-out infinite' },
+    },
+  },
+  plugins: [],
+}
