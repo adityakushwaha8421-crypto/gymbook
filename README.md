@@ -49,6 +49,10 @@ The training and operations areas were inspired by the feature set of the open-s
 
 The build is branded for **R.K. Gym Fitness Centre**, Murbad (Thane): name, address, phone, the `RK` invoice prefix and the RK monogram logo live in `src/brand.ts` and are the defaults for a fresh install. The gym's Google Maps listing has no separate logo image, so the monogram was drawn in the red of the staff kit; `public/logo.svg` is the master and `node scripts/make-icons.mjs` regenerates the PNG app icons from it. Everything here can still be changed in Settings, and sample data no longer renames the gym.
 
+## Deploying to GitHub Pages
+
+Push the repository to GitHub and, under **Settings → Pages**, set the source to **GitHub Actions**. The workflow in `.github/workflows/pages.yml` runs the unit tests, builds with `BASE_PATH=/<repo>/` (or `/` for a `<user>.github.io` repository) and publishes `dist/`. The build is sub-path aware: Vite's `base`, the router's `basename`, the service worker scope and the manifest are all relative, and `404.html` is a copy of `index.html` so deep links work on a static host. To test the same thing locally: `BASE_PATH=/gymbook/ npm run build` and serve `dist/` under `/gymbook/`.
+
 ## Design system
 
 - **Typography:** Inter Variable (OFL, bundled locally via `@fontsource-variable/inter`, no network fetch). Scale: 11 / 12 / 13 / 14 / 15 / 17 / 20 / 24 / 30 px with tightened tracking above 20 px.
