@@ -16,8 +16,8 @@ import { EmptyState, ErrorState } from '@/components/ui/EmptyState'
 
 const KINDS: { value: ActivityKind; label: string; tone: Tone }[] = [
   { value: 'member', label: 'Members', tone: 'neutral' },
-  { value: 'membership', label: 'Memberships', tone: 'accent' },
-  { value: 'payment', label: 'Payments', tone: 'accent' },
+  { value: 'membership', label: 'Memberships', tone: 'success' },
+  { value: 'payment', label: 'Payments', tone: 'success' },
   { value: 'invoice', label: 'Invoices', tone: 'info' },
   { value: 'attendance', label: 'Attendance', tone: 'info' },
   { value: 'session', label: 'PT sessions', tone: 'info' },

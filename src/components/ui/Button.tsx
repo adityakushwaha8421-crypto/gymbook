@@ -7,7 +7,7 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'outl
 export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon' | 'icon-sm'
 
 const variants: Record<ButtonVariant, string> = {
-  primary: 'bg-accent text-accent-fg hover:bg-accent-hover shadow-glow [box-shadow:inset_0_1px_0_rgb(255_255_255/0.18),0_8px_20px_-8px_rgb(var(--c-accent)/0.55)]',
+  primary: 'bg-accent text-accent-fg hover:bg-accent-hover [box-shadow:inset_0_1px_0_rgb(255_255_255/0.18),0_1px_2px_rgb(0_0_0/0.16),0_6px_14px_-8px_rgb(0_0_0/0.28)]',
   secondary: 'bg-surface/70 text-ink border border-line/80 backdrop-blur-md hover:border-line-strong hover:bg-surface shadow-card',
   outline: 'bg-transparent text-ink border border-line-strong hover:bg-surface/60',
   ghost: 'bg-transparent text-muted hover:bg-sunken/80 hover:text-ink',

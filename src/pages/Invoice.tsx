@@ -145,7 +145,7 @@ export function InvoicePage() {
             {bal.adjustmentsPaise !== 0 ? <Row label="Adjustments" value={`${bal.adjustmentsPaise < 0 ? '− ' : '+ '}${formatINR(Math.abs(bal.adjustmentsPaise))}`} /> : null}
             <Row label="Total" value={formatINR(bal.duePaise)} strong />
             <Row label="Paid" value={formatINR(bal.paidPaise)} />
-            <Row label={bal.balancePaise < 0 ? 'Credit' : 'Balance due'} value={formatINR(Math.abs(bal.balancePaise))} strong tone={bal.balancePaise > 0 ? 'danger' : 'accent'} />
+            <Row label={bal.balancePaise < 0 ? 'Credit' : 'Balance due'} value={formatINR(Math.abs(bal.balancePaise))} strong tone={bal.balancePaise > 0 ? 'danger' : 'success'} />
           </dl>
         </div>
 
@@ -182,11 +182,11 @@ export function InvoicePage() {
   )
 }
 
-function Row({ label, value, strong, tone }: { label: string; value: string; strong?: boolean; tone?: 'danger' | 'accent' }) {
+function Row({ label, value, strong, tone }: { label: string; value: string; strong?: boolean; tone?: 'danger' | 'success' }) {
   return (
     <div className={`flex justify-between py-1 ${strong ? 'border-t border-line font-semibold' : ''}`}>
       <dt>{label}</dt>
-      <dd className={`tabular ${tone === 'danger' ? 'text-danger' : tone === 'accent' ? 'text-accent-ink' : ''}`}>{value}</dd>
+      <dd className={`tabular ${tone === 'danger' ? 'text-danger' : tone === 'success' ? 'text-success' : ''}`}>{value}</dd>
     </div>
   )
 }

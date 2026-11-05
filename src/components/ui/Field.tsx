@@ -2,7 +2,7 @@ import { forwardRef, useId, type InputHTMLAttributes, type ReactNode, type Selec
 import { cn } from '@/lib/cn'
 
 export const controlClasses =
-  'w-full rounded-xl border border-line bg-surface/80 px-3.5 text-base text-ink shadow-[0_1px_2px_rgb(0_0_0/0.03)] transition-[border-color,box-shadow] duration-150 placeholder:text-faint hover:border-line-strong focus:border-accent focus:outline-none focus:ring-[3px] focus:ring-accent/20 disabled:bg-sunken disabled:text-muted disabled:shadow-none aria-[invalid=true]:border-danger aria-[invalid=true]:focus:ring-danger/20'
+  'w-full rounded-xl border border-line bg-surface/80 px-3.5 text-base text-ink shadow-[0_1px_2px_rgb(0_0_0/0.03)] transition-[border-color,box-shadow] duration-150 placeholder:text-faint hover:border-line-strong focus:border-ink/60 focus:outline-none focus:ring-[3px] focus:ring-ink/10 disabled:bg-sunken disabled:text-muted disabled:shadow-none aria-[invalid=true]:border-danger aria-[invalid=true]:focus:ring-danger/20'
 
 interface FieldProps {
   label: ReactNode
@@ -63,7 +63,7 @@ export function Checkbox({ label, className, ...rest }: InputHTMLAttributes<HTML
   const id = useId()
   return (
     <label htmlFor={id} className={cn('inline-flex min-h-9 cursor-pointer items-center gap-2.5 text-base', className)}>
-      <input id={id} type="checkbox" className="h-4 w-4 rounded border-line-strong text-accent focus:ring-accent" {...rest} />
+      <input id={id} type="checkbox" className="h-4 w-4 rounded border-line-strong" {...rest} />
       <span>{label}</span>
     </label>
   )

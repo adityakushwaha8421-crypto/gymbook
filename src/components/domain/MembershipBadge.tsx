@@ -3,7 +3,7 @@ import type { MembershipState } from '@/domain/membership'
 import type { InvoiceBalance } from '@/domain/membership'
 
 const map: Record<MembershipState, { tone: Tone; label: string }> = {
-  active: { tone: 'accent', label: 'Active' },
+  active: { tone: 'success', label: 'Active' },
   expiring: { tone: 'warn', label: 'Expiring soon' },
   expired: { tone: 'danger', label: 'Expired' },
   upcoming: { tone: 'info', label: 'Starts later' },
@@ -17,7 +17,7 @@ export function MembershipStateBadge({ state }: { state?: MembershipState }) {
 }
 
 const payMap: Record<InvoiceBalance['status'], { tone: Tone; label: string }> = {
-  paid: { tone: 'accent', label: 'Paid' },
+  paid: { tone: 'success', label: 'Paid' },
   partial: { tone: 'warn', label: 'Partly paid' },
   unpaid: { tone: 'danger', label: 'Unpaid' },
   void: { tone: 'muted', label: 'Void' },

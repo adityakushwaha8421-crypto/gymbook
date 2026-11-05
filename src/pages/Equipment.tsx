@@ -21,7 +21,7 @@ import { Modal } from '@/components/ui/Modal'
 import { useToast } from '@/components/ui/Toast'
 import { errorMessage } from '@/data/errors'
 
-const eqTone: Record<EquipmentStatus, Tone> = { ok: 'accent', needs_service: 'warn', out_of_order: 'danger' }
+const eqTone: Record<EquipmentStatus, Tone> = { ok: 'success', needs_service: 'warn', out_of_order: 'danger' }
 const sevTone: Record<IncidentSeverity, Tone> = { low: 'muted', medium: 'warn', high: 'danger' }
 
 export function EquipmentPage() {
@@ -117,7 +117,7 @@ export function EquipmentPage() {
               return (
                 <li key={i.id} className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
-                    <p className="flex flex-wrap items-center gap-2 text-sm font-medium">{i.title}{i.sample ? <SampleBadge /> : null}<Badge tone={sevTone[i.severity]}>{labelFor(INCIDENT_SEVERITIES, i.severity)}</Badge><Badge tone={i.status === 'resolved' ? 'accent' : i.status === 'in_progress' ? 'info' : 'warn'} dot>{labelFor(INCIDENT_STATUSES, i.status)}</Badge></p>
+                    <p className="flex flex-wrap items-center gap-2 text-sm font-medium">{i.title}{i.sample ? <SampleBadge /> : null}<Badge tone={sevTone[i.severity]}>{labelFor(INCIDENT_SEVERITIES, i.severity)}</Badge><Badge tone={i.status === 'resolved' ? 'success' : i.status === 'in_progress' ? 'info' : 'warn'} dot>{labelFor(INCIDENT_STATUSES, i.status)}</Badge></p>
                     <p className="text-xs text-muted">{eq?.name ?? 'Unknown equipment'} · reported {formatDateTime(i.reportedAt, timezone)}{i.reportedBy ? ` by ${i.reportedBy}` : ''}</p>
                     {i.note ? <p className="mt-1 text-sm text-muted">{i.note}</p> : null}
                     {i.resolution ? <p className="mt-1 text-sm"><span className="text-muted">Resolved {formatDateTime(i.resolvedAt, timezone)}:</span> {i.resolution}</p> : null}

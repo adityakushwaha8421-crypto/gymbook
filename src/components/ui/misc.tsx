@@ -71,14 +71,17 @@ export function Avatar({ name, src, size = 'md' }: { name: string; src?: string;
   )
 }
 
-export function Stat({ label, value, hint, tone, icon, to }: { label: ReactNode; value: ReactNode; hint?: ReactNode; tone?: 'danger' | 'warn' | 'accent'; icon?: ReactNode; to?: string }) {
+export function Stat({ label, value, hint, tone, icon, to }: { label: ReactNode; value: ReactNode; hint?: ReactNode; tone?: 'danger' | 'warn' | 'success'; icon?: ReactNode; to?: string }) {
+  // Long amounts step down a size so a five-up row never breaks "−" away from its number.
+  const len = typeof value === 'string' ? value.length : 0
+  const size = len >= 12 ? 'text-lg' : len >= 10 ? 'text-xl' : 'text-2xl'
   const body = (
     <>
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-medium text-muted">{label}</p>
         {icon ? <span className="text-faint">{icon}</span> : null}
       </div>
-      <p className={cn('tabular mt-2 text-2xl font-semibold leading-none [overflow-wrap:anywhere]', tone === 'danger' && 'text-danger', tone === 'warn' && 'text-warn', tone === 'accent' && 'text-accent-ink')}>{value}</p>
+      <p className={cn('tabular mt-2 font-semibold !leading-none [overflow-wrap:anywhere]', size, tone === 'danger' && 'text-danger', tone === 'warn' && 'text-warn', tone === 'success' && 'text-success')}>{value}</p>
       {hint ? <p className="mt-2 text-xs text-muted">{hint}</p> : null}
     </>
   )

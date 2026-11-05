@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 
-export type Tone = 'neutral' | 'accent' | 'danger' | 'warn' | 'info' | 'muted'
+export type Tone = 'neutral' | 'accent' | 'success' | 'danger' | 'warn' | 'info' | 'muted'
 
 const tones: Record<Tone, string> = {
   neutral: 'bg-sunken text-ink ring-line',
   muted: 'bg-sunken text-muted ring-line',
   accent: 'bg-accent-soft text-accent-ink ring-accent/20',
+  success: 'bg-success-soft text-success ring-success/20',
   danger: 'bg-danger-soft text-danger ring-danger/20',
   warn: 'bg-warn-soft text-warn ring-warn/25',
   info: 'bg-info-soft text-info ring-info/20',
@@ -15,6 +16,7 @@ const dots: Record<Tone, string> = {
   neutral: 'bg-faint',
   muted: 'bg-faint',
   accent: 'bg-accent',
+  success: 'bg-success',
   danger: 'bg-danger',
   warn: 'bg-warn',
   info: 'bg-info',

@@ -99,7 +99,7 @@ export function MemberDetailPage() {
                 {member.memberCode ? <Badge tone="neutral" title="Member code: search this at check-in"><span className="font-mono">{member.memberCode}</span></Badge> : null}
                 {member.sample ? <SampleBadge /> : null}
                 {archived ? <Badge tone="muted">Archived</Badge> : <MembershipStateBadge state={data.state} />}
-                {data.openVisit ? <Badge tone="accent">In the gym now</Badge> : null}
+                {data.openVisit ? <Badge tone="success">In the gym now</Badge> : null}
               </div>
               <ContactLinks phone={member.phone} email={member.email} className="mt-1 text-sm" />
               <p className="mt-1 text-sm text-muted">
@@ -269,7 +269,7 @@ export function MemberDetailPage() {
                 <li key={a.id} className="flex items-center justify-between gap-3 px-4 py-2.5 sm:px-5">
                   <div className="min-w-0">
                     <p className="text-sm">
-                      {formatDateTime(a.checkInAt, timezone)} {a.checkOutAt ? <span className="text-muted">→ {formatDuration(a.checkInAt, a.checkOutAt)}</span> : <Badge tone="accent">Checked in</Badge>}
+                      {formatDateTime(a.checkInAt, timezone)} {a.checkOutAt ? <span className="text-muted">→ {formatDuration(a.checkInAt, a.checkOutAt)}</span> : <Badge tone="success">Checked in</Badge>}
                     </p>
                     {a.overrideReason ? <p className="text-xs text-warn">Allowed without membership: {a.overrideReason}</p> : null}
                   </div>
@@ -339,7 +339,7 @@ export function MemberDetailPage() {
           {data.sessions.length === 0 ? <EmptyState compact title="No sessions yet" description="Book a session with a trainer to track it here." /> : (
             <ul className="divide-y divide-line">
               {data.sessions.map((s) => {
-                const tone = ({ scheduled: 'info', completed: 'accent', cancelled: 'muted', no_show: 'danger' } as const)[s.status]
+                const tone = ({ scheduled: 'info', completed: 'success', cancelled: 'muted', no_show: 'danger' } as const)[s.status]
                 const set = async (status: SessionStatus) => { try { await setSessionStatus(s.id, s.rev, status); toast.success('Session updated') } catch (err) { toast.error('Could not update session', errorMessage(err)) } }
                 return (
                   <li key={s.id} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">

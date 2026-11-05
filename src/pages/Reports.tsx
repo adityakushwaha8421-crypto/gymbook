@@ -107,11 +107,11 @@ export function ReportsPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-        <Stat label="Revenue received" value={formatINR(finance.receivedPaise)} hint={`${finance.paymentsCount} payment${finance.paymentsCount === 1 ? '' : 's'}`} tone="accent" />
+        <Stat label="Revenue received" value={formatINR(finance.receivedPaise)} hint={`${finance.paymentsCount} payment${finance.paymentsCount === 1 ? '' : 's'}`} tone="success" />
         <Stat label="Invoiced" value={formatINR(finance.invoicedPaise)} hint={`${finance.invoicesCount} invoice${finance.invoicesCount === 1 ? '' : 's'} issued`} />
         <Stat label="Outstanding (all time)" value={formatINR(outstanding.totalPaise)} hint={`${outstanding.members} member${outstanding.members === 1 ? '' : 's'} owe money`} tone={outstanding.totalPaise > 0 ? 'danger' : undefined} />
         <Stat label="Expenses" value={formatINR(finance.expensesPaise)} hint={`${finance.expensesCount} record${finance.expensesCount === 1 ? '' : 's'}`} />
-        <Stat label="Net cash flow" value={formatINR(finance.netCashPaise)} hint="received − expenses" tone={finance.netCashPaise < 0 ? 'danger' : 'accent'} />
+        <Stat label="Net cash flow" value={formatINR(finance.netCashPaise)} hint="received − expenses" tone={finance.netCashPaise < 0 ? 'danger' : 'success'} />
       </div>
 
       <Card>
@@ -125,7 +125,7 @@ export function ReportsPage() {
           <CardHeader title="Cash in vs. expenses" />
           <CardBody>
             <BarChart labels={labels} series={[
-              { key: 'received', label: 'Cash received', color: 'rgb(var(--c-accent))', values: series.points.map((p) => p.received), format: formatINR },
+              { key: 'received', label: 'Cash received', color: 'rgb(var(--c-success))', values: series.points.map((p) => p.received), format: formatINR },
               { key: 'expenses', label: 'Expenses', color: 'rgb(var(--c-warn))', values: series.points.map((p) => p.expenses), format: formatINR },
             ]} />
           </CardBody>
@@ -135,7 +135,7 @@ export function ReportsPage() {
           <CardBody>
             <BarChart labels={labels} series={[
               { key: 'attendance', label: 'Visits', color: 'rgb(var(--c-info))', values: series.points.map((p) => p.attendance), format: (v) => String(v) },
-              { key: 'new', label: 'New memberships', color: 'rgb(var(--c-accent))', values: series.points.map((p) => p.newMemberships), format: (v) => String(v) },
+              { key: 'new', label: 'New memberships', color: 'rgb(var(--c-success))', values: series.points.map((p) => p.newMemberships), format: (v) => String(v) },
               { key: 'renewals', label: 'Renewals', color: 'rgb(var(--c-faint))', values: series.points.map((p) => p.renewals), format: (v) => String(v) },
             ]} />
           </CardBody>

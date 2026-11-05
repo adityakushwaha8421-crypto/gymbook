@@ -197,7 +197,7 @@ export function AttendancePage() {
                       <Td><Link to={`/members/${a.memberId}`} className="flex items-center gap-2 font-medium hover:underline">{m?.name ?? 'Unknown'}{m?.sample ? <SampleBadge /> : null}</Link></Td>
                       <Td className="text-muted">{formatDate(date)}</Td>
                       <Td className="tabular">{formatTime(a.checkInAt, timezone)}</Td>
-                      <Td className="tabular">{a.checkOutAt ? formatTime(a.checkOutAt, timezone) : <Badge tone="accent">Inside</Badge>}</Td>
+                      <Td className="tabular">{a.checkOutAt ? formatTime(a.checkOutAt, timezone) : <Badge tone="success">Inside</Badge>}</Td>
                       <Td className="text-muted">{a.checkOutAt ? formatDuration(a.checkInAt, a.checkOutAt) : '—'}</Td>
                       <Td className="max-w-[16rem] truncate text-muted">{a.overrideReason ? <span className="text-warn">Override: {a.overrideReason}</span> : a.note ?? ''}</Td>
                     </Tr>
@@ -219,7 +219,7 @@ export function AttendancePage() {
                       <p className="text-xs text-muted">{formatDateTime(a.checkInAt, timezone)}{a.checkOutAt ? ` → ${formatTime(a.checkOutAt, timezone)} (${formatDuration(a.checkInAt, a.checkOutAt)})` : ''}</p>
                       {a.overrideReason ? <p className="text-xs text-warn">Override: {a.overrideReason}</p> : null}
                     </div>
-                    {!a.checkOutAt ? <Badge tone="accent">Inside</Badge> : null}
+                    {!a.checkOutAt ? <Badge tone="success">Inside</Badge> : null}
                   </div>
                 </RowCard>
               )

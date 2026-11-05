@@ -19,10 +19,12 @@
   --c-accent-soft: 253 232 234;
   --c-accent-ink: 158 18 34;
   --c-accent-fg: 255 255 255;
-  --c-danger: 186 60 10;
-  --c-danger-soft: 253 236 228;
-  --c-warn: 170 83 0;
-  --c-warn-soft: 255 243 224;
+  --c-success: 12 110 76;
+  --c-success-soft: 228 244 236;
+  --c-danger: 188 44 22;
+  --c-danger-soft: 254 234 229;
+  --c-warn: 138 92 0;
+  --c-warn-soft: 255 244 210;
   --c-info: 29 93 160;
   --c-info-soft: 232 241 251;
 
@@ -66,10 +68,12 @@
   --c-accent-soft: 62 22 28;
   --c-accent-ink: 255 150 158;
   --c-accent-fg: 40 8 12;
-  --c-danger: 250 140 90;
-  --c-danger-soft: 60 32 20;
-  --c-warn: 245 177 72;
-  --c-warn-soft: 54 39 14;
+  --c-success: 98 214 162;
+  --c-success-soft: 16 50 38;
+  --c-danger: 255 128 104;
+  --c-danger-soft: 64 28 22;
+  --c-warn: 240 190 84;
+  --c-warn-soft: 54 42 14;
   --c-info: 104 168 240;
   --c-info-soft: 22 36 58;
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.35), 0 16px 40px -20px rgb(0 0 0 / 0.5);
@@ -103,10 +107,12 @@
     --c-accent-soft: 62 22 28;
     --c-accent-ink: 255 150 158;
     --c-accent-fg: 40 8 12;
-    --c-danger: 250 140 90;
-    --c-danger-soft: 60 32 20;
-    --c-warn: 245 177 72;
-    --c-warn-soft: 54 39 14;
+    --c-success: 98 214 162;
+    --c-success-soft: 16 50 38;
+    --c-danger: 255 128 104;
+    --c-danger-soft: 64 28 22;
+    --c-warn: 240 190 84;
+    --c-warn-soft: 54 42 14;
     --c-info: 104 168 240;
     --c-info-soft: 22 36 58;
     --shadow-card: 0 1px 2px rgb(0 0 0 / 0.35), 0 16px 40px -20px rgb(0 0 0 / 0.5);
@@ -177,7 +183,11 @@
   input[type='search']::-webkit-search-cancel-button { -webkit-appearance: none; }
   ::placeholder { @apply text-faint; }
   input[type='date'], input[type='time'], input[type='datetime-local'] { color-scheme: inherit; }
-  ::selection { background: rgb(var(--c-accent) / 0.25); }
+  ::selection { background: rgb(var(--c-accent) / 0.22); }
+  /* The parts the browser draws: native controls, caret, scrollbars and link underlines follow the palette. */
+  html { accent-color: rgb(var(--c-accent)); scrollbar-color: rgb(var(--c-line-strong)) transparent; }
+  input, textarea, [contenteditable] { caret-color: rgb(var(--c-accent)); }
+  a { text-underline-offset: 0.2em; text-decoration-thickness: from-font; }
 }
 
 @layer components {

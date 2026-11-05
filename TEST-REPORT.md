@@ -144,3 +144,27 @@ Branded for R.K. Gym Fitness Centre (name, address, phone, RK invoice prefix, RK
 | Live site in headless Chromium | deep link `/gymbook/settings` renders, SW scope `/gymbook/`, offline reload of `/members` shows 12 sample members, no page errors |
 
 Test fixes in this pass were all branding follow-through: default gym name, prefilled onboarding name, "Change logo" as the initial state, invoice numbers `RK-…`, and a photo-upload locator scoped to `main` so it ignores the new sidebar logo.
+
+## Polish pass with Impeccable (2026-11-05)
+
+Refinement only, following Impeccable's `polish` playbook: the glass look, crimson brand and all behaviour are unchanged.
+
+Findings and fixes:
+
+- **Status colours inverted after the rebrand.** The accent (now crimson) was still used for positive states, so Active, Paid, Completed, Inside and In service rendered red. Added a `success` token (emerald) and moved every status use to it; accent is now brand and primary actions only.
+- **Warn and danger were nearly the same hue.** Warn is now gold (hue 40°), danger red-orange (hue 8°), with yellow and pink soft backgrounds.
+- **Charts.** Cash received and new memberships use success instead of the brand red, so they no longer read like expenses.
+- **Orphaned minus sign.** In the five-up Reports row "−₹42,500.00" broke after the minus; long amounts now step down a type size.
+- **Field focus looked like an error.** Focused inputs get a neutral ink border; invalid stays red.
+- **Coloured button glow** (flagged by the detector on dark backgrounds) replaced with neutral elevation.
+- **Browser surfaces.** Caret, native control accent, scrollbars and link underline offset now follow the palette.
+
+| Check | Result |
+| --- | --- |
+| Vitest | 124 passed |
+| Playwright main + features + shell exploratory | 53 passed |
+| Contrast table (light and dark, now including success) | every pair ≥ 5.1:1 |
+| Impeccable detector | source clean; one rendered finding (button glow) fixed |
+| Typecheck, lint | clean |
+
+Left as is: on phones the floating Check in and Record payment actions overlap card content while scrolling; that is the existing floating-action pattern, not changed in this pass.

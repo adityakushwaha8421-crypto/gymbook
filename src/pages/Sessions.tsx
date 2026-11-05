@@ -26,7 +26,7 @@ import { errorMessage } from '@/data/errors'
 import type { Snapshot } from '@/data/snapshot'
 
 
-const statusTone: Record<SessionStatus, Tone> = { scheduled: 'info', completed: 'accent', cancelled: 'muted', no_show: 'danger' }
+const statusTone: Record<SessionStatus, Tone> = { scheduled: 'info', completed: 'success', cancelled: 'muted', no_show: 'danger' }
 
 export function SessionsPage() {
   usePage('PT sessions', 'Book and track personal-training sessions between trainers and members.')

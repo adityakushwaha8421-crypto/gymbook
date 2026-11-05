@@ -1025,7 +1025,7 @@ test.describe('7. accessibility', () => {
         }
         const v = (n: string) => getComputedStyle(document.documentElement).getPropertyValue(n).trim().split(/\s+/).map(Number)
         const canvas = v('--c-canvas'), surface = v('--c-surface'), sunken = v('--c-sunken')
-        const ink = v('--c-ink'), muted = v('--c-muted'), faint = v('--c-faint'), accentInk = v('--c-accent-ink'), accent = v('--c-accent'), accentFg = v('--c-accent-fg'), danger = v('--c-danger'), warn = v('--c-warn'), info = v('--c-info'), dangerSoft = v('--c-danger-soft'), warnSoft = v('--c-warn-soft'), infoSoft = v('--c-info-soft')
+        const ink = v('--c-ink'), muted = v('--c-muted'), faint = v('--c-faint'), accentInk = v('--c-accent-ink'), accent = v('--c-accent'), accentFg = v('--c-accent-fg'), danger = v('--c-danger'), warn = v('--c-warn'), info = v('--c-info'), dangerSoft = v('--c-danger-soft'), warnSoft = v('--c-warn-soft'), infoSoft = v('--c-info-soft'), success = v('--c-success'), successSoft = v('--c-success-soft')
         const out: Record<string, number> = {
           'ink/canvas': ratio(ink, canvas),
           'ink/surface': ratio(ink, surface),
@@ -1041,6 +1041,8 @@ test.describe('7. accessibility', () => {
           'warn/canvas': ratio(warn, canvas),
           'warn/warn-soft': ratio(warn, warnSoft),
           'info/info-soft': ratio(info, infoSoft),
+          'success/canvas': ratio(success, canvas),
+          'success/success-soft': ratio(success, successSoft),
         }
         for (const k of Object.keys(out)) out[k] = Math.round(out[k] * 100) / 100
         return out

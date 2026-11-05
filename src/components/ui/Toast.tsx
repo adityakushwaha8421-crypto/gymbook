@@ -53,7 +53,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               className="pointer-events-auto flex w-full max-w-sm items-start gap-2.5 glass-pop rounded-2xl px-3.5 py-3"
             >
               <span className="mt-0.5 shrink-0">
-                {t.tone === 'success' ? <CheckCircle2 className="h-4 w-4 text-accent" aria-hidden /> : null}
+                {t.tone === 'success' ? <CheckCircle2 className="h-4 w-4 text-success" aria-hidden /> : null}
                 {t.tone === 'error' ? <AlertTriangle className="h-4 w-4 text-danger" aria-hidden /> : null}
                 {t.tone === 'info' ? <Info className="h-4 w-4 text-info" aria-hidden /> : null}
               </span>

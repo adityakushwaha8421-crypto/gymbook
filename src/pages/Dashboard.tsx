@@ -67,7 +67,7 @@ export function Dashboard() {
                   <span className="tabular w-16 shrink-0 text-muted">{formatTime(s.startAt, timezone)}</span>
                   <Link to={`/members/${s.memberId}?tab=sessions`} className="min-w-0 flex-1 truncate font-medium hover:underline">{memberName}</Link>
                   <span className="hidden truncate text-xs text-muted sm:inline">{trainerName}</span>
-                  <Badge tone={s.status === 'completed' ? 'accent' : s.status === 'scheduled' ? 'info' : 'muted'} dot>{s.status === 'no_show' ? 'No-show' : s.status[0].toUpperCase() + s.status.slice(1)}</Badge>
+                  <Badge tone={s.status === 'completed' ? 'success' : s.status === 'scheduled' ? 'info' : 'muted'} dot>{s.status === 'no_show' ? 'No-show' : s.status[0].toUpperCase() + s.status.slice(1)}</Badge>
                 </li>
               ))}
             </ul>
@@ -102,12 +102,12 @@ export function Dashboard() {
             <MoneyCell label="Cash received" value={finance.receivedPaise} hint={`${finance.paymentsCount} payment${finance.paymentsCount === 1 ? '' : 's'}`} />
             <MoneyCell label="Invoiced" value={finance.invoicedPaise} hint={`${finance.invoicesCount} invoice${finance.invoicesCount === 1 ? '' : 's'}`} />
             <MoneyCell label="Expenses" value={finance.expensesPaise} hint={`${finance.expensesCount} record${finance.expensesCount === 1 ? '' : 's'}`} />
-            <MoneyCell label="Net cash" value={finance.netCashPaise} hint="received − expenses" tone={finance.netCashPaise < 0 ? 'danger' : 'accent'} />
+            <MoneyCell label="Net cash" value={finance.netCashPaise} hint="received − expenses" tone={finance.netCashPaise < 0 ? 'danger' : 'success'} />
           </div>
           <BarChart
             labels={labels}
             series={[
-              { key: 'received', label: 'Cash received', color: 'rgb(var(--c-accent))', values: series.points.map((p) => p.received), format: formatINR },
+              { key: 'received', label: 'Cash received', color: 'rgb(var(--c-success))', values: series.points.map((p) => p.received), format: formatINR },
               { key: 'expenses', label: 'Expenses', color: 'rgb(var(--c-warn))', values: series.points.map((p) => p.expenses), format: formatINR },
             ]}
             height={180}
@@ -183,7 +183,7 @@ function Delta({ label, now, prev, fmt }: { label: string; now: number; prev: nu
       </div>
       <div className="text-right">
         <p className="tabular text-base font-semibold">{fmt(now)}</p>
-        <p className={`flex items-center justify-end gap-1 text-xs ${same ? 'text-muted' : up ? 'text-accent-ink' : 'text-danger'}`}>
+        <p className={`flex items-center justify-end gap-1 text-xs ${same ? 'text-muted' : up ? 'text-success' : 'text-danger'}`}>
           {same ? <Minus className="h-3 w-3" aria-hidden /> : up ? <TrendingUp className="h-3 w-3" aria-hidden /> : <TrendingDown className="h-3 w-3" aria-hidden />}
           {pct === null ? 'new' : `${pct > 0 ? '+' : ''}${pct}%`}
         </p>
@@ -192,11 +192,11 @@ function Delta({ label, now, prev, fmt }: { label: string; now: number; prev: nu
   )
 }
 
-function MoneyCell({ label, value, hint, tone }: { label: string; value: number; hint?: string; tone?: 'danger' | 'accent' }) {
+function MoneyCell({ label, value, hint, tone }: { label: string; value: number; hint?: string; tone?: 'danger' | 'success' }) {
   return (
     <div className="rounded-xl border border-line/70 bg-sunken/50 px-3.5 py-3">
       <p className="text-xs font-medium text-muted">{label}</p>
-      <p className={`tabular mt-1 text-lg font-semibold leading-6 [overflow-wrap:anywhere] ${tone === 'danger' ? 'text-danger' : tone === 'accent' ? 'text-accent-ink' : ''}`}>{formatINR(value)}</p>
+      <p className={`tabular mt-1 text-lg font-semibold leading-6 [overflow-wrap:anywhere] ${tone === 'danger' ? 'text-danger' : tone === 'success' ? 'text-success' : ''}`}>{formatINR(value)}</p>
       {hint ? <p className="text-xs text-muted">{hint}</p> : null}
     </div>
   )
