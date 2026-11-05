@@ -857,7 +857,7 @@ test.describe('6. shell', () => {
     expect.soft(stacked, '⌘K opened the command palette on top of an open form dialog').toBe(1)
   })
 
-  test('bottom tab bar at 390px: tabs, More drawer, floating actions above the bar', async ({ page }) => {
+  test('bottom tab bar at 390px: tabs, More drawer, page actions inline under the header', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await onboard(page, 'sample')
     const bar = page.getByRole('navigation', { name: 'Quick navigation' })
@@ -892,15 +892,17 @@ test.describe('6. shell', () => {
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
     await page.keyboard.press('Escape')
 
-    // Floating page actions sit above the tab bar and do not overlap it
+    // Page actions are in the flow under the title: never fixed over content, never under the tab bar
     const actions = page.locator('#page-header-actions')
     await expect(actions.getByRole('button', { name: 'New plan' })).toBeVisible()
     const a = (await actions.boundingBox())!
     const b = (await bar.boundingBox())!
-    expect(await actions.evaluate((el) => getComputedStyle(el).position)).toBe('fixed')
+    expect(await actions.evaluate((el) => getComputedStyle(el).position)).toBe('static')
+    const h1 = (await page.getByRole('heading', { level: 1 }).boundingBox())!
+    expect(a.y, 'actions sit below the page title').toBeGreaterThanOrEqual(h1.y + h1.height)
     expect(a.y + a.height, 'actions overlap the tab bar').toBeLessThanOrEqual(b.y)
     expect(a.x + a.width).toBeLessThanOrEqual(390)
-    // Toast vs tab bar vs floating actions at phone width
+    // Toast vs tab bar vs page actions at phone width
     await actions.getByRole('button', { name: 'New plan' }).click()
     const dialog = page.getByRole('dialog')
     await dialog.getByLabel('Plan name').fill('Phone plan')
@@ -915,7 +917,7 @@ test.describe('6. shell', () => {
     const overlapsActions = t.y < a2.y + a2.height && t.y + t.height > a2.y && t.x < a2.x + a2.width && t.x + t.width > a2.x
     log('layout', `toast ${JSON.stringify(t)} bar ${JSON.stringify(b)} actions ${JSON.stringify(a2)}`)
     expect.soft(overlapsBar, 'toast overlaps the bottom tab bar').toBe(false)
-    expect.soft(overlapsActions, 'toast overlaps the floating page actions').toBe(false)
+    expect.soft(overlapsActions, 'toast overlaps the page actions').toBe(false)
   })
 })
 

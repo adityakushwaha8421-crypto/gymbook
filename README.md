@@ -64,7 +64,7 @@ Push the repository to GitHub and, under **Settings → Pages**, set the source 
 
 ### Mobile
 
-Below 1024 px the sidebar is replaced by a bottom tab bar (Home, Members, Check in, Payments, More) with safe-area padding, and each page's primary action floats above it. Tables become cards, dialogs become drag-to-dismiss bottom sheets, controls grow to 44 px and fields render at 16 px so iOS Safari does not zoom. The app ships a web manifest and home-screen icons, so it can be added to an iOS or Android home screen and opens standalone; scroll position is restored on back navigation.
+Below 1024 px the sidebar is replaced by a bottom tab bar (Home, Members, Check in, Payments, More) with safe-area padding, and each page's actions sit under the page title as equal-width buttons, in the flow, so they never cover content. Tables become cards, dialogs become drag-to-dismiss bottom sheets, controls grow to 44 px and fields render at 16 px so iOS Safari does not zoom. The app ships a web manifest and home-screen icons, so it can be added to an iOS or Android home screen and opens standalone; scroll position is restored on back navigation.
 
 ### Offline
 

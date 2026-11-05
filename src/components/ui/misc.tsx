@@ -5,7 +5,7 @@ import { cn } from '@/lib/cn'
 import { Input } from './Field'
 import { PAGE_ACTIONS_ID } from './PageActions'
 
-export function PageHeader({ title, description, actions, back, eyebrow, slot }: { title: ReactNode; description?: ReactNode; actions?: ReactNode; back?: { to: string; label: string }; eyebrow?: ReactNode; slot?: boolean }) {
+export function PageHeader({ title, description, actions, back, slot }: { title: ReactNode; description?: ReactNode; actions?: ReactNode; back?: { to: string; label: string }; slot?: boolean }) {
   return (
     <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
@@ -15,7 +15,6 @@ export function PageHeader({ title, description, actions, back, eyebrow, slot }:
             {back.label}
           </Link>
         ) : null}
-        {eyebrow ? <p className="mb-1 text-xs font-medium uppercase tracking-[0.08em] text-muted">{eyebrow}</p> : null}
         <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">{title}</h1>
         {description ? <p className="mt-1 max-w-2xl text-sm text-muted">{description}</p> : null}
       </div>
@@ -23,7 +22,8 @@ export function PageHeader({ title, description, actions, back, eyebrow, slot }:
         <div
           className={cn(
             'flex flex-wrap items-center gap-2 sm:shrink-0',
-            slot && 'max-sm:fixed max-sm:bottom-[calc(68px+env(safe-area-inset-bottom))] max-sm:right-4 max-sm:z-30 max-sm:flex-col max-sm:items-end max-sm:gap-2 max-sm:empty:hidden [&>*]:max-sm:shadow-pop',
+            // Phones: actions sit under the title as equal-width buttons, in the flow, so they never cover content.
+            slot && 'empty:hidden max-sm:[&>*]:min-w-0 max-sm:[&>*]:flex-1',
           )}
           id={slot ? PAGE_ACTIONS_ID : undefined}
         >

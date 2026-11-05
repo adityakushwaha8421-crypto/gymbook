@@ -167,4 +167,10 @@ Findings and fixes:
 | Impeccable detector | source clean; one rendered finding (button glow) fixed |
 | Typecheck, lint | clean |
 
-Left as is: on phones the floating Check in and Record payment actions overlap card content while scrolling; that is the existing floating-action pattern, not changed in this pass.
+Follow-up the same day: on phones the page actions no longer float. They sit under the page title as equal-width buttons, in the flow, so they cannot cover card content (the floating Check in and Record payment pills used to hide values on the dashboard). The tablet top bar's search text and Sample data pill no longer wrap. The unused `eyebrow` prop was removed from `PageHeader`.
+
+| Check | Result |
+| --- | --- |
+| Vitest | 124 passed |
+| Playwright main + features + shell exploratory | 53 passed (one attendance test stalled for 7 minutes with no assertion error on the first run and passed in 9 s on rerun) |
+| Phone 375 px, tablet 768 px, desktop | checked in the browser |

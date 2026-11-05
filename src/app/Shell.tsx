@@ -224,16 +224,16 @@ export function Shell() {
             <button
               type="button"
               onClick={() => setPalette(true)}
-              className="pressable hidden h-9 w-72 items-center gap-2 rounded-xl border border-line/80 bg-surface/60 px-3 text-sm text-faint shadow-card backdrop-blur-md hover:border-line-strong hover:bg-surface md:flex"
+              className="pressable hidden h-9 w-72 min-w-0 shrink items-center gap-2 rounded-xl border border-line/80 bg-surface/60 px-3 text-sm text-faint shadow-card backdrop-blur-md hover:border-line-strong hover:bg-surface md:flex"
               aria-label="Search members and commands"
             >
               <Search className="h-4 w-4" aria-hidden />
-              <span className="flex-1 text-left">Search members, commands…</span>
+              <span className="min-w-0 flex-1 truncate text-left">Search members, commands…</span>
               <Kbd>⌘K</Kbd>
             </button>
             <div className="ml-auto flex items-center gap-1.5">
               {settings.dataMode === 'sample' ? (
-                <Link to="/settings#data" className="pressable hidden h-8 items-center gap-1.5 rounded-full border border-info/25 bg-info-soft px-2.5 text-xs font-medium text-info hover:brightness-95 sm:inline-flex" title="Labelled sample data is loaded. Records marked “Sample” are not real. Click to manage.">
+                <Link to="/settings#data" className="pressable hidden h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-info/25 bg-info-soft px-2.5 text-xs font-medium text-info hover:brightness-95 sm:inline-flex" title="Labelled sample data is loaded. Records marked “Sample” are not real. Click to manage.">
                   <FlaskConical className="h-3.5 w-3.5" aria-hidden />
                   Sample data
                 </Link>
