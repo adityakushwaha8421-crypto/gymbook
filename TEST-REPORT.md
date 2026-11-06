@@ -229,3 +229,19 @@ Asked for: height and weight on the member form; Trainer, Email, Emergency conta
 | Playwright, every suite | 104 passed (the first full run had 99; five failed: two still expected the old palette size and email search, one looked for the wrong not-found heading, and three hit a dev server that had stopped. All pass after the test updates and a rerun) |
 | Desktop 1280 and phone 375 | member form, member page, dashboard and reports checked in the browser; no horizontal overflow |
 | Typecheck, lint | clean |
+
+## Upcoming expiries on Follow-ups (2026-11-06)
+
+Asked for: a section of upcoming expiries on the Follow-ups page.
+
+- **What it shows:** on the Open tab, members whose cover ends within 7, 15 or 30 days (switchable, 7 by default), soonest first, with days left, plan, end date and phone. Six rows show at first; "Show all" expands the rest.
+- **Actions per row:** Call, WhatsApp with a renewal reminder already written, and "Add follow-up" prefilled as an expiry follow-up. A member who already has an open expiry follow-up is marked "Follow-up open" instead.
+- **Who is left out:** archived members, cancelled memberships, plans that already ended, and members who have already renewed (cover is judged by the latest end date, in `upcomingExpiries` in `src/domain/metrics.ts`).
+- **Suggested card:** it used to list expiring members too. It now lists only plans that lapsed in the last 14 days and outstanding balances, so nobody appears twice.
+
+| Check | Result |
+| --- | --- |
+| Vitest | 128 passed (4 new for the expiry rules) |
+| Playwright: workflows, features, shell, operations | 59 passed, including a new test for the section |
+| Desktop 1280 and phone 375 | section checked in the browser; no horizontal overflow |
+| Typecheck, lint | clean |

@@ -15,10 +15,10 @@ import {
 import { parseRupees, formatINRCompact, paiseToInput, formatINR } from './money'
 import { csvCell, toCsv } from './csv'
 import { invoiceBalance, memberBalance, membershipState, pickCurrentMembership, latestEndDate, daysRemaining } from './membership'
-import { financeSummary, financeSeries, dashboardMetrics, periodPreset, memberRows } from './metrics'
+import { financeSummary, financeSeries, dashboardMetrics, periodPreset, memberRows, upcomingExpiries } from './metrics'
 import { phoneSchema, optionalEmail, settingsForm, followUpForm, memberForm, rupeesInput, normalizePhone, planForm } from './validation'
 import type { Snapshot } from '@/data/snapshot'
-import type { Invoice, Payment, Adjustment, Membership, Member, Attendance } from './types'
+import type { Invoice, Payment, Adjustment, Membership, Member, Attendance, FollowUp } from './types'
 
 // ---------------------------------------------------------------------------
 // helpers
@@ -414,6 +414,56 @@ describe('metrics: financeSeries', () => {
     const s = snap({ payments: [pay({ id: 'p1', receivedAt: '2026-11-10T06:00:00.000Z', amountPaise: 1 }), pay({ id: 'p2', receivedAt: '2026-11-20T06:00:00.000Z', amountPaise: 10 })] })
     const r = financeSeries(s, { start: '2026-11-15', end: '2027-02-10' }, TZ)
     expect(r.points[0].received).toBe(10)
+  })
+})
+
+describe('metrics: upcomingExpiries', () => {
+  const today = '2026-11-06'
+  const fu = (over: Partial<FollowUp>): FollowUp => ({ ...base, id: 'fu', type: 'expiry', dueDate: today, status: 'open', ...over })
+  it('includes today and the last day of the window, excludes yesterday and the day after', () => {
+    const s = snap({
+      members: [member({ id: 'a', name: 'A' }), member({ id: 'b', name: 'B' }), member({ id: 'c', name: 'C' }), member({ id: 'd', name: 'D' })],
+      memberships: [
+        ms({ id: 'm1', memberId: 'a', startDate: '2026-10-07', endDate: '2026-11-06' }), // ends today
+        ms({ id: 'm2', memberId: 'b', startDate: '2026-10-14', endDate: '2026-11-13' }), // day 7
+        ms({ id: 'm3', memberId: 'c', startDate: '2026-10-06', endDate: '2026-11-05' }), // ended yesterday
+        ms({ id: 'm4', memberId: 'd', startDate: '2026-10-15', endDate: '2026-11-14' }), // day 8
+      ],
+    })
+    expect(upcomingExpiries(s, today, 7).map((x) => [x.member.id, x.daysLeft])).toEqual([['a', 0], ['b', 7]])
+    expect(upcomingExpiries(s, today, 30).map((x) => x.member.id)).toEqual(['a', 'b', 'd'])
+  })
+  it('a member who already renewed is judged by the renewal, not the plan ending now', () => {
+    const s = snap({
+      members: [member({ id: 'a', name: 'Renewed' })],
+      memberships: [ms({ id: 'm1', memberId: 'a', startDate: '2026-10-10', endDate: '2026-11-09' }), ms({ id: 'm2', memberId: 'a', startDate: '2026-11-10', endDate: '2026-12-09', renewalOfId: 'm1' })],
+    })
+    expect(upcomingExpiries(s, today, 7)).toEqual([])
+    const far = upcomingExpiries(s, today, 40)
+    expect(far).toHaveLength(1)
+    expect(far[0].membership.id).toBe('m2')
+    expect(far[0].endDate).toBe('2026-12-09')
+  })
+  it('skips archived members, cancelled memberships and members without any membership', () => {
+    const s = snap({
+      members: [member({ id: 'a', name: 'Archived', status: 'archived' }), member({ id: 'b', name: 'Cancelled' }), member({ id: 'c', name: 'None' }), member({ id: 'd', name: 'Fallback' })],
+      memberships: [
+        ms({ id: 'm1', memberId: 'a', endDate: '2026-11-08' }),
+        ms({ id: 'm2', memberId: 'b', endDate: '2026-11-08', cancelledAt: '2026-11-01T00:00:00.000Z' }),
+        // the later membership was cancelled, so the earlier one is the real last day of cover
+        ms({ id: 'm3', memberId: 'd', startDate: '2026-10-10', endDate: '2026-11-09' }),
+        ms({ id: 'm4', memberId: 'd', startDate: '2026-11-10', endDate: '2026-12-09', cancelledAt: '2026-11-02T00:00:00.000Z' }),
+      ],
+    })
+    expect(upcomingExpiries(s, today, 7).map((x) => [x.member.id, x.membership.id])).toEqual([['d', 'm3']])
+  })
+  it('sorts by end date then name, and flags members that already have an open expiry follow-up', () => {
+    const s = snap({
+      members: [member({ id: 'z', name: 'Zoya' }), member({ id: 'a', name: 'Amit' }), member({ id: 'k', name: 'Kiran' })],
+      memberships: [ms({ id: 'm1', memberId: 'z', endDate: '2026-11-08' }), ms({ id: 'm2', memberId: 'a', endDate: '2026-11-08' }), ms({ id: 'm3', memberId: 'k', endDate: '2026-11-07' })],
+      followups: [fu({ id: 'f1', memberId: 'a' }), fu({ id: 'f2', memberId: 'z', status: 'done' }), fu({ id: 'f3', memberId: 'k', type: 'payment' })],
+    })
+    expect(upcomingExpiries(s, today, 7).map((x) => [x.member.name, x.hasOpenFollowUp])).toEqual([['Kiran', false], ['Amit', true], ['Zoya', false]])
   })
 })
 

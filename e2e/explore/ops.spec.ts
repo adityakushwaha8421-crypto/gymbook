@@ -497,6 +497,126 @@ test.describe('follow-ups', () => {
     expect(fus.some((f) => f.note === 'Order towels')).toBe(false)
   })
 
+  test('upcoming expiries: windows, renewed and lapsed members, contact links, add follow-up', async ({ page }) => {
+    await onboard(page, 'empty')
+    await page.goto('/follow-ups')
+    const card = page.getByRole('heading', { name: 'Upcoming expiries' }).locator('xpath=ancestor::*[contains(@class,"rounded-2xl")][1]')
+    await expect(card.getByRole('heading', { name: 'No memberships end in the next 7 days' })).toBeVisible()
+
+    const t = today()
+    let n = 0
+    const member = (name: string, extra: object = {}) => stamp('mem', { name, phone: `98200 001${String(++n).padStart(2, '0')}`, joiningDate: addDays(t, -90), status: 'active', ...extra }, n)
+    const cover = (memberId: string, start: number, end: number, extra: object = {}) =>
+      stamp('ms', { memberId, planId: 'plan_x', planName: 'Monthly', durationValue: 1, durationUnit: 'months', startDate: addDays(t, start), endDate: addDays(t, end), listPricePaise: 150000, discountPaise: 0, pricePaise: 150000, invoiceId: 'inv_x', ...extra }, ++n)
+    const asha = member('Asha Today')
+    const bala = member('Bala Tomorrow')
+    const chitra = member('Chitra Week')
+    const dev = member('Dev Eight')
+    const esha = member('Esha Month')
+    const farid = member('Farid Far')
+    const gita = member('Gita Renewed')
+    const hari = member('Hari Lapsed')
+    const indu = member('Indu Archived', { status: 'archived' })
+    const jai = member('Jai Cancelled')
+    const extras = [member('Kavya Twenty'), member('Lata Twentyone'), member('Mohan Twentytwo')]
+    const gitaFirst = cover(gita.id, -27, 2)
+    await putStore(page, 'members', [asha, bala, chitra, dev, esha, farid, gita, hari, indu, jai, ...extras])
+    await putStore(page, 'memberships', [
+      cover(asha.id, -29, 0),
+      cover(bala.id, -28, 1),
+      cover(chitra.id, -22, 7),
+      cover(dev.id, -21, 8),
+      cover(esha.id, 1, 30),
+      cover(farid.id, 2, 31),
+      gitaFirst,
+      cover(gita.id, 3, 33, { renewalOfId: gitaFirst.id }),
+      cover(hari.id, -30, -1),
+      cover(indu.id, -26, 3),
+      cover(jai.id, -25, 4, { cancelledAt: new Date().toISOString(), cancelReason: 'Invoice voided' }),
+      ...extras.map((m, i) => cover(m.id, -9 + i, 20 + i)),
+    ])
+    await page.reload()
+
+    const rows = card.getByRole('listitem')
+    const names = async () => (await rows.locator('a[href^="/members/"]').allTextContents()).map((x) => x.trim())
+    // 7 days: today, tomorrow and day 7, soonest first. Renewed, lapsed, archived, cancelled and later ones are out.
+    await expect(rows).toHaveCount(3)
+    expect(await names()).toEqual(['Asha Today', 'Bala Tomorrow', 'Chitra Week'])
+    await expect(rows.nth(0)).toContainText('Ends today')
+    await expect(rows.nth(1)).toContainText('Ends tomorrow')
+    await expect(rows.nth(2)).toContainText('7 days left')
+    await expect(rows.nth(2)).toContainText(`Monthly · ends ${formatDate(addDays(t, 7))}`)
+    await expect(card.getByRole('button', { name: /Show all/ })).toHaveCount(0)
+
+    // 15 days adds day 8 only
+    await card.getByRole('tab', { name: '15 days' }).click()
+    await expect(rows).toHaveCount(4)
+    expect(await names()).toEqual(['Asha Today', 'Bala Tomorrow', 'Chitra Week', 'Dev Eight'])
+    await expect(rows.nth(3)).toContainText('8 days left')
+
+    // 30 days: 8 members, six shown until "Show all"; day 31 and the renewed member stay out
+    await card.getByRole('tab', { name: '30 days' }).click()
+    await expect(card).toContainText('Memberships ending in the next 30 days')
+    await expect(rows).toHaveCount(6)
+    await card.getByRole('button', { name: 'Show all 8' }).click()
+    await expect(rows).toHaveCount(8)
+    expect(await names()).toEqual(['Asha Today', 'Bala Tomorrow', 'Chitra Week', 'Dev Eight', 'Kavya Twenty', 'Lata Twentyone', 'Mohan Twentytwo', 'Esha Month'])
+    for (const out of ['Farid Far', 'Gita Renewed', 'Hari Lapsed', 'Indu Archived', 'Jai Cancelled']) await expect(card.getByText(out)).toHaveCount(0)
+    await card.getByRole('button', { name: 'Show fewer' }).click()
+    await expect(rows).toHaveCount(6)
+    await card.getByRole('tab', { name: '7 days' }).click()
+    await expect(rows).toHaveCount(3)
+
+    // contact links
+    const ashaRow = rows.filter({ hasText: 'Asha Today' })
+    const digits = asha.phone.replace(/\D/g, '')
+    await expect(ashaRow.getByRole('link', { name: 'Call' })).toHaveAttribute('href', `tel:${digits}`)
+    const wa = new URL((await ashaRow.getByRole('link', { name: 'WhatsApp' }).getAttribute('href'))!)
+    expect(wa.origin + wa.pathname).toBe(`https://wa.me/91${digits}`)
+    expect(wa.searchParams.get('text')).toBe('Hi Asha Today, this is Test Gym. Your Monthly membership ends today. Renew at the desk to keep coming in.')
+    await expect(ashaRow.getByRole('link', { name: 'WhatsApp' })).toHaveAttribute('rel', /noopener/)
+    const waWeek = new URL((await rows.filter({ hasText: 'Chitra Week' }).getByRole('link', { name: 'WhatsApp' }).getAttribute('href'))!)
+    expect(waWeek.searchParams.get('text')).toBe(`Hi Chitra Week, this is Test Gym. Your Monthly membership ends on ${formatDate(addDays(t, 7))}. Renew at the desk to keep coming in.`)
+
+    // the lapsed member is offered under Suggested instead; members still covered are not
+    const suggested = page.getByRole('heading', { name: 'Suggested' }).locator('xpath=ancestor::*[contains(@class,"rounded-2xl")][1]')
+    await expect(suggested.getByRole('listitem')).toHaveCount(1)
+    await expect(suggested.getByRole('listitem')).toContainText(`Hari Lapsed · Monthly ended ${formatDate(addDays(t, -1))}`)
+
+    // add a follow-up from a row: prefilled, then the row shows it is already covered
+    const balaRow = rows.filter({ hasText: 'Bala Tomorrow' })
+    await balaRow.getByRole('button', { name: 'Add follow-up' }).click()
+    const d = page.getByRole('dialog')
+    await expect(d.getByLabel(/^Type/)).toHaveValue('expiry')
+    await expect(d.getByText('Bala Tomorrow', { exact: true })).toBeVisible()
+    await expect(d.getByLabel(/^Due date/)).toHaveValue(t)
+    await expect(d.getByLabel(/^Note/)).toHaveValue(`Monthly ends ${formatDate(addDays(t, 1))}; offer renewal`)
+    await d.getByRole('button', { name: 'Add follow-up' }).click()
+    await expect(d).toBeHidden()
+    const fus = await readStore<FU>(page, 'followups')
+    expect(fus).toHaveLength(1)
+    expect(fus[0]).toMatchObject({ type: 'expiry', memberId: bala.id, status: 'open', dueDate: t })
+    await expect(balaRow).toContainText('Follow-up open')
+    await expect(balaRow.getByRole('button', { name: 'Add follow-up' })).toHaveCount(0)
+    await expect(ashaRow.getByRole('button', { name: 'Add follow-up' })).toBeVisible()
+
+    // once it is done the row can get a new one; the section is only on the Open tab
+    const todo = page.getByRole('heading', { name: 'To do' }).locator('xpath=ancestor::*[contains(@class,"rounded-2xl")][1]')
+    await todo.getByRole('listitem').filter({ hasText: 'Bala Tomorrow' }).getByRole('button', { name: 'Done' }).click()
+    await expect(balaRow.getByRole('button', { name: 'Add follow-up' })).toBeVisible()
+    await expect(balaRow).not.toContainText('Follow-up open')
+    await page.getByRole('tab', { name: /^Done/ }).click()
+    await expect(page.getByRole('heading', { name: 'Upcoming expiries' })).toHaveCount(0)
+
+    // phone width: no horizontal overflow
+    await page.getByRole('tab', { name: /^Open/ }).click()
+    await page.setViewportSize({ width: 375, height: 800 })
+    await card.getByRole('tab', { name: '30 days' }).click()
+    await expect(rows).toHaveCount(6)
+    const { scrollW, inner } = await page.evaluate(() => ({ scrollW: document.documentElement.scrollWidth, inner: window.innerWidth }))
+    expect(scrollW).toBeLessThanOrEqual(inner)
+  })
+
   test('suggested section (sample data) and contact link hrefs', async ({ page }) => {
     await onboard(page, 'sample')
     const t = today()

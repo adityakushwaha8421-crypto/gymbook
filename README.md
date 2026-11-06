@@ -38,7 +38,7 @@ The first `test:e2e` run needs the Chromium browser once: `npx playwright instal
 
 ## What it covers
 
-- **Front desk:** dashboard with money for the period and month-over-month trends; members with a unique member code (searchable at check-in), date of birth, gender, height, weight, fitness goal and health notes; attendance; payments and invoices; follow-ups.
+- **Front desk:** dashboard with money for the period and month-over-month trends; members with a unique member code (searchable at check-in), date of birth, gender, height, weight, fitness goal and health notes; attendance; payments and invoices; follow-ups with an Upcoming expiries list (memberships ending in the next 7, 15 or 30 days, with call and WhatsApp links and a one-click follow-up).
 - **Manage:** membership plans; workout plans from a built-in library or custom-built, assignable to members with a printable sheet.
 - **Insights:** reports with CSV export and a printable summary, a filterable activity log, settings with backup and restore.
 

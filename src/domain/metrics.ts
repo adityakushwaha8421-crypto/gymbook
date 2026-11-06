@@ -34,6 +34,37 @@ export function memberRows(snap: Snapshot, today: ISODate): MemberRow[] {
   })
 }
 
+export interface UpcomingExpiry {
+  member: Member
+  /** The membership whose end date is the last day the member is covered. */
+  membership: Membership
+  endDate: ISODate
+  /** 0 means the membership ends today. */
+  daysLeft: number
+  /** An open expiry follow-up already exists for this member. */
+  hasOpenFollowUp: boolean
+}
+
+/**
+ * Members whose cover runs out within the next `withinDays` days, soonest first.
+ * Cover is judged by the latest end date across the member's memberships, so a member who has
+ * already renewed is not listed until the renewal itself is about to end.
+ */
+export function upcomingExpiries(snap: Snapshot, today: ISODate, withinDays: number): UpcomingExpiry[] {
+  const msByMember = groupBy(snap.memberships, (m) => m.memberId)
+  const openExpiry = new Set(snap.followups.filter((f) => f.status === 'open' && f.type === 'expiry' && f.memberId).map((f) => f.memberId))
+  const out: UpcomingExpiry[] = []
+  for (const member of snap.members) {
+    if (member.status === 'archived') continue
+    const last = (msByMember.get(member.id) ?? []).filter((m) => !m.cancelledAt).sort((a, b) => compareDates(b.endDate, a.endDate))[0]
+    if (!last) continue
+    const daysLeft = diffDays(today, last.endDate)
+    if (daysLeft < 0 || daysLeft > withinDays) continue
+    out.push({ member, membership: last, endDate: last.endDate, daysLeft, hasOpenFollowUp: openExpiry.has(member.id) })
+  }
+  return out.sort((a, b) => compareDates(a.endDate, b.endDate) || a.member.name.localeCompare(b.member.name))
+}
+
 /** Month-over-month comparison: this calendar month so far vs. the same number of days last month. */
 export function monthComparison(snap: Snapshot, today: ISODate, timezone: string): { received: [Paise, Paise]; newMembers: [number, number]; visits: [number, number] } {
   const thisStart = today.slice(0, 7) + '-01'
