@@ -105,17 +105,6 @@ export function membershipEndDate(start: ISODate, value: number, unit: DurationU
   return addDays(exclusiveEnd, -1)
 }
 
-/** First day of the month containing the given date. */
-export function startOfMonth(date: ISODate): ISODate {
-  const { y, m } = partsOf(date)
-  return toISODate(y, m, 1)
-}
-
-export function endOfMonth(date: ISODate): ISODate {
-  const { y, m } = partsOf(date)
-  return toISODate(y, m, daysInMonth(y, m))
-}
-
 /** Start/end instants (UTC ISO) of a calendar date in a timezone. */
 export function dateRangeInstants(start: ISODate, end: ISODate, timezone: string): { from: ISODateTime; to: ISODateTime } {
   return { from: startOfDayInstant(start, timezone), to: startOfDayInstant(addDays(end, 1), timezone) }

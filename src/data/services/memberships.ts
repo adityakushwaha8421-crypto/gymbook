@@ -32,10 +32,6 @@ export async function listMembershipsForMember(memberId: string): Promise<Member
   return readTx(['memberships'], (tx) => tx.objectStore('memberships').index('memberId').getAll(memberId))
 }
 
-export async function listMemberships(): Promise<Membership[]> {
-  return readTx(['memberships'], (tx) => tx.objectStore('memberships').getAll())
-}
-
 /** Where a renewal would start, given the member's latest end date. */
 export function renewalStartOptions(latestEnd: ISODate | undefined, today: ISODate): { afterCurrent?: ISODate; today: ISODate } {
   if (!latestEnd) return { today }

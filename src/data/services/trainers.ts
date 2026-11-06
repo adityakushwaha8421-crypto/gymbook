@@ -10,10 +10,6 @@ import { WEEKDAYS, formatMinutes } from '@/domain/dates'
 export async function listTrainers(): Promise<Trainer[]> {
   return readTx(['trainers'], (tx) => tx.objectStore('trainers').getAll())
 }
-export async function listSchedules(): Promise<TrainerSchedule[]> {
-  return readTx(['schedules'], (tx) => tx.objectStore('schedules').getAll())
-}
-
 export async function createTrainer(values: TrainerFormValues): Promise<Trainer> {
   return writeTx(['trainers', 'activity'], async (tx) => {
     const t = stampNew('tr', { ...values, status: 'active' as const }) as Trainer

@@ -42,10 +42,6 @@ export async function loadSnapshot(): Promise<Snapshot> {
   }))
 }
 
-export function indexBy<T extends { id: string }>(list: T[]): Map<string, T> {
-  return new Map(list.map((x) => [x.id, x]))
-}
-
 export function groupBy<T>(list: T[], key: (x: T) => string | undefined): Map<string, T[]> {
   const out = new Map<string, T[]>()
   for (const x of list) {

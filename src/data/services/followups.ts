@@ -1,14 +1,10 @@
-import { readTx, writeTx } from '../db'
+import { writeTx } from '../db'
 import { logActivity, stampNew, updateRecord } from '../repo'
 import type { FollowUp } from '@/domain/types'
 import type { FollowUpFormValues } from '@/domain/validation'
 import { nowIso } from '@/domain/ids'
 import { isISODate } from '@/domain/dates'
 import { DomainError } from '../errors'
-
-export async function listFollowUps(): Promise<FollowUp[]> {
-  return readTx(['followups'], (tx) => tx.objectStore('followups').getAll())
-}
 
 export async function createFollowUp(values: FollowUpFormValues): Promise<FollowUp> {
   return writeTx(['followups', 'activity'], async (tx) => {

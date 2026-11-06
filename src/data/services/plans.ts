@@ -1,11 +1,7 @@
-import { readTx, writeTx } from '../db'
+import { writeTx } from '../db'
 import { logActivity, stampNew, updateRecord } from '../repo'
 import type { Plan } from '@/domain/types'
 import type { PlanFormValues } from '@/domain/validation'
-
-export async function listPlans(): Promise<Plan[]> {
-  return readTx(['plans'], (tx) => tx.objectStore('plans').getAll())
-}
 
 export async function createPlan(values: PlanFormValues): Promise<Plan> {
   return writeTx(['plans', 'activity'], async (tx) => {

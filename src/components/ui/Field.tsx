@@ -59,16 +59,6 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<H
   return <textarea ref={ref} className={cn(controlClasses, 'min-h-[88px] py-2', className)} {...rest} />
 })
 
-export function Checkbox({ label, className, ...rest }: InputHTMLAttributes<HTMLInputElement> & { label: ReactNode }) {
-  const id = useId()
-  return (
-    <label htmlFor={id} className={cn('inline-flex min-h-9 cursor-pointer items-center gap-2.5 text-base', className)}>
-      <input id={id} type="checkbox" className="h-4 w-4 rounded border-line-strong" {...rest} />
-      <span>{label}</span>
-    </label>
-  )
-}
-
 export function FormError({ message }: { message: string | null | undefined }) {
   if (!message) return null
   return (

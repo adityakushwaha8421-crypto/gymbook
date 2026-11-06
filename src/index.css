@@ -219,7 +219,6 @@
   [role='option'] { min-height: 44px; }
 }
 .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
-.tabbar-h { height: calc(56px + env(safe-area-inset-bottom)); }
 /* Space for the fixed bottom tab bar on small screens. */
 @media (max-width: 1023.98px) {
   .main-mobile-pad { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }

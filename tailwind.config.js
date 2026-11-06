@@ -47,7 +47,6 @@ export default {
         card: 'var(--shadow-card)',
         pop: 'var(--shadow-pop)',
         sheet: 'var(--shadow-sheet)',
-        ring: '0 0 0 1px rgb(var(--c-line))',
       },
       borderRadius: {
         md: '6px',
@@ -56,7 +55,7 @@ export default {
         '2xl': '14px',
         '3xl': '18px',
       },
-      transitionDuration: { 150: '150ms', 200: '200ms', 250: '250ms' },
+      transitionDuration: { 150: '150ms', 200: '200ms' },
       transitionTimingFunction: { DEFAULT: 'cubic-bezier(0.22, 1, 0.36, 1)' },
       keyframes: {
         shimmer: { '0%': { opacity: '0.55' }, '50%': { opacity: '1' }, '100%': { opacity: '0.55' } },

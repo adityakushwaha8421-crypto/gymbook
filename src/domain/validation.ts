@@ -92,7 +92,6 @@ export const memberForm = z.object({
   goal: optionalText(120),
   healthNotes: optionalText(1000),
 })
-export type MemberFormInput = z.input<typeof memberForm>
 export type MemberFormValues = z.output<typeof memberForm>
 
 export const planForm = z.object({

@@ -12,7 +12,7 @@ import { invoiceBalance } from '@/domain/membership'
 import { exportBackup, validateBackup, importBackup, type Backup } from './backup'
 import { seedSampleData, removeSampleRecords } from './sample'
 import { withIdempotency } from './repo'
-import { DomainError, StorageError } from './errors'
+import { DomainError } from './errors'
 import { todayInTz } from '@/domain/dates'
 
 const TZ = 'Asia/Kolkata'

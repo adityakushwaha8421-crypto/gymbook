@@ -5,10 +5,6 @@ import { isMembershipCurrent } from '@/domain/membership'
 import { DomainError } from '../errors'
 import { nowIso } from '@/domain/ids'
 
-export async function listAttendance(): Promise<Attendance[]> {
-  return readTx(['attendance'], (tx) => tx.objectStore('attendance').getAll())
-}
-
 export async function listAttendanceForMember(memberId: string): Promise<Attendance[]> {
   return readTx(['attendance'], (tx) => tx.objectStore('attendance').index('memberId').getAll(memberId))
 }
@@ -71,15 +67,5 @@ export async function checkOut(id: string, expectedRev: number): Promise<Attenda
     const member = await tx.objectStore('members').get(next.memberId)
     await logActivity(tx, { kind: 'attendance', message: `${member?.name ?? 'Member'} checked out`, memberId: next.memberId, refType: 'attendance', refId: id })
     return next
-  })
-}
-
-export async function deleteAttendance(id: string): Promise<void> {
-  return writeTx(['attendance', 'members', 'activity'], async (tx) => {
-    const rec = await tx.objectStore('attendance').get(id)
-    if (!rec) return
-    await tx.objectStore('attendance').delete(id)
-    const member = await tx.objectStore('members').get(rec.memberId)
-    await logActivity(tx, { kind: 'attendance', message: `Removed a visit record for ${member?.name ?? 'member'}`, memberId: rec.memberId })
   })
 }

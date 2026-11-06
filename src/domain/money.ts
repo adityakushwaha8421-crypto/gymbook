@@ -53,9 +53,3 @@ export function parseRupees(input: string): Paise | null {
   if (total === 0) return 0
   return negative ? -total : total
 }
-
-export function sumPaise(values: Iterable<Paise>): Paise {
-  let total = 0
-  for (const v of values) total += v
-  return total
-}
