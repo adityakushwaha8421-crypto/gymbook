@@ -34,6 +34,11 @@ The first `test:e2e` run needs the Chromium browser once: `npx playwright instal
 - Data does **not** synchronise between devices, browsers, or private windows. Two laptops at the front desk will have two separate datasets.
 - Clearing site data in the browser deletes everything. Export a backup first (Settings → Backup).
 - A JSON backup can be imported on another device. Import validates the file and shows a preview; it replaces all current data only after explicit confirmation, and leaves current data untouched when validation fails.
+- **Google Drive backup (optional).** Settings → Google Drive backup signs in with Google and keeps one backup file in that account's hidden app folder in Drive. It needs a one-time setup by the site owner: [docs/GOOGLE-DRIVE-SETUP.md](docs/GOOGLE-DRIVE-SETUP.md). Until then the section says it is not set up and everything else works as before.
+  - One file per Google account, replaced in place; unchanged data is not uploaded again; a backup counts as done only after Drive's size and checksum match what was sent.
+  - Signing in never restores or uploads by itself. A backup found in the account is offered; restoring validates it, downloads a copy of the current data first, and reads the result back to compare.
+  - Data that belongs to one Google account is never uploaded to another without an explicit confirmation.
+  - It backs up automatically only while the app is open and signed in. It cannot run while the app is closed, and it is a backup, not sync: two devices do not merge their changes.
 - Multiple tabs of the same browser share the database. Writes use an optimistic revision check, so a save based on a stale copy is refused with a clear message instead of silently overwriting another tab's change.
 
 ## What it covers
@@ -91,6 +96,7 @@ src/
   domain/      Types, money (integer paise), date-only + timezone helpers,
                membership/invoice derivations, validation (zod), CSV escaping, metrics
   data/        IndexedDB schema (idb), transactional services, backup, sample data,
+               drive/ (Google Drive client, backup rules, automatic backup),
                cross-tab change events (BroadcastChannel), fail-point for testing
   app/         Router, app context (settings, "today" in the gym timezone), shell
   components/  ui/ primitives (Button, Field, Modal/sheet, Toast, Table, …)

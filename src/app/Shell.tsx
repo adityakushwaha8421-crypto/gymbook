@@ -1,4 +1,7 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { useDriveState } from '@/hooks/useDriveState'
+import { backupFromReminder, startAutoBackup } from '@/data/drive/driveController'
+import { formatDateTime } from '@/domain/dates'
 import { NavLink, Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import {
@@ -11,7 +14,7 @@ import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useTheme } from '@/hooks/useTheme'
 import { springSheet, fadeReduced, pageEnter } from '@/lib/motion'
 import { LinkButton, Button, Kbd } from '@/components/ui/Button'
-import { PageHeader } from '@/components/ui/misc'
+import { Banner, PageHeader } from '@/components/ui/misc'
 import { CommandPalette } from './CommandPalette'
 import { ShortcutsDialog } from './ShortcutsDialog'
 import { BRAND } from '@/brand'
@@ -94,6 +97,10 @@ function isTypingTarget(el: EventTarget | null): boolean {
 export function Shell() {
   const { settings } = useApp()
   const { meta } = useContext(HeaderContext)
+  const drive = useDriveState()
+  useEffect(() => {
+    startAutoBackup()
+  }, [])
   const isDesktop = useIsDesktop()
   const [drawer, setDrawer] = useState(false)
   const [collapsed, setCollapsed] = useState(() => {
@@ -251,6 +258,21 @@ export function Shell() {
             animate={{ opacity: 1, y: 0 }}
             transition={reduced ? fadeReduced : pageEnter}
           >
+            {drive.overdue && drive.link ? (
+              <div className="no-print mb-5">
+                <Banner
+                  tone="warn"
+                  action={
+                    <span className="flex flex-wrap items-center gap-2">
+                      <Button size="sm" variant="secondary" loading={drive.busy === 'backup' || drive.busy === 'signing-in' || drive.busy === 'checking'} onClick={() => void backupFromReminder()}>Back up now</Button>
+                      <Link to="/settings#drive" className="text-sm font-medium underline-offset-2 hover:underline">Backup settings</Link>
+                    </span>
+                  }
+                >
+                  <strong className="font-medium">Google Drive backup is out of date.</strong> There are changes on this device since the last backup{drive.link.lastBackupAt ? ` on ${formatDateTime(drive.link.lastBackupAt, settings.timezone)}` : ''}.
+                </Banner>
+              </div>
+            ) : null}
             {showHeader ? <PageHeader title={meta.title} description={meta.description} slot /> : null}
             {settings.dataMode === 'sample' && showHeader ? (
               <p className="-mt-3 mb-5 text-xs text-muted sm:hidden">

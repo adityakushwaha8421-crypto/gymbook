@@ -311,3 +311,74 @@ Asked for: a Marathi button in "Send on WhatsApp", for Marathi-speaking members.
 | Desktop 1100 and phone 375 | Marathi dialog checked on screenshots; Devanagari renders, no horizontal overflow, no console errors |
 | Not checked | the Marathi wording by a native speaker, and a real WhatsApp chat |
 | Typecheck, build | clean |
+
+## Google sign-in and Google Drive backup (2026-11-06)
+
+Asked for: Google sign-in, backup and restore to the owner's Google Drive, a clear status, account isolation, change detection, a daily automatic backup, and a tested restore.
+
+**Read this first.** Everything below marked PASS was tested against a **stand-in for Google** written for these tests (`src/test/fakeDrive.ts`, `e2e/google.ts`). No real Google account, sign-in window or Drive was used, because that needs an OAuth client ID that only the site owner can create (`docs/GOOGLE-DRIVE-SETUP.md`). So the app's own logic is tested; Google's side of every step is **NOT TESTED**. Reliable recovery from Google Drive must not be assumed until the "real Google" rows at the end have been run and passed.
+
+### Design
+
+- **Sign-in:** Google Identity Services, pop-up token flow, in the browser. No client secret exists. The access token is held in memory only and expires after about an hour; nothing about the session is written to storage.
+- **Permission:** `https://www.googleapis.com/auth/drive.appdata` and nothing else. The account's email and id come from the Drive `about` call, so no profile or email scope is requested.
+- **Isolation:** the hidden app folder is per Google account. In addition the browser remembers which account its data belongs to (`gymbook-drive-link` in localStorage, cleared with "Reset everything") and refuses to upload it anywhere else without an explicit yes.
+- **File:** one `gymbook-backup.json` per account in the existing versioned backup format (`gymbook-backup`, version 1), updated in place. Photos travel inside the member records.
+- **Change detection:** a SHA-256 of the records is stored on the file; equal fingerprints mean no upload.
+- **Verification:** an upload counts only when Drive's reported size and MD5 equal what was sent. A restore is read back and compared store by store.
+- **Guards before overwriting a backup:** other account, a backup this device's data did not come from, a backup replaced by another device, and a device with fewer than half the members of the backup. Each stops and asks.
+- **Restore:** download → the existing validator (schema plus cross-record checks) → preview → confirmation → current data downloaded as a file → one transaction → read back.
+- **Not built:** keeping older versions. Each backup replaces the one before; the screen says so.
+
+### Scheduling: what is and is not possible
+
+A scheduled backup while the app is closed is **not possible** in this design, for two separate reasons: the records exist only in the browser, so no server can read them, and a closed browser runs no code (and has no long-lived Google token without a server). Nothing in the app claims a schedule exists.
+
+What was built instead: while GymBook is open, a backup runs two minutes after a change and on a 15-minute check, when the device is tied to the signed-in account and nothing needs a decision. After a reload the token is gone; the app tries once to get one without a click, and if Google or the browser refuses it shows a reminder ("Google Drive backup is out of date", with a one-tap "Back up now") once the last backup is a day old.
+
+A backup that does not depend on the app being open needs the records on a server (for example Firebase with a scheduled function). Estimated cost at this size: free to about ₹100 a month; this was not priced against current rates and was not built.
+
+### Files
+
+New: `src/lib/google.ts`, `src/data/drive/{driveApi,driveBackup,driveController,driveState,md5}.ts`, `src/components/domain/DriveBackupSection.tsx`, `src/hooks/useDriveState.ts`, `src/test/fakeDrive.ts`, `src/data/drive/drive.test.ts`, `e2e/google.ts`, `e2e/explore/drive.spec.ts`, `docs/GOOGLE-DRIVE-SETUP.md`, `.env.example`.
+Changed: `src/pages/Settings.tsx` (new section; file backup renamed "Backup file"; reset also forgets the Drive link), `src/app/Shell.tsx` (starts automatic backup; reminder), `.github/workflows/pages.yml` (passes `VITE_GOOGLE_CLIENT_ID`), `playwright.config.ts` (a made-up client ID for tests), `README.md`.
+
+### Test phase
+
+| # | Test | Result | Notes |
+| --- | --- | --- | --- |
+| 1 | Member with membership and photo created; present in IndexedDB | PASS | Browser test reads IndexedDB directly |
+| 2 | Sign in, grant Drive permission, Back Up Now, upload confirmed, file and timestamp checked | PASS against the stand-in; **NOT TESTED with Google** | File content compared record for record with IndexedDB; the screen shows the time Drive reported |
+| 3 | Change the member and back up again: the one file is replaced, no duplicates; unchanged data is not uploaded | PASS against the stand-in | Same file id, later time, one file; second press says "Already up to date" and makes no upload request |
+| 4 | Clear local data, sign in to the same account, restore; member details and photo return | PASS against the stand-in; **NOT TESTED with Google** | Signing in offered the restore and did nothing by itself; restored records equal the originals including the photo |
+| 5 | Different Google account cannot see or restore the first account's backup; the first account's data is not silently uploaded | PASS against the stand-in; **NOT TESTED with Google** | Isolation itself is Google's app-folder rule, which the stand-in only imitates; the app's refusal to upload was tested directly |
+| 6a | Offline | PASS | "Could not reach Google Drive", previous backup and status unchanged |
+| 6b | Drive permission revoked / sign-in expired | PASS against the stand-in | Reported, signed out, link to the account kept |
+| 6c | Interrupted upload | PASS against the stand-in | One dropped connection is retried and completes; a connection that stays down is reported and the old file is intact |
+| 6d | Invalid or damaged backup file | PASS | Not JSON, wrong format, wrong version, broken links between records: each refused, local data untouched |
+| 6e | Quota error | PASS against the stand-in | "storage is full"; previous backup intact |
+| 6f | Restore conflict (device has its own data) | PASS | Offer shows both choices; replacing the Drive backup needs a second confirmation; restoring downloads the current data first |
+| 6g | Drive stores something different from what was sent | PASS against the stand-in | Reported as failed; last-backup time not advanced |
+| 6h | Sign-in refused, permission box not ticked, pop-up blocked, window closed | PASS against the stand-in | Each has its own message |
+| 7 | Daily schedule with the app closed | **FAIL by design / not possible** | With the page closed nothing was uploaded, as expected. While open: backup two minutes after a change (PASS); reminder and one-tap backup after reopening (PASS); silent backup after reopening when the sign-in is allowed without a click (PASS against the stand-in; whether real Google allows it is NOT TESTED) |
+| 7b | Backend or scheduled-service alternative | NOT TESTED | Not built; see "Scheduling" |
+| 8 | Another browser: sign in to the same account, restore, compare records and photo | PASS against the stand-in; **NOT TESTED with Google or on a second physical device** | A separate browser profile with no shared storage |
+| 9 | Restore protects existing local data | PASS | The downloaded safety file was opened and holds the device's previous member; explicit confirmation required |
+| R1 | Real Google sign-in window opens and returns a token for this site | **NOT TESTED** | Needs the client ID and the owner's sign-in |
+| R2 | Real Drive accepts the upload, including a backup over 5 MB through an upload session | **NOT TESTED** | The session path relies on the browser being allowed to read Google's `Location` header |
+| R3 | Real Drive download and end-to-end restore | **NOT TESTED** | |
+| R4 | Real second Google account sees nothing | **NOT TESTED** | |
+| R5 | The Cloud Console steps as written | **NOT TESTED** | Written from documentation |
+
+| Check | Result |
+| --- | --- |
+| Vitest | 177 passed (23 new: checksums against Node's, backup, change detection, isolation, guards, restore, every failure) |
+| Playwright, every suite | 123 passed (6 new Drive tests). On their first run 3 of the 6 failed on ambiguous locators in the tests; the app was not changed for them |
+| After the last small change (no repeated sign-in attempts without a click) | unit tests and the 6 Drive browser tests re-run and passed; the other suites were not re-run |
+| Desktop 1280 and phone 375 | Drive section checked on screenshots; no horizontal overflow |
+| Site without a client ID | Settings shows "Not set up for this site yet"; nothing else changes |
+| Typecheck, build | clean |
+
+### Who can access the backup, and what it contains
+
+Contents: every member (with photo and health notes), plan, membership, invoice, payment, visit, follow-up, workout plan, the activity log and the settings. Access: only someone signed in to the Google account that made it, through this site; GymBook itself has no server and no copy. It is not encrypted beyond what Google Drive does for every file.

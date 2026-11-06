@@ -22,6 +22,8 @@ import { Modal } from '@/components/ui/Modal'
 import { DiscardGuard } from '@/components/domain/DiscardGuard'
 import { useToast } from '@/components/ui/Toast'
 import { errorMessage } from '@/data/errors'
+import { DriveBackupSection } from '@/components/domain/DriveBackupSection'
+import { forgetDriveLink } from '@/data/drive/driveController'
 
 const TIMEZONES = ['Asia/Kolkata', 'Asia/Dubai', 'Asia/Singapore', 'Asia/Kathmandu', 'Asia/Dhaka', 'Asia/Colombo', 'Asia/Karachi', 'Europe/London', 'America/New_York', 'Australia/Sydney', 'UTC']
 
@@ -38,6 +40,7 @@ export function SettingsPage() {
   return (
     <div className="flex flex-col">
       <GymDetailsForm key={settings.rev} />
+      <DriveBackupSection />
       <BackupSection />
       <DataSection onChanged={refreshSettings} />
     </div>
@@ -200,7 +203,7 @@ function BackupSection() {
   const fmtMB = (n: number) => `${(n / 1_048_576).toFixed(1)} MB`
 
   return (
-    <Section title="Backup" description="Data lives only in this browser. Export a backup regularly and before clearing browser data or switching devices.">
+    <Section title="Backup file" description="Save everything to a file on this device, or bring a saved file back. Works without a Google account.">
       <Card>
       <CardBody className="flex flex-col gap-4">
         <Banner tone="info">Browser-local storage does <strong>not</strong> sync between devices, browsers or private windows. To move GymBook, export here and import on the other device.</Banner>
@@ -271,8 +274,8 @@ function DataSection({ onChanged }: { onChanged: () => Promise<void> }) {
         onConfirm={async () => { const n = await removeSampleRecords(); await onChanged(); toast.success(`Removed ${n} sample records`) }} />
       <ConfirmDialog open={confirm === 'loadSample'} onClose={() => setConfirm(null)} title="Load sample data?" description="Adds a labelled set of fictional members, plans, payments and visits alongside your existing records. You can remove them again later." confirmLabel="Load sample data"
         onConfirm={async () => { await seedSampleData(settings.timezone); await onChanged(); toast.success('Sample data loaded') }} />
-      <ConfirmDialog open={confirm === 'reset'} onClose={() => setConfirm(null)} title="Reset everything?" description="Permanently deletes all GymBook data in this browser, including settings. Export a backup first. This cannot be undone." confirmLabel="Delete all data" danger typeToConfirm="RESET"
-        onConfirm={async () => { await deleteDatabase(); window.location.assign(appUrl('/')) }} />
+      <ConfirmDialog open={confirm === 'reset'} onClose={() => setConfirm(null)} title="Reset everything?" description="Permanently deletes all GymBook data in this browser, including settings. Export a backup first. This cannot be undone. A backup in Google Drive is not deleted." confirmLabel="Delete all data" danger typeToConfirm="RESET"
+        onConfirm={async () => { await deleteDatabase(); forgetDriveLink(); window.location.assign(appUrl('/')) }} />
     </Section>
   )
 }

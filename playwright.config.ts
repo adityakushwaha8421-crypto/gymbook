@@ -14,6 +14,8 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
     command: 'npm run dev -- --port 4173 --strictPort',
+    // A made-up client ID switches the Google Drive backup on; the browser tests answer for Google themselves.
+    env: { VITE_GOOGLE_CLIENT_ID: 'gymbook-tests.apps.googleusercontent.com' },
     url: 'http://localhost:4173',
     reuseExistingServer: true,
     timeout: 60_000,

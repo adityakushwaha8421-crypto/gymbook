@@ -29,6 +29,8 @@ jobs:
         env:
           # Project sites live under /<repo>/; a <user>.github.io repo is served from /.
           BASE_PATH: ${{ endsWith(github.event.repository.name, '.github.io') && '/' || format('/{0}/', github.event.repository.name) }}
+          # Public Google OAuth client ID (not a secret). Empty leaves Google Drive backup switched off.
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
         run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
