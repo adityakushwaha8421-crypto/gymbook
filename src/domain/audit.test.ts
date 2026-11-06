@@ -14,9 +14,9 @@ import {
 } from './dates'
 import { parseRupees, formatINRCompact, paiseToInput, formatINR } from './money'
 import { csvCell, toCsv } from './csv'
-import { invoiceBalance, memberBalance, membershipState, pickCurrentMembership, latestEndDate, daysRemaining } from './membership'
+import { invoiceBalance, memberBalance, membershipState, memberMembershipState, pickCurrentMembership, latestEndDate, daysRemaining } from './membership'
 import { financeSummary, financeSeries, dashboardMetrics, periodPreset, memberRows, upcomingExpiries } from './metrics'
-import { phoneSchema, optionalEmail, settingsForm, followUpForm, memberForm, rupeesInput, normalizePhone, planForm } from './validation'
+import { phoneSchema, optionalEmail, settingsForm, followUpForm, memberForm, newMemberForm, rupeesInput, normalizePhone, planForm, fieldErrors } from './validation'
 import type { Snapshot } from '@/data/snapshot'
 import type { Invoice, Payment, Adjustment, Membership, Member, Attendance, FollowUp } from './types'
 
@@ -467,6 +467,41 @@ describe('metrics: upcomingExpiries', () => {
   })
 })
 
+describe('membership: member-level state after an early renewal', () => {
+  const today = '2026-11-06'
+  const ending = ms({ id: 'm1', memberId: 'a', startDate: '2026-10-10', endDate: '2026-11-09' })
+  it('reads as expiring until a renewal is on file, then as active', () => {
+    expect(memberMembershipState([ending], today)).toBe('expiring')
+    const renewal = ms({ id: 'm2', memberId: 'a', startDate: '2026-11-10', endDate: '2026-12-09', renewalOfId: 'm1' })
+    expect(memberMembershipState([ending, renewal], today)).toBe('active')
+    // the single membership still reports its own state
+    expect(membershipState(ending, today)).toBe('expiring')
+  })
+  it('a cancelled or very short renewal does not hide the expiry', () => {
+    const cancelled = ms({ id: 'm2', memberId: 'a', startDate: '2026-11-10', endDate: '2026-12-09', cancelledAt: '2026-11-05T00:00:00.000Z' })
+    expect(memberMembershipState([ending, cancelled], today)).toBe('expiring')
+    const short = ms({ id: 'm3', memberId: 'a', startDate: '2026-11-10', endDate: '2026-11-12' })
+    expect(memberMembershipState([ending, short], today)).toBe('expiring')
+  })
+  it('other states pass through, and no membership means no state', () => {
+    expect(memberMembershipState([], today)).toBeUndefined()
+    expect(memberMembershipState([ms({ startDate: '2026-09-01', endDate: '2026-09-30' })], today)).toBe('expired')
+    expect(memberMembershipState([ms({ startDate: '2026-11-10', endDate: '2026-12-09' })], today)).toBe('upcoming')
+    expect(memberMembershipState([ms({ startDate: '2026-11-01', endDate: '2026-11-30' })], today)).toBe('active')
+  })
+  it('dashboard and member rows agree with Upcoming expiries: a renewed member is not expiring', () => {
+    const s = snap({
+      members: [member({ id: 'a', name: 'Renewed' }), member({ id: 'b', name: 'Not renewed' })],
+      memberships: [ending, ms({ id: 'm2', memberId: 'a', startDate: '2026-11-10', endDate: '2026-12-09', renewalOfId: 'm1' }), ms({ id: 'm3', memberId: 'b', startDate: '2026-10-10', endDate: '2026-11-09' })],
+    })
+    const d = dashboardMetrics(s, today, 'Asia/Kolkata')
+    expect(d.expiringSoon.map((r) => r.member.id)).toEqual(['b'])
+    expect(d.expiringSoon.map((r) => r.member.id)).toEqual(upcomingExpiries(s, today, 7).map((x) => x.member.id))
+    expect(d.activeMembers).toBe(2)
+    expect(memberRows(s, today).map((r) => [r.member.id, r.state])).toEqual([['a', 'active'], ['b', 'expiring']])
+  })
+})
+
 describe('metrics: dashboardMetrics', () => {
   const TZ = 'Asia/Kolkata'
   const today = '2026-10-28'
@@ -666,5 +701,33 @@ describe('validation: rupeesInput', () => {
     expect(planForm.safeParse({ ...base, durationValue: '1.5' }).success).toBe(false)
     expect(planForm.safeParse({ ...base, durationValue: '' }).success).toBe(false)
     expect(planForm.parse({ ...base, price: '' }).price).toBe(0)
+  })
+})
+
+describe('validation: newMemberForm (add member with an optional plan)', () => {
+  const person = { name: 'Asha Rao', phone: '98765 43210', joiningDate: '2026-11-06', notes: '', dateOfBirth: '', gender: '', heightCm: '', weightKg: '', goal: '', healthNotes: '' }
+  const planFields = { planId: 'plan_1', planStartDate: '2026-11-06', planDiscount: '', planReceived: '500', planPaymentMethod: 'upi' }
+  it('without a plan the plan fields are ignored, even when they hold junk', () => {
+    const r = newMemberForm.safeParse({ ...person, planId: '', planStartDate: 'not a date', planDiscount: 'abc', planReceived: '-5', planPaymentMethod: 'cash' })
+    expect(r.success).toBe(true)
+    if (r.success) {
+      expect(r.data.plan).toBeUndefined()
+      expect(r.data.member.name).toBe('Asha Rao')
+    }
+  })
+  it('with a plan, rupees become paise and an empty amount is zero', () => {
+    const r = newMemberForm.safeParse({ ...person, ...planFields })
+    expect(r.success).toBe(true)
+    if (r.success) expect(r.data.plan).toEqual({ planId: 'plan_1', planStartDate: '2026-11-06', planDiscount: 0, planReceived: 50000, planPaymentMethod: 'upi' })
+  })
+  it('member mistakes and plan mistakes are reported in the same pass', () => {
+    const r = newMemberForm.safeParse({ ...person, name: 'A', ...planFields, planStartDate: '2026-02-30', planDiscount: 'ten', planReceived: '-1' })
+    expect(r.success).toBe(false)
+    if (!r.success) {
+      const errs = fieldErrors(r.error)
+      expect(Object.keys(errs).sort()).toEqual(['name', 'planDiscount', 'planReceived', 'planStartDate'])
+      expect(errs.planStartDate).toBe('Enter a valid start date')
+      expect(errs.planDiscount).toMatch(/valid discount/)
+    }
   })
 })

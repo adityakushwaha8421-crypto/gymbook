@@ -11,7 +11,7 @@ import { settingsForm, type SettingsFormValues } from '@/domain/validation'
 import { useForm } from '@/lib/forms'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import { fileToSmallDataUrl } from '@/lib/image'
-import { isValidTimezone } from '@/domain/dates'
+import { isValidTimezone, formatDateTime } from '@/domain/dates'
 import { downloadText } from '@/domain/csv'
 import { Card, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -146,6 +146,7 @@ function GymDetailsForm() {
 }
 
 function BackupSection() {
+  const { settings } = useApp()
   const toast = useToast()
   const fileRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<ImportPreview | null>(null)
@@ -218,7 +219,7 @@ function BackupSection() {
           <div className="flex flex-col gap-3 text-sm">
             {preview.ok ? (
               <>
-                <p>Backup of <strong>{preview.gymName ?? 'unnamed gym'}</strong> exported {preview.exportedAt ? new Date(preview.exportedAt).toLocaleString() : 'unknown time'}.</p>
+                <p>Backup of <strong>{preview.gymName ?? 'unnamed gym'}</strong> exported {preview.exportedAt ? formatDateTime(preview.exportedAt, settings.timezone) : 'unknown time'}.</p>
                 <ul className="grid grid-cols-2 gap-x-4 gap-y-1 rounded-xl bg-sunken/70 px-3.5 py-3">
                   {Object.entries(preview.counts).filter(([k, v]) => v > 0 || !RETIRED_STORES.includes(k)).map(([k, v]) => (
                     <li key={k} className="flex justify-between"><span className="capitalize text-muted">{k}</span><span className="tabular font-medium">{v}</span></li>

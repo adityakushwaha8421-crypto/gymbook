@@ -38,7 +38,7 @@ The first `test:e2e` run needs the Chromium browser once: `npx playwright instal
 
 ## What it covers
 
-- **Front desk:** dashboard with money for the period and month-over-month trends; members with a unique member code (searchable at check-in), date of birth, gender, height, weight, fitness goal and health notes; attendance; payments and invoices; follow-ups with an Upcoming expiries list (memberships ending in the next 7, 15 or 30 days, with call and WhatsApp links and a one-click follow-up).
+- **Front desk:** dashboard with money for the period and month-over-month trends; members with a unique member code (searchable at check-in), a photo taken with the device camera or uploaded, date of birth, gender, height, weight, fitness goal and health notes; a plan can be chosen on the Add member page, which saves the member, membership, invoice and first payment together; attendance; payments and invoices; follow-ups with an Upcoming expiries list (memberships ending in the next 7, 15 or 30 days, with call and WhatsApp links and a one-click follow-up).
 - **Manage:** membership plans; workout plans from a built-in library or custom-built, assignable to members with a printable sheet.
 - **Insights:** reports with CSV export and a printable summary, a filterable activity log, settings with backup and restore.
 
@@ -102,7 +102,7 @@ Rules that matter:
 
 - **Money is integer paise.** Formatting happens only at the edges (`domain/money.ts`).
 - **Membership dates are date-only strings** (`YYYY-MM-DD`) evaluated in the gym's timezone; attendance and payments are timestamps. "Today" comes from the configured timezone, never the device clock's local date.
-- **Status is derived, never stored.** Active / expiring / expired comes from the dates; paid / partly paid / unpaid comes from invoice total + adjustments − recorded payments. Nothing infers "paid" from "active".
+- **Status is derived, never stored.** Active / expiring / expired comes from the dates (a member who has already renewed reads as active, not expiring: `memberMembershipState` in `src/domain/membership.ts`); paid / partly paid / unpaid comes from invoice total + adjustments − recorded payments. Nothing infers "paid" from "active".
 - **Plan details are snapshotted** onto each membership and invoice line at sale time, so editing a plan later never changes what was sold.
 - **Invoice numbers are allocated inside the same IndexedDB transaction** as the invoice, so they are unique and never reused.
 - **Corrections are additive.** Payments and invoices are voided with a reason, and invoice totals are changed through adjustment records. History is kept.

@@ -4,7 +4,7 @@ import { StorageError } from './errors'
 import { newId, nowIso } from '@/domain/ids'
 import type { Activity, ActivityKind, BaseRecord } from '@/domain/types'
 
-type AnyWriteTx = IDBPTransaction<GymDB, StoreNames<GymDB>[], 'readwrite'>
+export type AnyWriteTx = IDBPTransaction<GymDB, StoreNames<GymDB>[], 'readwrite'>
 
 /** Attach id, timestamps and rev 1 to a new record. */
 export function stampNew<T extends object>(prefix: string, data: T, sample?: boolean): T & BaseRecord {

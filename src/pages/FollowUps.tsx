@@ -8,7 +8,7 @@ import { createFollowUp, updateFollowUp, setFollowUpStatus, rescheduleFollowUp, 
 import { followUpForm, type FollowUpFormValues } from '@/domain/validation'
 import { useForm } from '@/lib/forms'
 import { FOLLOWUP_TYPES, labelFor, type FollowUp, type FollowUpType, type Member } from '@/domain/types'
-import { formatDate, addDays, diffDays, compareDates, isISODate } from '@/domain/dates'
+import { formatDate, addDays, diffDays, compareDates, isISODate, instantToDateInTz } from '@/domain/dates'
 import { formatINR } from '@/domain/money'
 import { memberRows, upcomingExpiries } from '@/domain/metrics'
 import { Card, CardHeader } from '@/components/ui/Card'
@@ -35,7 +35,7 @@ const EXPIRY_PREVIEW = 6
 
 export function FollowUpsPage() {
   usePage('Follow-ups', 'Expiry reminders, outstanding payments and leads to contact')
-  const { today, settings } = useApp()
+  const { today, settings, timezone } = useApp()
   const toast = useToast()
   const snap = useLiveQuery(loadSnapshot, [...SNAPSHOT_STORES])
   const [tab, setTab] = useState<'open' | 'done'>('open')
@@ -206,7 +206,7 @@ export function FollowUpsPage() {
                       </p>
                       <p className="text-sm text-muted">{f.note || '—'}</p>
                       <p className="text-xs text-muted">
-                        {f.status === 'open' ? `Due ${formatDate(f.dueDate)}` : `Completed ${formatDate(f.completedAt?.slice(0, 10))}`}
+                        {f.status === 'open' ? `Due ${formatDate(f.dueDate)}` : `Completed ${f.completedAt ? formatDate(instantToDateInTz(f.completedAt, timezone)) : '—'}`}
                         {f.assignee ? ` · ${f.assignee}` : ''}
                         {c.phone ? ` · ${c.phone}` : ''}
                       </p>

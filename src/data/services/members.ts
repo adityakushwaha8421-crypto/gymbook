@@ -1,5 +1,5 @@
 import { readTx, writeTx } from '../db'
-import { logActivity, stampNew, updateRecord, withIdempotency } from '../repo'
+import { logActivity, stampNew, updateRecord, withIdempotency, type AnyWriteTx } from '../repo'
 import type { Member } from '@/domain/types'
 import type { MemberFormValues } from '@/domain/validation'
 import { normalizePhone } from '@/domain/validation'
@@ -27,32 +27,33 @@ export function findPossibleDuplicates(all: Member[], values: { phone: string; n
   })
 }
 
+/** Insert a member inside the caller's transaction (needs the members, counters and activity stores). */
+export async function insertMember(tx: AnyWriteTx, values: MemberFormValues): Promise<Member> {
+  const counters = tx.objectStore('counters')
+  const next = ((await counters.get('member'))?.value ?? 0) + 1
+  await counters.put({ key: 'member', value: next })
+  const member = stampNew<Omit<Member, keyof import('@/domain/types').BaseRecord>>('mem', {
+    name: values.name,
+    phone: values.phone,
+    joiningDate: values.joiningDate,
+    status: 'active',
+    notes: values.notes,
+    photoDataUrl: values.photoDataUrl,
+    memberCode: `GB-${String(next).padStart(4, '0')}`,
+    dateOfBirth: values.dateOfBirth,
+    gender: values.gender,
+    heightCm: values.heightCm,
+    weightKg: values.weightKg,
+    goal: values.goal,
+    healthNotes: values.healthNotes,
+  })
+  await tx.objectStore('members').put(member)
+  await logActivity(tx, { kind: 'member', message: `Added member ${member.name}`, memberId: member.id, refType: 'member', refId: member.id })
+  return member
+}
+
 export async function createMember(values: MemberFormValues, opts: { requestKey?: string } = {}): Promise<Member> {
-  return withIdempotency(opts.requestKey, () =>
-    writeTx(['members', 'counters', 'activity'], async (tx) => {
-      const counters = tx.objectStore('counters')
-      const next = ((await counters.get('member'))?.value ?? 0) + 1
-      await counters.put({ key: 'member', value: next })
-      const member = stampNew<Omit<Member, keyof import('@/domain/types').BaseRecord>>('mem', {
-        name: values.name,
-        phone: values.phone,
-        joiningDate: values.joiningDate,
-        status: 'active',
-        notes: values.notes,
-        photoDataUrl: values.photoDataUrl,
-        memberCode: `GB-${String(next).padStart(4, '0')}`,
-        dateOfBirth: values.dateOfBirth,
-        gender: values.gender,
-        heightCm: values.heightCm,
-        weightKg: values.weightKg,
-        goal: values.goal,
-        healthNotes: values.healthNotes,
-      })
-      await tx.objectStore('members').put(member)
-      await logActivity(tx, { kind: 'member', message: `Added member ${member.name}`, memberId: member.id, refType: 'member', refId: member.id })
-      return member
-    }),
-  )
+  return withIdempotency(opts.requestKey, () => writeTx(['members', 'counters', 'activity'], (tx) => insertMember(tx, values)))
 }
 
 export async function updateMember(id: string, expectedRev: number, values: MemberFormValues): Promise<Member> {

@@ -1,25 +1,33 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Camera, Trash2 } from 'lucide-react'
+import { Camera, ImageUp, Trash2 } from 'lucide-react'
 import { usePage, useApp } from '@/app/AppContext'
 import { useLiveQuery } from '@/hooks/useLiveQuery'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import { listMembers, createMember, updateMember, findPossibleDuplicates, getMember } from '@/data/services/members'
-import { memberForm, type MemberFormValues } from '@/domain/validation'
+import { createMemberWithMembership } from '@/data/services/memberships'
+import { listPlans } from '@/data/services/plans'
+import { newMemberForm, type NewMemberValues } from '@/domain/validation'
+import { membershipEndDate, formatDate, isISODate } from '@/domain/dates'
+import { formatINR, parseRupees } from '@/domain/money'
 import { useForm } from '@/lib/forms'
 import { fileToSmallDataUrl } from '@/lib/image'
-import { GENDERS, type Member } from '@/domain/types'
+import { GENDERS, PAYMENT_METHODS, type Member, type PaymentMethod } from '@/domain/types'
 import { Card, CardBody } from '@/components/ui/Card'
-import { Field, Input, Select, Textarea, FormError } from '@/components/ui/Field'
+import { Field, Input, MoneyInput, Select, Textarea, FormError } from '@/components/ui/Field'
 import { Button } from '@/components/ui/Button'
 import { Avatar, Banner, PageHeader } from '@/components/ui/misc'
 import { PageLoading } from '@/components/ui/Spinner'
 import { ErrorState } from '@/components/ui/EmptyState'
 import { useToast } from '@/components/ui/Toast'
 import { DiscardGuard } from '@/components/domain/DiscardGuard'
+import { CameraDialog } from '@/components/domain/CameraDialog'
+import { cn } from '@/lib/cn'
 import { errorMessage } from '@/data/errors'
 
-type Values = { name: string; phone: string; joiningDate: string; notes: string; photoDataUrl?: string; dateOfBirth: string; gender: '' | 'female' | 'male' | 'other'; heightCm: string; weightKg: string; goal: string; healthNotes: string }
+type Values = { name: string; phone: string; joiningDate: string; notes: string; photoDataUrl?: string; dateOfBirth: string; gender: '' | 'female' | 'male' | 'other'; heightCm: string; weightKg: string; goal: string; healthNotes: string
+  /** Add member only: an empty planId means no plan is sold with the new member. */
+  planId: string; planStartDate: string; planDiscount: string; planReceived: string; planPaymentMethod: PaymentMethod }
 
 export function MemberFormPage({ mode }: { mode: 'new' | 'edit' }) {
   const { id } = useParams()
@@ -40,8 +48,10 @@ function MemberFormInner({ mode, member }: { mode: 'new' | 'edit'; member?: Memb
   const navigate = useNavigate()
   const toast = useToast()
   const members = useLiveQuery(listMembers, ['members'])
+  const plans = useLiveQuery(listPlans, ['plans'])
   const fileRef = useRef<HTMLInputElement>(null)
   const [photoError, setPhotoError] = useState<string | null>(null)
+  const [cameraOpen, setCameraOpen] = useState(false)
 
   const initial = useMemo<Values>(
     () => ({
@@ -56,6 +66,11 @@ function MemberFormInner({ mode, member }: { mode: 'new' | 'edit'; member?: Memb
       weightKg: member?.weightKg !== undefined ? String(member.weightKg) : '',
       goal: member?.goal ?? '',
       healthNotes: member?.healthNotes ?? '',
+      planId: '',
+      planStartDate: member?.joiningDate ?? today,
+      planDiscount: '',
+      planReceived: '',
+      planPaymentMethod: 'cash',
     }),
     [member, today],
   )
@@ -63,12 +78,18 @@ function MemberFormInner({ mode, member }: { mode: 'new' | 'edit'; member?: Memb
   const leaveRef = useRef<() => void>(() => {})
   /** Revision the form was loaded from; saves are checked against it so another tab's change is never overwritten. */
   const baselineRev = useRef(member?.rev ?? 0)
-  const form = useForm<Values, MemberFormValues>(initial, memberForm, async (values, { requestKey }) => {
+  const form = useForm<Values, NewMemberValues>(initial, newMemberForm, async ({ member: values, plan: sale }, { requestKey }) => {
     if (mode === 'edit' && member) {
       await updateMember(member.id, baselineRev.current, values)
       toast.success('Member updated')
       leaveRef.current()
       navigate(`/members/${member.id}`)
+    } else if (sale) {
+      // Member, membership, invoice and first payment are saved together or not at all.
+      const sold = await createMemberWithMembership(values, { planId: sale.planId, startDate: sale.planStartDate, discountPaise: sale.planDiscount, initialPaymentPaise: sale.planReceived, paymentMethod: sale.planPaymentMethod, issueDate: today }, { requestKey })
+      toast.success(`Added ${sold.member.name}`, `${sold.membership.planName} sold · invoice ${sold.invoiceNumber} created${sold.payment ? ` · ${formatINR(sold.payment.amountPaise)} recorded` : ''}`)
+      leaveRef.current()
+      navigate(`/members/${sold.member.id}`, { replace: true })
     } else {
       const created = await createMember(values, { requestKey: requestKey })
       toast.success(`Added ${created.name}`)
@@ -118,6 +139,19 @@ function MemberFormInner({ mode, member }: { mode: 'new' | 'edit'; member?: Memb
     }
   }
 
+  const activePlans = useMemo(() => (plans.data ?? []).filter((x) => !x.archived).sort((a, b) => a.pricePaise - b.pricePaise || a.name.localeCompare(b.name)), [plans.data])
+  const plan = activePlans.find((x) => x.id === form.values.planId)
+  const planEnd = plan && isISODate(form.values.planStartDate) ? membershipEndDate(form.values.planStartDate, plan.durationValue, plan.durationUnit) : undefined
+  const netPaise = plan ? Math.max(0, plan.pricePaise - (parseRupees(form.values.planDiscount || '0') ?? 0)) : 0
+  const payPaise = parseRupees(form.values.planReceived || '0') ?? 0
+  const balancePaise = netPaise - payPaise
+
+  const onJoiningDate = (value: string) => {
+    // The plan normally starts on the joining date, so it follows until someone sets a different start.
+    if (form.values.planStartDate === form.values.joiningDate) form.set('planStartDate', value)
+    form.set('joiningDate', value)
+  }
+
   return (
     <form onSubmit={form.submit} noValidate className="mx-auto flex max-w-2xl flex-col gap-4">
       <PageHeader back={member ? { to: `/members/${member.id}`, label: member.name } : { to: '/members', label: 'Members' }} title={mode === 'new' ? 'Add member' : `Edit ${member?.name ?? 'member'}`} description={mode === 'new' ? 'Phone and name are required; everything else can be added later.' : 'Changes are saved to this browser only.'} />
@@ -128,8 +162,11 @@ function MemberFormInner({ mode, member }: { mode: 'new' | 'edit'; member?: Memb
             <Avatar name={form.values.name || 'New member'} src={form.values.photoDataUrl} size="lg" />
             <div className="flex flex-wrap gap-2">
               <input ref={fileRef} type="file" accept="image/*" className="sr-only" id="member-photo" onChange={(e) => onPhoto(e.target.files?.[0])} />
-              <Button type="button" variant="secondary" size="sm" icon={<Camera className="h-4 w-4" aria-hidden />} onClick={() => fileRef.current?.click()}>
-                {form.values.photoDataUrl ? 'Change photo' : 'Add photo'}
+              <Button type="button" variant="secondary" size="sm" icon={<Camera className="h-4 w-4" aria-hidden />} onClick={() => { setPhotoError(null); setCameraOpen(true) }}>
+                Take photo
+              </Button>
+              <Button type="button" variant="secondary" size="sm" icon={<ImageUp className="h-4 w-4" aria-hidden />} onClick={() => fileRef.current?.click()}>
+                Upload photo
               </Button>
               {form.values.photoDataUrl ? (
                 <Button type="button" variant="ghost" size="sm" icon={<Trash2 className="h-4 w-4" aria-hidden />} onClick={() => form.set('photoDataUrl', undefined)}>
@@ -138,6 +175,7 @@ function MemberFormInner({ mode, member }: { mode: 'new' | 'edit'; member?: Memb
               ) : null}
             </div>
           </div>
+          {cameraOpen ? <CameraDialog onClose={() => setCameraOpen(false)} onCapture={(dataUrl) => form.set('photoDataUrl', dataUrl)} onUploadInstead={() => fileRef.current?.click()} /> : null}
           {photoError ? <p role="alert" className="text-xs font-medium text-danger">{photoError}</p> : null}
           {form.errors.photoDataUrl ? <p role="alert" className="text-xs font-medium text-danger">{form.errors.photoDataUrl}</p> : null}
 
@@ -149,12 +187,75 @@ function MemberFormInner({ mode, member }: { mode: 'new' | 'edit'; member?: Memb
               {({ id, invalid, describedBy }) => <Input id={id} type="tel" inputMode="tel" aria-invalid={invalid} aria-describedby={describedBy} value={form.values.phone} onChange={(e) => form.set('phone', e.target.value)} autoComplete="off" />}
             </Field>
             <Field label="Joining date" required error={form.errors.joiningDate}>
-              {({ id, invalid }) => <Input id={id} type="date" aria-invalid={invalid} value={form.values.joiningDate} onChange={(e) => form.set('joiningDate', e.target.value)} />}
+              {({ id, invalid }) => <Input id={id} type="date" aria-invalid={invalid} value={form.values.joiningDate} onChange={(e) => onJoiningDate(e.target.value)} />}
             </Field>
             <Field label="Notes" error={form.errors.notes} className="sm:col-span-2">
               {({ id }) => <Textarea id={id} value={form.values.notes} onChange={(e) => form.set('notes', e.target.value)} placeholder="Preferred timings, how they found the gym…" />}
             </Field>
           </div>
+
+          {mode === 'new' ? (
+            <div className="border-t border-line pt-4">
+              <h2 className="text-md font-medium">Membership plan</h2>
+              <p className="mb-3 text-sm text-muted">Optional. Choosing a plan sells it and creates its invoice when you save. You can also sell a plan later from the member’s page.</p>
+              {plans.data && activePlans.length === 0 ? (
+                <p className="text-sm text-muted">No plans yet. <Link to="/plans" className="font-medium text-ink underline">Create a plan</Link> first, then come back to add the member.</p>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="Plan" error={form.errors.planId}>
+                      {({ id, invalid }) => (
+                        <Select id={id} aria-invalid={invalid} value={form.values.planId} onChange={(e) => form.set('planId', e.target.value)}>
+                          <option value="">No plan for now</option>
+                          {activePlans.map((x) => (
+                            <option key={x.id} value={x.id}>{x.name} · {x.durationValue} {x.durationUnit} · {formatINR(x.pricePaise)}</option>
+                          ))}
+                        </Select>
+                      )}
+                    </Field>
+                    {form.values.planId ? (
+                      <Field label="Plan starts" required error={form.errors.planStartDate}>
+                        {({ id, invalid }) => <Input id={id} type="date" aria-invalid={invalid} value={form.values.planStartDate} onChange={(e) => form.set('planStartDate', e.target.value)} />}
+                      </Field>
+                    ) : null}
+                  </div>
+                  {form.values.planId ? (
+                    <>
+                      {plan && planEnd ? (
+                        <p className="rounded-xl bg-sunken/70 px-3.5 py-3 text-sm">
+                          <strong className="font-medium">{formatDate(form.values.planStartDate)}</strong> to <strong className="font-medium">{formatDate(planEnd)}</strong> (last day of access).
+                        </p>
+                      ) : null}
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <Field label="Discount" hint={plan ? `Plan price ${formatINR(plan.pricePaise)}` : undefined} error={form.errors.planDiscount}>
+                          {({ id, invalid, describedBy }) => <MoneyInput id={id} aria-invalid={invalid} aria-describedby={describedBy} value={form.values.planDiscount} onChange={(e) => form.set('planDiscount', e.target.value)} placeholder="0" />}
+                        </Field>
+                        <div className="rounded-xl border border-line px-3.5 py-2.5">
+                          <p className="text-xs font-medium text-muted">Net price</p>
+                          <p className="tabular text-lg font-medium">{formatINR(netPaise)}</p>
+                        </div>
+                        <Field label="Received now" hint="Leave empty if nothing was paid yet. Partial amounts are fine." error={form.errors.planReceived}>
+                          {({ id, invalid, describedBy }) => <MoneyInput id={id} aria-invalid={invalid} aria-describedby={describedBy} value={form.values.planReceived} onChange={(e) => form.set('planReceived', e.target.value)} placeholder="0" />}
+                        </Field>
+                        <Field label="Payment method" error={form.errors.planPaymentMethod}>
+                          {({ id }) => (
+                            <Select id={id} value={form.values.planPaymentMethod} onChange={(e) => form.set('planPaymentMethod', e.target.value as PaymentMethod)} disabled={payPaise <= 0}>
+                              {PAYMENT_METHODS.map((m) => (
+                                <option key={m.value} value={m.value}>{m.label}</option>
+                              ))}
+                            </Select>
+                          )}
+                        </Field>
+                      </div>
+                      <p className={cn('text-sm', balancePaise > 0 ? 'text-warn' : 'text-muted')}>
+                        {balancePaise > 0 ? `${formatINR(balancePaise)} will remain outstanding on the invoice.` : payPaise > 0 ? 'Invoice will be fully paid.' : 'Nothing recorded as paid yet; the full amount stays outstanding.'}
+                      </p>
+                    </>
+                  ) : null}
+                </div>
+              )}
+            </div>
+          ) : null}
 
           <div className="border-t border-line pt-4">
             <h2 className="text-md font-medium">Profile</h2>
@@ -217,7 +318,7 @@ function MemberFormInner({ mode, member }: { mode: 'new' | 'edit'; member?: Memb
           Cancel
         </Button>
         <Button type="submit" loading={form.saving}>
-          {mode === 'new' ? 'Add member' : 'Save changes'}
+          {mode === 'new' ? (form.values.planId ? 'Add member and create invoice' : 'Add member') : 'Save changes'}
         </Button>
       </div>
     </form>

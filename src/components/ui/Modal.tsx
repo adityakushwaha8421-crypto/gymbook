@@ -87,7 +87,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
               if (opener?.isConnected) opener.focus({ preventScroll: true })
             }} onOpenAutoFocus={(e) => {
               // Focus the first control rather than the close button.
-              const el = (e.currentTarget as HTMLElement | null)?.querySelector<HTMLElement>('input, select, textarea, button[data-primary]')
+              const el = (e.currentTarget as HTMLElement | null)?.querySelector<HTMLElement>('input:not(:disabled), select:not(:disabled), textarea:not(:disabled), button[data-primary]:not(:disabled)')
               if (el) {
                 e.preventDefault()
                 el.focus()

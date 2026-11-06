@@ -4,7 +4,7 @@ import { IDBFactory } from 'fake-indexeddb'
 import { closeDb, getDb } from './db'
 import { createMember, setMemberArchived, updateMember, listMembers, getMember } from './services/members'
 import { createPlan } from './services/plans'
-import { assignMembership } from './services/memberships'
+import { assignMembership, createMemberWithMembership } from './services/memberships'
 import { recordPayment, listInvoices, listPayments, listAdjustments, voidPayment, voidInvoice, addAdjustment } from './services/payments'
 import { checkIn, checkOut, listAttendanceForMember, MembershipRequiredError } from './services/attendance'
 import { invoiceBalance, memberBalance } from '@/domain/membership'
@@ -274,5 +274,59 @@ describe('member codes, measurements and workouts', () => {
     expect(again.data.expenses[0].amountPaise).toBe(4500000)
     expect(again.data.trainers[0].name).toBe('Coach')
     expect(again.data.workouts[0].name).toBe('Fat-loss circuits')
+  })
+})
+
+describe('add member with a plan in one step', () => {
+  const person = { name: 'Walk In', phone: '9811122233', joiningDate: today }
+  const countOf = async (store: 'members' | 'memberships' | 'invoices' | 'payments') => (await (await getDb()).getAll(store)).length
+
+  it('creates the member, membership, invoice and first payment together', async () => {
+    const plan = await createPlan({ name: 'Monthly', durationValue: 1, durationUnit: 'months', price: 150000 })
+    const r = await createMemberWithMembership(person, { planId: plan.id, startDate: today, discountPaise: 10000, initialPaymentPaise: 50000, paymentMethod: 'upi', issueDate: today })
+    expect(r.member.memberCode).toBe('GB-0001')
+    expect(r.membership).toMatchObject({ memberId: r.member.id, planName: 'Monthly', startDate: today, endDate: '2026-11-27', pricePaise: 140000 })
+    expect(r.membership.renewalOfId).toBeUndefined()
+    expect(r.invoiceNumber).toBe('RK-00001')
+    expect(r.payment).toMatchObject({ memberId: r.member.id, amountPaise: 50000, method: 'upi', status: 'recorded' })
+    const inv = (await listInvoices())[0]
+    expect(inv).toMatchObject({ memberId: r.member.id, issueDate: today, totalPaise: 140000 })
+    expect(invoiceBalance(inv, await listPayments(), await listAdjustments()).balancePaise).toBe(90000)
+    expect((await getMember(r.member.id))?.name).toBe('Walk In')
+  })
+
+  it('a refused sale saves nothing: no member, no invoice number used', async () => {
+    const plan = await createPlan({ name: 'Monthly', durationValue: 1, durationUnit: 'months', price: 150000 })
+    await expect(createMemberWithMembership(person, { planId: plan.id, startDate: today, discountPaise: 200000, initialPaymentPaise: 0, paymentMethod: 'cash' })).rejects.toThrow(/Discount must be between/)
+    await expect(createMemberWithMembership(person, { planId: plan.id, startDate: today, discountPaise: 0, initialPaymentPaise: 150001, paymentMethod: 'cash' })).rejects.toThrow(/Initial payment cannot exceed/)
+    await expect(createMemberWithMembership(person, { planId: 'plan_missing', startDate: today, discountPaise: 0, initialPaymentPaise: 0, paymentMethod: 'cash' })).rejects.toThrow(/Plan not found/)
+    expect(await countOf('members')).toBe(0)
+    expect(await countOf('memberships')).toBe(0)
+    expect(await countOf('invoices')).toBe(0)
+    // the next successful save still gets the first member code and invoice number
+    const ok = await createMemberWithMembership(person, { planId: plan.id, startDate: today, discountPaise: 0, initialPaymentPaise: 0, paymentMethod: 'cash' })
+    expect(ok.member.memberCode).toBe('GB-0001')
+    expect(ok.invoiceNumber).toBe('RK-00001')
+    expect(ok.payment).toBeUndefined()
+    expect(await countOf('payments')).toBe(0)
+  })
+
+  it('a double submit with the same request key writes once', async () => {
+    const plan = await createPlan({ name: 'Monthly', durationValue: 1, durationUnit: 'months', price: 150000 })
+    const sale = { planId: plan.id, startDate: today, discountPaise: 0, initialPaymentPaise: 0, paymentMethod: 'cash' as const }
+    const [a, b] = await Promise.all([createMemberWithMembership(person, sale, { requestKey: 'k1' }), createMemberWithMembership(person, sale, { requestKey: 'k1' })])
+    expect(a.member.id).toBe(b.member.id)
+    expect(await countOf('members')).toBe(1)
+    expect(await countOf('memberships')).toBe(1)
+    expect(await countOf('invoices')).toBe(1)
+  })
+
+  it('a storage failure leaves nothing behind and can be retried', async () => {
+    const plan = await createPlan({ name: 'Monthly', durationValue: 1, durationUnit: 'months', price: 150000 })
+    armSaveFailure()
+    await expect(createMemberWithMembership(person, { planId: plan.id, startDate: today, discountPaise: 0, initialPaymentPaise: 0, paymentMethod: 'cash' })).rejects.toMatchObject({ kind: 'simulated' })
+    expect(await countOf('members')).toBe(0)
+    const ok = await createMemberWithMembership(person, { planId: plan.id, startDate: today, discountPaise: 0, initialPaymentPaise: 0, paymentMethod: 'cash' })
+    expect(ok.invoiceNumber).toBe('RK-00001')
   })
 })

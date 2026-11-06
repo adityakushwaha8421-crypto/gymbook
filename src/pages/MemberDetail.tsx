@@ -13,8 +13,8 @@ import { listActivityForMember } from '@/data/services/activity'
 import { setMemberArchived } from '@/data/services/members'
 import { checkOut } from '@/data/services/attendance'
 import { voidPayment, voidInvoice } from '@/data/services/payments'
-import { membershipState, invoiceBalance, memberBalance, pickCurrentMembership, daysRemaining } from '@/domain/membership'
-import { formatDate, formatDateTime, formatDuration, compareDates } from '@/domain/dates'
+import { membershipState, memberMembershipState, invoiceBalance, memberBalance, pickCurrentMembership, latestEndDate } from '@/domain/membership'
+import { formatDate, formatDateTime, formatDuration, compareDates, diffDays } from '@/domain/dates'
 import { formatINR } from '@/domain/money'
 import { labelFor, PAYMENT_METHODS } from '@/domain/types'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
@@ -60,7 +60,9 @@ export function MemberDetailPage() {
     const balance = memberBalance(invoices, payments, adjustments)
     const openVisit = attendance.find((a) => a.checkOutAt === null)
     const workout = member.workoutPlanId ? snap.data.workouts.find((w) => w.id === member.workoutPlanId) : undefined
-    return { memberships, invoices, payments, adjustments, attendance, current, state: current ? membershipState(current, today) : undefined, balance, openVisit, workout }
+    // A renewal already on file extends cover past the current plan, so the header and "Days left" follow the last day of cover.
+    const coverEnd = latestEndDate(memberships)
+    return { memberships, invoices, payments, adjustments, attendance, current, coverEnd, state: memberMembershipState(memberships, today), balance, openVisit, workout }
   }, [snap.data, member, today])
 
   const { checkIn: doCheckIn, dialog: checkInDialog, busy: checkInBusy } = useCheckIn()
@@ -136,7 +138,7 @@ export function MemberDetailPage() {
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Current plan" value={data.current ? data.current.planName : '—'} hint={data.current ? (data.state === 'upcoming' ? `Starts ${formatDate(data.current.startDate)}` : `${data.state === 'expired' ? 'Ended' : 'Ends'} ${formatDate(data.current.endDate)}`) : 'No membership yet'} />
-        <Stat label="Days left" value={data.current && data.state !== 'expired' && data.state !== 'upcoming' ? daysRemaining(data.current, today) : '—'} tone={data.state === 'expiring' ? 'warn' : undefined} />
+        <Stat label="Days left" value={data.current && data.coverEnd && data.state !== 'expired' && data.state !== 'upcoming' ? diffDays(today, data.coverEnd) : '—'} tone={data.state === 'expiring' ? 'warn' : undefined} hint={data.current && data.coverEnd && data.state !== 'expired' && data.state !== 'upcoming' && compareDates(data.coverEnd, data.current.endDate) > 0 ? `Renewed to ${formatDate(data.coverEnd)}` : undefined} />
         <Stat label="Outstanding" value={formatINR(Math.max(0, data.balance.balancePaise))} tone={data.balance.balancePaise > 0 ? 'danger' : undefined} hint={data.balance.balancePaise < 0 ? `${formatINR(-data.balance.balancePaise)} credit` : `${formatINR(data.balance.paidPaise)} paid of ${formatINR(data.balance.invoicedPaise)}`} />
         <Stat label="Visits" value={data.attendance.length} hint={data.attendance[0] ? `Last ${formatDateTime(data.attendance[0].checkInAt, timezone)}` : 'No visits recorded'} />
       </div>

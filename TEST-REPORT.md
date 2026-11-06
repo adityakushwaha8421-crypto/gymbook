@@ -245,3 +245,27 @@ Asked for: a section of upcoming expiries on the Follow-ups page.
 | Playwright: workflows, features, shell, operations | 59 passed, including a new test for the section |
 | Desktop 1280 and phone 375 | section checked in the browser; no horizontal overflow |
 | Typecheck, lint | clean |
+
+## Test run, fixes, camera photo and plan on Add member (2026-11-06)
+
+Asked for: run the tests and fix things; a camera option for the member photo; a plan choice on the Add member page.
+
+**Test run before any change:** typecheck clean, 128 unit tests and 105 browser tests passed, production build succeeded. Nothing was failing, so the fixes below come from reading the code while the suite ran.
+
+- **Renewed members read as expiring (fixed).** The dashboard count and card, the Members "Expiring" filter and the member page judged a member by the plan that covers today, so someone who had already renewed still showed as "Expiring soon" while Follow-ups left them out. One rule now decides it everywhere (`memberMembershipState` in `src/domain/membership.ts`): with a renewal on file the member reads as active, and "Days left" on the member page counts to the end of the renewal ("Renewed to …").
+- **Dates shown in UTC instead of gym time (fixed).** Between midnight and 05:30 in India these showed the previous day: the "generated on" date and adjustment dates on an invoice, and the "Completed" date of a follow-up. The backup preview's export time used the device's locale and timezone; it now uses the gym's.
+- **Dialogs:** opening a dialog no longer tries to focus a disabled control.
+- **Not changed:** the 22 lint warnings are older React-compiler style notes (state set in effects, fast-refresh exports). None is a test failure and none was touched.
+
+**Camera photo.** The member form has "Take photo" beside "Upload photo". The dialog opens the device camera (back camera on a phone, the webcam on a laptop, "Switch camera" when there are two), shows a square preview, and offers Retake before "Use photo". The picture is cropped square, shrunk to 256 px and stored with the member like an uploaded one; nothing is sent anywhere. The camera is released when the dialog closes. A blocked camera, a missing camera, a busy camera and a browser without camera support each get their own message, with "Try again" and "Upload a photo instead".
+
+**Plan on Add member.** A "Membership plan" section lists the active plans ("No plan for now" by default, so adding a member without a plan works as before). With a plan chosen it asks for the start date (follows the joining date until changed), discount, amount received now and payment method, and shows the last day of access and what stays outstanding. Saving writes the member, membership, invoice and first payment in one transaction (`createMemberWithMembership`): if the sale is refused, the member is not created either, and no member code or invoice number is used up.
+
+| Check | Result |
+| --- | --- |
+| Vitest | 139 passed (11 new: renewal rule, add-with-plan service, form validation) |
+| Playwright, every suite | 113 passed (8 new: 4 camera with Chromium's fake camera and stubbed failures, 4 add-member-with-plan). On the first run of the new tests 4 failed on wrong expectations in the tests themselves: the dev build opens the camera twice (React StrictMode), and the outstanding-amount line was misquoted |
+| Camera dialog | live preview, taken photo and saved avatar checked on screenshots at 1100 and 375 px with the fake camera; the blocked-camera state checked in the in-app browser |
+| Add member with plan | checked in the browser at 1100 and 375 px; no horizontal overflow |
+| Not checked | a real phone or webcam: the camera was exercised only with Chromium's fake device |
+| Typecheck, build | clean |

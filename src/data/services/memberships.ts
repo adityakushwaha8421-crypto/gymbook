@@ -1,6 +1,8 @@
 import { readTx, writeTx } from '../db'
-import { logActivity, stampNew, withIdempotency } from '../repo'
-import type { Membership, Plan, Payment, PaymentMethod, ISODate, Paise } from '@/domain/types'
+import { logActivity, stampNew, withIdempotency, type AnyWriteTx } from '../repo'
+import type { Member, Membership, Plan, Payment, PaymentMethod, ISODate, Paise } from '@/domain/types'
+import type { MemberFormValues } from '@/domain/validation'
+import { insertMember } from './members'
 import { membershipEndDate, addDays, compareDates, formatDate, todayInTz, DEFAULT_TIMEZONE } from '@/domain/dates'
 import { formatINR } from '@/domain/money'
 import { DomainError } from '../errors'
@@ -40,6 +42,95 @@ export function renewalStartOptions(latestEnd: ISODate | undefined, today: ISODa
   return { afterCurrent, today }
 }
 
+const SALE_STORES = ['members', 'plans', 'memberships', 'invoices', 'payments', 'counters', 'settings', 'activity'] as const
+
+type SaleInput = Omit<AssignMembershipInput, 'memberId' | 'requestKey'>
+
+/** The sale itself, inside the caller's transaction (needs every store in SALE_STORES). */
+async function sellInTx(tx: AnyWriteTx, member: Member, input: SaleInput): Promise<AssignMembershipResult> {
+  if (member.status === 'archived') throw new DomainError('member-archived', 'Restore this member before selling a membership.')
+  const plan: Plan | undefined = await tx.objectStore('plans').get(input.planId)
+  if (!plan) throw new DomainError('plan-missing', 'Plan not found.')
+  if (plan.archived) throw new DomainError('plan-archived', 'This plan is archived. Choose an active plan.')
+  if (input.discountPaise < 0 || input.discountPaise > plan.pricePaise) {
+    throw new DomainError('discount', `Discount must be between ₹0 and ${formatINR(plan.pricePaise)}.`)
+  }
+  const netPaise = plan.pricePaise - input.discountPaise
+  if (input.initialPaymentPaise < 0 || input.initialPaymentPaise > netPaise) {
+    throw new DomainError('payment', `Initial payment cannot exceed the net price of ${formatINR(netPaise)}.`)
+  }
+  const endDate = membershipEndDate(input.startDate, plan.durationValue, plan.durationUnit)
+  if (compareDates(endDate, input.startDate) < 0) throw new DomainError('dates', 'End date is before start date.')
+
+  const number = await nextInvoiceNumber(tx)
+  const membershipId = stampNew('ms', {}).id
+  const invoice = buildInvoice({
+    number,
+    memberId: member.id,
+    membershipId,
+    issueDate: input.issueDate ?? todayInTz((await tx.objectStore('settings').get('settings'))?.timezone ?? DEFAULT_TIMEZONE),
+    lines: [
+      {
+        description: `${plan.name} membership (${plan.durationValue} ${plan.durationUnit}) · ${formatDate(input.startDate)} to ${formatDate(endDate)}`,
+        quantity: 1,
+        unitPricePaise: plan.pricePaise,
+        amountPaise: plan.pricePaise,
+      },
+    ],
+    discountPaise: input.discountPaise,
+    note: input.note,
+  })
+  const membership: Membership = {
+    ...stampNew('ms', {}),
+    id: membershipId,
+    memberId: member.id,
+    planId: plan.id,
+    planName: plan.name,
+    durationValue: plan.durationValue,
+    durationUnit: plan.durationUnit,
+    startDate: input.startDate,
+    endDate,
+    listPricePaise: plan.pricePaise,
+    discountPaise: input.discountPaise,
+    pricePaise: netPaise,
+    invoiceId: invoice.id,
+    renewalOfId: input.renewalOfId,
+    note: input.note,
+  }
+  await tx.objectStore('invoices').put(invoice)
+  await tx.objectStore('memberships').put(membership)
+  let payment: Payment | undefined
+  if (input.initialPaymentPaise > 0) {
+    payment = stampNew('pay', {
+      memberId: member.id,
+      invoiceId: invoice.id,
+      amountPaise: input.initialPaymentPaise,
+      method: input.paymentMethod,
+      receivedAt: nowIso(),
+      status: 'recorded' as const,
+      note: 'Paid at membership sale',
+    }) as Payment
+    await tx.objectStore('payments').put(payment)
+  }
+  await logActivity(tx, {
+    kind: 'membership',
+    message: `${input.renewalOfId ? 'Renewed' : 'Sold'} ${plan.name} to ${member.name} (${input.startDate} → ${endDate}), invoice ${number}`,
+    memberId: member.id,
+    refType: 'membership',
+    refId: membership.id,
+  })
+  if (payment) {
+    await logActivity(tx, {
+      kind: 'payment',
+      message: `Recorded ${formatINR(payment.amountPaise)} ${payment.method.toUpperCase()} from ${member.name} for ${number}`,
+      memberId: member.id,
+      refType: 'payment',
+      refId: payment.id,
+    })
+  }
+  return { membership, invoiceId: invoice.id, invoiceNumber: number, payment }
+}
+
 /**
  * Sell a membership: membership + invoice (+ optional first payment) in one
  * transaction. Plan details are snapshotted so later plan edits never change
@@ -47,90 +138,26 @@ export function renewalStartOptions(latestEnd: ISODate | undefined, today: ISODa
  */
 export async function assignMembership(input: AssignMembershipInput): Promise<AssignMembershipResult> {
   return withIdempotency(input.requestKey, () =>
-    writeTx(['members', 'plans', 'memberships', 'invoices', 'payments', 'counters', 'settings', 'activity'], async (tx) => {
+    writeTx([...SALE_STORES], async (tx) => {
       const member = await tx.objectStore('members').get(input.memberId)
       if (!member) throw new DomainError('member-missing', 'Member not found.')
-      if (member.status === 'archived') throw new DomainError('member-archived', 'Restore this member before selling a membership.')
-      const plan: Plan | undefined = await tx.objectStore('plans').get(input.planId)
-      if (!plan) throw new DomainError('plan-missing', 'Plan not found.')
-      if (plan.archived) throw new DomainError('plan-archived', 'This plan is archived. Choose an active plan.')
-      if (input.discountPaise < 0 || input.discountPaise > plan.pricePaise) {
-        throw new DomainError('discount', `Discount must be between ₹0 and ${formatINR(plan.pricePaise)}.`)
-      }
-      const netPaise = plan.pricePaise - input.discountPaise
-      if (input.initialPaymentPaise < 0 || input.initialPaymentPaise > netPaise) {
-        throw new DomainError('payment', `Initial payment cannot exceed the net price of ${formatINR(netPaise)}.`)
-      }
-      const endDate = membershipEndDate(input.startDate, plan.durationValue, plan.durationUnit)
-      if (compareDates(endDate, input.startDate) < 0) throw new DomainError('dates', 'End date is before start date.')
+      return sellInTx(tx, member, input)
+    }),
+  )
+}
 
-      const number = await nextInvoiceNumber(tx)
-      const membershipId = stampNew('ms', {}).id
-      const invoice = buildInvoice({
-        number,
-        memberId: member.id,
-        membershipId,
-        issueDate: input.issueDate ?? todayInTz((await tx.objectStore('settings').get('settings'))?.timezone ?? DEFAULT_TIMEZONE),
-        lines: [
-          {
-            description: `${plan.name} membership (${plan.durationValue} ${plan.durationUnit}) · ${formatDate(input.startDate)} to ${formatDate(endDate)}`,
-            quantity: 1,
-            unitPricePaise: plan.pricePaise,
-            amountPaise: plan.pricePaise,
-          },
-        ],
-        discountPaise: input.discountPaise,
-        note: input.note,
-      })
-      const membership: Membership = {
-        ...stampNew('ms', {}),
-        id: membershipId,
-        memberId: member.id,
-        planId: plan.id,
-        planName: plan.name,
-        durationValue: plan.durationValue,
-        durationUnit: plan.durationUnit,
-        startDate: input.startDate,
-        endDate,
-        listPricePaise: plan.pricePaise,
-        discountPaise: input.discountPaise,
-        pricePaise: netPaise,
-        invoiceId: invoice.id,
-        renewalOfId: input.renewalOfId,
-        note: input.note,
-      }
-      await tx.objectStore('invoices').put(invoice)
-      await tx.objectStore('memberships').put(membership)
-      let payment: Payment | undefined
-      if (input.initialPaymentPaise > 0) {
-        payment = stampNew('pay', {
-          memberId: member.id,
-          invoiceId: invoice.id,
-          amountPaise: input.initialPaymentPaise,
-          method: input.paymentMethod,
-          receivedAt: nowIso(),
-          status: 'recorded' as const,
-          note: 'Paid at membership sale',
-        }) as Payment
-        await tx.objectStore('payments').put(payment)
-      }
-      await logActivity(tx, {
-        kind: 'membership',
-        message: `${input.renewalOfId ? 'Renewed' : 'Sold'} ${plan.name} to ${member.name} (${input.startDate} → ${endDate}), invoice ${number}`,
-        memberId: member.id,
-        refType: 'membership',
-        refId: membership.id,
-      })
-      if (payment) {
-        await logActivity(tx, {
-          kind: 'payment',
-          message: `Recorded ${formatINR(payment.amountPaise)} ${payment.method.toUpperCase()} from ${member.name} for ${number}`,
-          memberId: member.id,
-          refType: 'payment',
-          refId: payment.id,
-        })
-      }
-      return { membership, invoiceId: invoice.id, invoiceNumber: number, payment }
+/** What the Add member page collects when a plan is chosen there. */
+export type FirstMembershipInput = Pick<AssignMembershipInput, 'planId' | 'startDate' | 'discountPaise' | 'initialPaymentPaise' | 'paymentMethod' | 'issueDate'>
+
+/**
+ * Add a member and sell their first membership in one transaction: if the sale is refused
+ * (archived plan, discount above the price…) the member is not created either, so a retry never leaves a duplicate.
+ */
+export async function createMemberWithMembership(values: MemberFormValues, sale: FirstMembershipInput, opts: { requestKey?: string } = {}): Promise<AssignMembershipResult & { member: Member }> {
+  return withIdempotency(opts.requestKey, () =>
+    writeTx([...SALE_STORES], async (tx) => {
+      const member = await insertMember(tx, values)
+      return { member, ...(await sellInTx(tx, member, sale)) }
     }),
   )
 }

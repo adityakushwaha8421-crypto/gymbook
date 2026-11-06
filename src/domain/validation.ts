@@ -126,6 +126,36 @@ export const membershipForm = z
   })
 export type MembershipFormValues = z.output<typeof membershipForm>
 
+/** The plan fields on the Add member page. Only checked when a plan is chosen there. */
+export const firstPlanForm = z.object({
+  planId: z.string().min(1, 'Choose a plan'),
+  planStartDate: z.string().refine(isISODate, 'Enter a valid start date'),
+  planDiscount: rupeesInput({ allowZero: true, label: 'discount' }),
+  planReceived: rupeesInput({ allowZero: true, label: 'payment' }),
+  planPaymentMethod: z.enum(['cash', 'upi', 'bank', 'card']),
+})
+export type FirstPlanValues = z.output<typeof firstPlanForm>
+
+export interface NewMemberValues {
+  member: MemberFormValues
+  /** Present only when a plan was chosen on the Add member page. */
+  plan?: FirstPlanValues
+}
+
+/**
+ * Add member page: the member fields, plus the plan fields when `planId` is not empty.
+ * Both halves are checked in one pass so every mistake shows at once.
+ */
+export const newMemberForm = {
+  safeParse(data: unknown): { success: true; data: NewMemberValues } | { success: false; error: z.ZodError } {
+    const member = memberForm.safeParse(data)
+    const wantsPlan = typeof data === 'object' && data !== null && typeof (data as { planId?: unknown }).planId === 'string' && (data as { planId: string }).planId !== ''
+    const plan = wantsPlan ? firstPlanForm.safeParse(data) : undefined
+    if (member.success && (!plan || plan.success)) return { success: true, data: { member: member.data, plan: plan?.data } }
+    return { success: false, error: new z.ZodError([...(member.success ? [] : member.error.issues), ...(plan && !plan.success ? plan.error.issues : [])]) }
+  },
+}
+
 export const paymentForm = z.object({
   amount: rupeesInput({ label: 'amount' }),
   method: z.enum(['cash', 'upi', 'bank', 'card']),

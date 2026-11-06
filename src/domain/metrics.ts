@@ -1,7 +1,7 @@
 import type { Snapshot } from '@/data/snapshot'
 import { groupBy } from '@/data/snapshot'
 import type { ISODate, Paise, Member, Membership } from './types'
-import { isMembershipCurrent, membershipState, memberBalance, pickCurrentMembership } from './membership'
+import { isMembershipCurrent, membershipState, memberMembershipState, memberBalance, pickCurrentMembership } from './membership'
 import { compareDates, diffDays, instantToDateInTz, eachDay, monthKey, addDays, daysInMonth } from './dates'
 
 export interface Period {
@@ -12,6 +12,7 @@ export interface Period {
 export interface MemberRow {
   member: Member
   current?: Membership
+  /** Member-level state: a member who has already renewed reads as active, not expiring. */
   state?: ReturnType<typeof membershipState>
   balancePaise: Paise
   lastVisitAt?: string
@@ -30,7 +31,7 @@ export function memberRows(snap: Snapshot, today: ISODate): MemberRow[] {
     const bal = memberBalance(invByMember.get(member.id) ?? [], payByMember.get(member.id) ?? [], adjByMember.get(member.id) ?? [])
     const visits = attByMember.get(member.id) ?? []
     const lastVisitAt = visits.reduce<string | undefined>((max, v) => (!max || v.checkInAt > max ? v.checkInAt : max), undefined)
-    return { member, current, state: current ? membershipState(current, today) : undefined, balancePaise: bal.balancePaise, lastVisitAt }
+    return { member, current, state: memberMembershipState(list, today), balancePaise: bal.balancePaise, lastVisitAt }
   })
 }
 

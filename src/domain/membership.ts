@@ -32,6 +32,19 @@ export function pickCurrentMembership(all: Membership[], today: ISODate): Member
   return [...list].sort((a, b) => compareDates(b.endDate, a.endDate))[0]
 }
 
+/**
+ * Member-level status for lists and counts. It is the state of the current membership, except that
+ * a member who has already renewed does not read as expiring: their cover runs past the warning window.
+ */
+export function memberMembershipState(all: Membership[], today: ISODate, expiringWithinDays = 7): MembershipState | undefined {
+  const current = pickCurrentMembership(all, today)
+  if (!current) return undefined
+  const state = membershipState(current, today, expiringWithinDays)
+  if (state !== 'expiring') return state
+  const coverEnd = latestEndDate(all)
+  return coverEnd && diffDays(today, coverEnd) > expiringWithinDays ? 'active' : 'expiring'
+}
+
 export function latestEndDate(list: Membership[]): ISODate | undefined {
   return list.filter((m) => !m.cancelledAt).sort((a, b) => compareDates(b.endDate, a.endDate))[0]?.endDate
 }

@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import { deflateSync } from 'node:zlib'
 import { onboard, createPlan, addMember, sellMembership, readStore } from '../helpers'
-import { todayInTz, addDays } from '../../src/domain/dates'
+import { todayInTz, addDays, formatDate, membershipEndDate } from '../../src/domain/dates'
 
 const TZ = 'Asia/Kolkata'
 
@@ -358,10 +358,11 @@ test.describe('3. photo upload', () => {
     const input = page.locator('input#member-photo')
     await input.setInputFiles({ name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('hello') })
     await expect(page.getByRole('alert').filter({ hasText: /Choose an image file/ })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Add photo' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Take photo' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Upload photo' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Remove' })).toHaveCount(0)
 
     await input.setInputFiles({ name: 'tiny.png', mimeType: 'image/png', buffer: makePng() })
-    await expect(page.getByRole('button', { name: 'Change photo' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Remove' })).toBeVisible()
     // previous non-image error should be cleared after a successful pick
     await expect(page.getByRole('alert').filter({ hasText: /Choose an image file/ })).toHaveCount(0)
@@ -376,7 +377,7 @@ test.describe('3. photo upload', () => {
     await page.goto('/members/new')
     await input.setInputFiles({ name: 'junk.png', mimeType: 'image/png', buffer: Buffer.from('not a png at all') })
     await expect(page.getByRole('alert').filter({ hasText: /Could not read this image/ })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Add photo' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Remove' })).toHaveCount(0)
   })
 
   it('removing the photo on edit clears photoDataUrl', async ({ page }) => {
@@ -908,5 +909,131 @@ test.describe('8. console clean on member pages', () => {
     await page.goto('/members/new')
     await expect(page.getByLabel(/^Joining date/)).toHaveValue(todayInTz(TZ))
     void addDays
+  })
+})
+
+// =====================================================================
+// 9. Add member with a plan
+// =====================================================================
+test.describe('9. add member with a plan', () => {
+  type Ms = { memberId: string; planName: string; startDate: string; endDate: string; pricePaise: number; discountPaise: number; renewalOfId?: string }
+  type Inv = { memberId: string; number: string; issueDate: string; totalPaise: number }
+  type Pay = { memberId: string; amountPaise: number; method: string; status: string }
+
+  it('with no plans the section points to Plans and the member still saves without one', async ({ page }) => {
+    await onboard(page, 'empty')
+    await page.goto('/members/new')
+    await expect(page.getByRole('heading', { name: 'Membership plan' })).toBeVisible()
+    await expect(page.getByRole('main').getByRole('link', { name: 'Create a plan' })).toHaveAttribute('href', '/plans')
+    await expect(page.getByLabel('Plan', { exact: true })).toHaveCount(0)
+    await fillAdd(page, { name: 'No Plan Yet', phone: '98200 00020' })
+    await submitAdd(page)
+    await expect(page).toHaveURL(/\/members\/mem_/)
+    expect(await readStore(page, 'memberships')).toHaveLength(0)
+  })
+
+  it('plan, discount and part payment: member, membership, invoice and payment are saved together', async ({ page }) => {
+    await onboard(page, 'empty')
+    await createPlan(page, 'Monthly', 1, 'months', '1500')
+    await createPlan(page, 'Quarterly', 3, 'months', '4000')
+    await page.goto('/members/new')
+    await fillAdd(page, { name: 'Plan Person', phone: '98200 00021' })
+    const today = todayInTz(TZ)
+    const plan = page.getByLabel('Plan', { exact: true })
+    await expect(plan).toHaveValue('')
+    await expect(plan.locator('option')).toHaveText(['No plan for now', 'Monthly · 1 months · ₹1,500.00', 'Quarterly · 3 months · ₹4,000.00'])
+    await expect(page.getByLabel('Plan starts')).toHaveCount(0)
+    await expect(page.getByLabel('Received now')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Add member', exact: true })).toBeVisible()
+
+    await plan.selectOption({ label: 'Monthly · 1 months · ₹1,500.00' })
+    await expect(page.getByRole('button', { name: 'Add member and create invoice' })).toBeVisible()
+    await expect(page.getByLabel('Plan starts')).toHaveValue(today)
+    // the plan start follows the joining date until it is set on its own
+    const start = addDays(today, -3)
+    await page.getByLabel(/^Joining date/).fill(start)
+    await expect(page.getByLabel('Plan starts')).toHaveValue(start)
+    const end = membershipEndDate(start, 1, 'months')
+    await expect(page.getByText(`${formatDate(start)} to ${formatDate(end)} (last day of access).`)).toBeVisible()
+
+    await expect(page.getByLabel('Payment method')).toBeDisabled()
+    await expect(page.getByText('₹1,500.00 will remain outstanding on the invoice.')).toBeVisible()
+    await page.getByLabel('Discount').fill('100')
+    await expect(page.getByText('₹1,400.00', { exact: true })).toBeVisible()
+    await page.getByLabel('Received now').fill('500')
+    await expect(page.getByLabel('Payment method')).toBeEnabled()
+    await page.getByLabel('Payment method').selectOption('upi')
+    await expect(page.getByText('₹900.00 will remain outstanding on the invoice.')).toBeVisible()
+
+    await page.getByRole('button', { name: 'Add member and create invoice' }).click()
+    await expect(page).toHaveURL(/\/members\/mem_/)
+    await expect(page.getByRole('status').filter({ hasText: 'Added Plan Person' })).toContainText('Monthly sold · invoice RK-00001 created · ₹500.00 recorded')
+    const [m] = await readStore<MemberRec>(page, 'members')
+    const ms = await readStore<Ms>(page, 'memberships')
+    const invs = await readStore<Inv>(page, 'invoices')
+    const pays = await readStore<Pay>(page, 'payments')
+    expect(ms).toHaveLength(1)
+    expect(ms[0]).toMatchObject({ memberId: m.id, planName: 'Monthly', startDate: start, endDate: end, pricePaise: 140000, discountPaise: 10000 })
+    expect(ms[0].renewalOfId).toBeUndefined()
+    expect(invs).toHaveLength(1)
+    expect(invs[0]).toMatchObject({ memberId: m.id, number: 'RK-00001', issueDate: today, totalPaise: 140000 })
+    expect(pays).toHaveLength(1)
+    expect(pays[0]).toMatchObject({ memberId: m.id, amountPaise: 50000, method: 'upi', status: 'recorded' })
+    // the member page shows the plan and what is still owed
+    await expect(page.getByRole('main')).toContainText('Monthly')
+    await expect(page.getByRole('main')).toContainText('₹900.00')
+  })
+
+  it('a refused sale saves nothing, keeps what was typed, and saves once corrected', async ({ page }) => {
+    await onboard(page, 'empty')
+    await createPlan(page, 'Monthly', 1, 'months', '1500')
+    await page.goto('/members/new')
+    await fillAdd(page, { name: 'Too Much Off', phone: '98200 00022' })
+    await page.getByLabel('Plan', { exact: true }).selectOption({ label: 'Monthly · 1 months · ₹1,500.00' })
+    await page.getByLabel('Discount').fill('2000')
+    await page.getByRole('button', { name: 'Add member and create invoice' }).click()
+    await expect(page.getByRole('alert').filter({ hasText: /Discount must be between/ })).toBeVisible()
+    await expect(page).toHaveURL(/\/members\/new$/)
+    expect(await readStore(page, 'members')).toHaveLength(0)
+    expect(await readStore(page, 'invoices')).toHaveLength(0)
+    await expect(page.getByLabel('Full name')).toHaveValue('Too Much Off')
+
+    // field mistakes in the plan part are shown beside the fields, together with member mistakes
+    await page.getByLabel('Full name').fill('T')
+    await page.getByLabel('Discount').fill('abc')
+    await page.getByLabel('Received now').fill('-5')
+    await page.getByRole('button', { name: 'Add member and create invoice' }).click()
+    await expect(page.getByText('Name must be at least 2 characters')).toBeVisible()
+    await expect(page.getByText('Enter a valid discount in rupees')).toBeVisible()
+    await expect(page.getByText(/Enter a valid payment in rupees|Amount cannot be negative/)).toBeVisible()
+    expect(await readStore(page, 'members')).toHaveLength(0)
+
+    await page.getByLabel('Full name').fill('Too Much Off')
+    await page.getByLabel('Discount').fill('')
+    await page.getByLabel('Received now').fill('')
+    await page.getByRole('button', { name: 'Add member and create invoice' }).click()
+    await expect(page).toHaveURL(/\/members\/mem_/)
+    expect(await readStore(page, 'members')).toHaveLength(1)
+    expect((await readStore<Inv>(page, 'invoices')).map((i) => i.number)).toEqual(['RK-00001'])
+    expect(await readStore(page, 'payments')).toHaveLength(0)
+  })
+
+  it('choosing a plan and then going back to no plan adds the member only; the edit page has no plan section', async ({ page }) => {
+    await onboard(page, 'empty')
+    await createPlan(page, 'Monthly', 1, 'months', '1500')
+    await page.goto('/members/new')
+    await fillAdd(page, { name: 'Changed Mind', phone: '98200 00023' })
+    const plan = page.getByLabel('Plan', { exact: true })
+    await plan.selectOption({ label: 'Monthly · 1 months · ₹1,500.00' })
+    await page.getByLabel('Received now').fill('500')
+    await plan.selectOption('')
+    await expect(page.getByLabel('Received now')).toHaveCount(0)
+    await submitAdd(page)
+    await expect(page).toHaveURL(/\/members\/mem_/)
+    expect(await readStore(page, 'memberships')).toHaveLength(0)
+    expect(await readStore(page, 'payments')).toHaveLength(0)
+    await page.goto(page.url() + '/edit')
+    await expect(page.getByLabel('Full name')).toHaveValue('Changed Mind')
+    await expect(page.getByRole('heading', { name: 'Membership plan' })).toHaveCount(0)
   })
 })
