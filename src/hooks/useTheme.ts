@@ -17,7 +17,7 @@ export function applyTheme(pref: ThemePreference): void {
   if (pref === 'system') root.removeAttribute('data-theme')
   else root.setAttribute('data-theme', pref)
   const dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
-  document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0b0c0f' : '#f4f5f7')
+  document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.setAttribute('content', dark ? '#141415' : '#fafafa')
 }
 
 /** Theme preference persisted per browser; 'system' follows prefers-color-scheme. */

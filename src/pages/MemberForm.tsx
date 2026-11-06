@@ -25,7 +25,7 @@ type Values = { name: string; phone: string; email: string; joiningDate: string;
 export function MemberFormPage({ mode }: { mode: 'new' | 'edit' }) {
   const { id } = useParams()
   const existing = useLiveQuery(() => (mode === 'edit' && id ? getMember(id) : Promise.resolve(undefined)), ['members'], [id, mode])
-  usePage(mode === 'new' ? 'Add member' : existing.data ? `Edit ${existing.data.name}` : 'Edit member', mode === 'new' ? 'Create a new member record.' : 'Update member details.', { header: false })
+  usePage(mode === 'new' ? 'Add member' : existing.data ? `Edit ${existing.data.name}` : 'Edit member', mode === 'new' ? 'Create a new member record' : 'Update member details', { header: false })
 
   if (mode === 'edit') {
     if (existing.error) return <ErrorState message={existing.error} />
@@ -178,7 +178,7 @@ function MemberFormInner({ mode, member }: { mode: 'new' | 'edit'; member?: Memb
           </div>
 
           <div className="border-t border-line pt-4">
-            <h2 className="text-md font-semibold">Profile</h2>
+            <h2 className="text-md font-medium">Profile</h2>
             <p className="mb-3 text-sm text-muted">Optional. Shown on the member’s page and used for workout sheets. Health notes are visible to staff only.</p>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Date of birth" error={form.errors.dateOfBirth}>
@@ -204,7 +204,7 @@ function MemberFormInner({ mode, member }: { mode: 'new' | 'edit'; member?: Memb
                 {({ id }) => <Input id={id} list="member-goals" value={form.values.goal} onChange={(e) => form.set('goal', e.target.value)} placeholder="Fat loss, Strength, Mobility…" />}
               </Field>
               <datalist id="member-goals">{['Fat loss', 'Strength', 'Muscle gain', 'General fitness', 'Mobility', 'Endurance'].map((g) => <option key={g} value={g} />)}</datalist>
-              <Field label="Health notes" hint="Injuries, conditions, medication the trainers should know about." error={form.errors.healthNotes} className="sm:col-span-2">
+              <Field label="Health notes" hint="Injuries, conditions, medication the trainers should know about" error={form.errors.healthNotes} className="sm:col-span-2">
                 {({ id, describedBy }) => <Textarea id={id} aria-describedby={describedBy} rows={2} value={form.values.healthNotes} onChange={(e) => form.set('healthNotes', e.target.value)} />}
               </Field>
             </div>

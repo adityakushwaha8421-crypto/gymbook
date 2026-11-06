@@ -96,7 +96,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
               <motion.div
                 role="dialog"
                 className={cn(
-                  'glass-pop fixed z-50 flex flex-col focus:outline-none',
+                  'surface-pop fixed z-50 flex flex-col focus:outline-none',
                   isDesktop
                     ? cn('left-1/2 top-1/2 w-[calc(100%-2rem)] max-h-[calc(100dvh-4rem)] rounded-2xl', widths[size])
                     : 'inset-x-0 bottom-0 max-h-[92dvh] rounded-t-3xl pb-[env(safe-area-inset-bottom)]',
@@ -120,7 +120,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
                 <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:px-5">
                   {children}
                 </div>
-                {footer ? <div className="flex flex-wrap justify-end gap-2 border-t border-line/70 bg-sunken/40 px-4 py-3 sm:rounded-b-2xl sm:px-5">{footer}</div> : null}
+                {footer ? <div className="flex flex-wrap justify-end gap-2 border-t border-line bg-sunken/40 px-4 py-3 sm:rounded-b-2xl sm:px-5">{footer}</div> : null}
               </motion.div>
             </Dialog.Content>
           </Dialog.Portal>
@@ -135,7 +135,7 @@ function SheetHeader({ title, description, isDesktop, onHandlePointerDown }: { t
     <div className={cn('flex items-start gap-3 px-4 pt-3 pb-3 sm:px-5 sm:pt-4', !isDesktop && 'touch-none cursor-grab active:cursor-grabbing')} onPointerDown={onHandlePointerDown}>
       <div className="min-w-0 flex-1">
         {!isDesktop ? <div className="mx-auto mb-2 h-1 w-9 rounded-full bg-line-strong" aria-hidden /> : null}
-        <Dialog.Title className="text-lg font-semibold leading-6 tracking-[-0.01em]">{title}</Dialog.Title>
+        <Dialog.Title className="text-lg font-medium leading-6">{title}</Dialog.Title>
         {description ? <Dialog.Description className="mt-0.5 text-sm text-muted">{description}</Dialog.Description> : <Dialog.Description className="sr-only">Dialog</Dialog.Description>}
       </div>
       <Dialog.Close asChild>

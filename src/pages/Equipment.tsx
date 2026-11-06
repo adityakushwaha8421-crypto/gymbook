@@ -25,7 +25,7 @@ const eqTone: Record<EquipmentStatus, Tone> = { ok: 'success', needs_service: 'w
 const sevTone: Record<IncidentSeverity, Tone> = { low: 'muted', medium: 'warn', high: 'danger' }
 
 export function EquipmentPage() {
-  usePage('Equipment', 'Track machines, their condition and maintenance incidents.')
+  usePage('Equipment', 'Track machines, their condition and maintenance incidents')
   const { timezone } = useApp()
   const toast = useToast()
   const snap = useLiveQuery(loadSnapshot, [...SNAPSHOT_STORES])
@@ -82,7 +82,7 @@ export function EquipmentPage() {
 
       {tab === 'equipment' ? (
         equipment.length === 0 ? (
-          <Card><EmptyState icon={<Wrench className="h-5 w-5" aria-hidden />} title="No equipment yet" description="Add treadmills, racks and machines to track their condition and incidents." action={<Button size="sm" onClick={() => setEditing('new')} icon={<Plus className="h-4 w-4" aria-hidden />}>Add equipment</Button>} /></Card>
+          <Card><EmptyState icon={<Wrench className="h-5 w-5" aria-hidden />} title="No equipment yet" description="Add treadmills, racks and machines to track their condition and incidents" action={<Button size="sm" onClick={() => setEditing('new')} icon={<Plus className="h-4 w-4" aria-hidden />}>Add equipment</Button>} /></Card>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {equipment.map((e) => (
@@ -93,7 +93,7 @@ export function EquipmentPage() {
                       <p className="flex flex-wrap items-center gap-2 font-medium">{e.name}{e.sample ? <SampleBadge /> : null}{e.archived ? <Badge tone="muted">Retired</Badge> : null}</p>
                       <p className="text-xs text-muted">{e.category}{e.location ? ` · ${e.location}` : ''}{e.serial ? ` · ${e.serial}` : ''}</p>
                     </div>
-                    <Badge tone={eqTone[e.status]} dot>{labelFor(EQUIPMENT_STATUSES, e.status)}</Badge>
+                    <Badge tone={eqTone[e.status]}>{labelFor(EQUIPMENT_STATUSES, e.status)}</Badge>
                   </div>
                   {e.notes ? <p className="text-sm text-muted">{e.notes}</p> : null}
                   <p className="text-xs text-muted">{openByEq.get(e.id) ? <span className="font-medium text-warn">{openByEq.get(e.id)} open incident{openByEq.get(e.id) === 1 ? '' : 's'}</span> : 'No open incidents'}{e.purchasedOn ? ` · bought ${formatDate(e.purchasedOn)}` : ''}</p>
@@ -108,7 +108,7 @@ export function EquipmentPage() {
           </div>
         )
       ) : incidents.length === 0 ? (
-        <Card><EmptyState icon={<AlertTriangle className="h-5 w-5" aria-hidden />} title={incidentFilter === 'open' ? 'No open incidents' : 'No resolved incidents'} description="Report a problem from an equipment card or the button above." /></Card>
+        <Card><EmptyState icon={<AlertTriangle className="h-5 w-5" aria-hidden />} title={incidentFilter === 'open' ? 'No open incidents' : 'No resolved incidents'} description="Report a problem from an equipment card or the button above" /></Card>
       ) : (
         <Card>
           <ul className="divide-y divide-line">
@@ -205,7 +205,7 @@ function IncidentDialog({ snap, presetEquipmentId, onClose }: { snap: Snapshot; 
     },
   )
   return (
-    <FormModal open onClose={onClose} dirty={form.dirty} saving={form.saving} title="Report an incident" description="Logs the problem and optionally changes the equipment's condition."
+    <FormModal open onClose={onClose} dirty={form.dirty} saving={form.saving} title="Report an incident" description="Logs the problem and optionally changes the equipment's condition"
       footer={(requestClose) => <><Button variant="secondary" onClick={requestClose} disabled={form.saving}>Cancel</Button><Button onClick={() => form.submit()} loading={form.saving} data-primary>Report incident</Button></>}
     >
       <form onSubmit={form.submit} noValidate className="flex flex-col gap-4">

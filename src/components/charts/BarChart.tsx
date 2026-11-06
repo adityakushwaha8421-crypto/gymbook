@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { cn } from '@/lib/cn'
 
 export interface BarSeries {
@@ -14,12 +14,21 @@ export interface BarSeries {
  * caller; the chart only draws. Keyboard users get a per-bucket summary via
  * the accessible table below the SVG.
  */
-export function BarChart({ labels, series, height = 200, className, emptyMessage = 'No data for this period' }: { labels: string[]; series: BarSeries[]; height?: number; className?: string; emptyMessage?: string }) {
+export function BarChart({ labels, series, height: maxHeight = 200, className, emptyMessage = 'No data for this period' }: { labels: string[]; series: BarSeries[]; height?: number; className?: string; emptyMessage?: string }) {
   const id = useId()
   const [hover, setHover] = useState<number | null>(null)
+  // Measure the container and draw in real pixels, so text never scales down with the chart.
+  const [el, setEl] = useState<HTMLDivElement | null>(null)
+  const [width, setWidth] = useState(600)
+  useEffect(() => {
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(([entry]) => setWidth(Math.max(240, Math.round(entry.contentRect.width))))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [el])
+  const height = width < 480 ? Math.min(maxHeight, 220) : maxHeight
   const max = Math.max(0, ...series.flatMap((s) => s.values))
   const n = labels.length
-  const width = 600
   const padL = 8
   const padR = 8
   const padT = 12
@@ -29,7 +38,7 @@ export function BarChart({ labels, series, height = 200, className, emptyMessage
   const groupW = n > 0 ? innerW / n : innerW
   const barGap = 2
   const barW = Math.max(2, (groupW - 6) / series.length - barGap)
-  const tickEvery = n > 14 ? Math.ceil(n / 7) : 1
+  const tickEvery = Math.max(1, Math.ceil(n / Math.max(1, Math.floor(innerW / 48))))
 
   if (max === 0) {
     return (
@@ -40,8 +49,8 @@ export function BarChart({ labels, series, height = 200, className, emptyMessage
   }
 
   return (
-    <div className={cn('relative', className)}>
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full" role="img" aria-labelledby={`${id}-title`} preserveAspectRatio="none">
+    <div ref={setEl} className={cn('relative', className)}>
+      <svg viewBox={`0 0 ${width} ${height}`} className="block w-full" style={{ height }} role="img" aria-labelledby={`${id}-title`}>
         <title id={`${id}-title`}>Bar chart of {series.map((s) => s.label).join(' and ')}</title>
         {[0.25, 0.5, 0.75, 1].map((f) => (
           <line key={f} x1={padL} x2={width - padR} y1={padT + innerH - innerH * f} y2={padT + innerH - innerH * f} stroke="rgb(var(--c-line))" strokeWidth={1} />
@@ -58,7 +67,7 @@ export function BarChart({ labels, series, height = 200, className, emptyMessage
                 return <rect key={s.key} x={x} y={padT + innerH - h} width={barW} height={h} rx={2} fill={s.color} opacity={hover === null || hover === i ? 1 : 0.6} />
               })}
               {i % tickEvery === 0 ? (
-                <text x={gx + groupW / 2} y={height - 6} textAnchor="middle" fontSize={11} fill="rgb(var(--c-muted))">
+                <text x={gx + groupW / 2} y={height - 6} textAnchor="middle" fontSize={11} fontFamily="'IBM Plex Mono', ui-monospace, monospace" fill="rgb(var(--c-faint))">
                   {label}
                 </text>
               ) : null}

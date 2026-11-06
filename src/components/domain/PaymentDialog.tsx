@@ -117,7 +117,7 @@ export function PaymentDialog({ open, onClose, member, invoices, payments, adjus
           <Field label="Received at" required error={form.errors.receivedAt}>
             {({ id, invalid }) => <Input id={id} type="datetime-local" aria-invalid={invalid} value={form.values.receivedAt} onChange={(e) => form.set('receivedAt', e.target.value)} />}
           </Field>
-          <Field label="Reference" hint="UPI ID, transaction no., cheque no." error={form.errors.reference}>
+          <Field label="Reference" hint="UPI ID, transaction no., cheque no" error={form.errors.reference}>
             {({ id, describedBy }) => <Input id={id} aria-describedby={describedBy} value={form.values.reference} onChange={(e) => form.set('reference', e.target.value)} />}
           </Field>
         </div>

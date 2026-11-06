@@ -25,7 +25,7 @@ type SortKey = 'name' | 'joined' | 'expiry' | 'balance' | 'lastVisit'
 const PAGE_SIZE = 20
 
 export function MembersPage() {
-  usePage('Members', 'Search, filter and manage gym members.')
+  usePage('Members', 'Search, filter and manage gym members')
   const { today, timezone } = useApp()
   const [params, setParams] = useSearchParams()
   const q = params.get('q') ?? ''
@@ -139,7 +139,7 @@ export function MembersPage() {
       />
       <Card>
         {noMembersAtAll ? (
-          <EmptyState icon={<Users className="h-5 w-5" aria-hidden />} title="No members yet" description="Add your first member to start selling memberships and recording attendance." action={<LinkButton to="/members/new" icon={<UserPlus className="h-4 w-4" aria-hidden />}>Add member</LinkButton>} />
+          <EmptyState icon={<Users className="h-5 w-5" aria-hidden />} title="No members yet" description="Add your first member to start selling memberships and recording attendance" action={<LinkButton to="/members/new" icon={<UserPlus className="h-4 w-4" aria-hidden />}>Add member</LinkButton>} />
         ) : filtered.length === 0 ? (
           <EmptyState title="No members match" description={q ? `Nothing matches “${q}” in this filter.` : 'Try another filter.'} />
         ) : isDesktop ? (

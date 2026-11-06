@@ -24,7 +24,7 @@ import { useToast } from '@/components/ui/Toast'
 import { errorMessage } from '@/data/errors'
 
 export function AttendancePage() {
-  usePage('Attendance', 'Check members in and out, and review visit history.')
+  usePage('Attendance', 'Check members in and out, and review visit history')
   const { today, timezone } = useApp()
   const toast = useToast()
   const isDesktop = useIsDesktop()
@@ -92,7 +92,7 @@ export function AttendancePage() {
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <Card>
-          <CardHeader title="Check in" description="Find the member, confirm their membership status, then check them in." />
+          <CardHeader title="Check in" description="Find the member, confirm their membership status, then check them in" />
           <CardBody className="flex flex-col gap-3">
             <div ref={pickerRef}>
               <MemberPicker rows={pickerRows} value={selected} onChange={setSelected} autoFocus={isDesktop} />
@@ -175,7 +175,7 @@ export function AttendancePage() {
           </div>
         ) : null}
         {history.length === 0 ? (
-          <EmptyState compact title="No visits in this range" description="Check someone in above, or widen the date range." />
+          <EmptyState compact title="No visits in this range" description="Check someone in above, or widen the date range" />
         ) : isDesktop ? (
           <div className="mt-3">
             <Table>
@@ -197,7 +197,7 @@ export function AttendancePage() {
                       <Td><Link to={`/members/${a.memberId}`} className="flex items-center gap-2 font-medium hover:underline">{m?.name ?? 'Unknown'}{m?.sample ? <SampleBadge /> : null}</Link></Td>
                       <Td className="text-muted">{formatDate(date)}</Td>
                       <Td className="tabular">{formatTime(a.checkInAt, timezone)}</Td>
-                      <Td className="tabular">{a.checkOutAt ? formatTime(a.checkOutAt, timezone) : <Badge tone="success">Inside</Badge>}</Td>
+                      <Td className="tabular">{a.checkOutAt ? formatTime(a.checkOutAt, timezone) : <Badge tone="success" dot>Inside</Badge>}</Td>
                       <Td className="text-muted">{a.checkOutAt ? formatDuration(a.checkInAt, a.checkOutAt) : '—'}</Td>
                       <Td className="max-w-[16rem] truncate text-muted">{a.overrideReason ? <span className="text-warn">Override: {a.overrideReason}</span> : a.note ?? ''}</Td>
                     </Tr>
@@ -219,7 +219,7 @@ export function AttendancePage() {
                       <p className="text-xs text-muted">{formatDateTime(a.checkInAt, timezone)}{a.checkOutAt ? ` → ${formatTime(a.checkOutAt, timezone)} (${formatDuration(a.checkInAt, a.checkOutAt)})` : ''}</p>
                       {a.overrideReason ? <p className="text-xs text-warn">Override: {a.overrideReason}</p> : null}
                     </div>
-                    {!a.checkOutAt ? <Badge tone="success">Inside</Badge> : null}
+                    {!a.checkOutAt ? <Badge tone="success" dot>Inside</Badge> : null}
                   </div>
                 </RowCard>
               )

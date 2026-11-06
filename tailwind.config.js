@@ -5,6 +5,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        deep: 'rgb(var(--c-deep) / <alpha-value>)',
         canvas: 'rgb(var(--c-canvas) / <alpha-value>)',
         surface: 'rgb(var(--c-surface) / <alpha-value>)',
         raised: 'rgb(var(--c-raised) / <alpha-value>)',
@@ -27,8 +28,8 @@ export default {
         info: { DEFAULT: 'rgb(var(--c-info) / <alpha-value>)', soft: 'rgb(var(--c-info-soft) / <alpha-value>)' },
       },
       fontFamily: {
-        sans: ['"Inter Variable"', 'Inter', 'ui-sans-serif', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
-        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        sans: ['"IBM Plex Sans Variable"', '"IBM Plex Sans"', 'ui-sans-serif', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        mono: ['"IBM Plex Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       fontSize: {
         '2xs': ['11px', { lineHeight: '16px' }],
@@ -37,9 +38,10 @@ export default {
         base: ['14px', { lineHeight: '20px' }],
         md: ['15px', { lineHeight: '22px' }],
         lg: ['17px', { lineHeight: '24px' }],
-        xl: ['20px', { lineHeight: '28px', letterSpacing: '-0.01em' }],
-        '2xl': ['24px', { lineHeight: '30px', letterSpacing: '-0.02em' }],
-        '3xl': ['30px', { lineHeight: '36px', letterSpacing: '-0.02em' }],
+        xl: ['20px', { lineHeight: '28px' }],
+        '2xl': ['24px', { lineHeight: '30px' }],
+        '3xl': ['28px', { lineHeight: '34px' }],
+        '4xl': ['32px', { lineHeight: '38px' }],
       },
       boxShadow: {
         card: 'var(--shadow-card)',
@@ -48,13 +50,14 @@ export default {
         ring: '0 0 0 1px rgb(var(--c-line))',
       },
       borderRadius: {
-        md: '8px',
-        lg: '10px',
-        xl: '14px',
-        '2xl': '18px',
-        '3xl': '24px',
+        md: '6px',
+        lg: '8px',
+        xl: '10px',
+        '2xl': '14px',
+        '3xl': '18px',
       },
       transitionDuration: { 150: '150ms', 200: '200ms', 250: '250ms' },
+      transitionTimingFunction: { DEFAULT: 'cubic-bezier(0.22, 1, 0.36, 1)' },
       keyframes: {
         shimmer: { '0%': { opacity: '0.55' }, '50%': { opacity: '1' }, '100%': { opacity: '0.55' } },
       },

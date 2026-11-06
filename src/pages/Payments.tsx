@@ -28,7 +28,7 @@ type Tab = 'payments' | 'invoices'
 const PAGE_SIZE = 25
 
 export function PaymentsPage() {
-  usePage('Payments & invoices', 'Record received payments and review invoices and balances.')
+  usePage('Payments & invoices', 'Record received payments and review invoices and balances')
   const { today, timezone } = useApp()
   const isDesktop = useIsDesktop()
   const [params, setParams] = useSearchParams()
@@ -139,7 +139,7 @@ export function PaymentsPage() {
             }
           />
           {payments.length === 0 ? (
-            <EmptyState compact title="No payments in this period" description="Recorded payments appear here with their method and invoice." />
+            <EmptyState compact title="No payments in this period" description="Recorded payments appear here with their method and invoice" />
           ) : isDesktop ? (
             <div className="mt-3">
               <Table>
@@ -185,7 +185,7 @@ export function PaymentsPage() {
                         <p className="text-xs text-muted">{formatDateTime(p.receivedAt, timezone)} · {labelFor(PAYMENT_METHODS, p.method)}{inv ? ` · ${inv.number}` : ' · credit'}</p>
                         {p.status === 'void' ? <p className="text-xs text-danger">Void: {p.voidReason}</p> : null}
                       </div>
-                      <span className={`tabular text-sm font-semibold ${p.status === 'void' ? 'text-muted line-through' : ''}`}>{formatINR(p.amountPaise)}</span>
+                      <span className={`tabular text-sm font-medium ${p.status === 'void' ? 'text-muted line-through' : ''}`}>{formatINR(p.amountPaise)}</span>
                     </div>
                   </RowCard>
                 )
@@ -203,7 +203,7 @@ export function PaymentsPage() {
             }
           />
           {invoices.length === 0 ? (
-            <EmptyState compact title={invoiceFilter === 'open' ? 'No outstanding invoices' : 'No invoices here'} description="Invoices are created automatically when a membership is sold or renewed." />
+            <EmptyState compact title={invoiceFilter === 'open' ? 'No outstanding invoices' : 'No invoices here'} description="Invoices are created automatically when a membership is sold or renewed" />
           ) : isDesktop ? (
             <div className="mt-3">
               <Table>
@@ -249,7 +249,7 @@ export function PaymentsPage() {
                       </div>
                       <div className="flex flex-col items-end gap-1">
                         <PaymentStatusBadge status={bal.status} />
-                        {bal.balancePaise > 0 ? <span className="tabular text-sm font-semibold text-danger">{formatINR(bal.balancePaise)}</span> : null}
+                        {bal.balancePaise > 0 ? <span className="tabular text-sm font-medium text-danger">{formatINR(bal.balancePaise)}</span> : null}
                       </div>
                     </div>
                   </RowCard>

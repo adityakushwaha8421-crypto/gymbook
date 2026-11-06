@@ -21,7 +21,7 @@ import { errorMessage } from '@/data/errors'
 import { cn } from '@/lib/cn'
 
 export function WorkoutsPage() {
-  usePage('Workout plans', 'Reusable training programmes you can assign to members, from the library or your own.')
+  usePage('Workout plans', 'Reusable training programmes you can assign to members, from the library or your own')
   const toast = useToast()
   const snap = useLiveQuery(loadSnapshot, [...SNAPSHOT_STORES])
   const [editing, setEditing] = useState<WorkoutPlan | 'new' | null>(null)
@@ -57,7 +57,7 @@ export function WorkoutsPage() {
       <Card>
         <CardHeader title="Your plans" description="Assign a plan from a member’s profile. Archived plans stay on members who already have them." action={archivedCount > 0 ? <Button variant="ghost" size="sm" onClick={() => setShowArchived((s) => !s)}>{showArchived ? 'Hide archived' : `Show archived (${archivedCount})`}</Button> : undefined} />
         {plans.length === 0 ? (
-          <EmptyState compact icon={<Dumbbell className="h-5 w-5" aria-hidden />} title="No plans yet" description="Start from a library template below or build your own." action={<Button size="sm" onClick={() => setEditing('new')} icon={<Plus className="h-4 w-4" aria-hidden />}>New plan</Button>} />
+          <EmptyState compact icon={<Dumbbell className="h-5 w-5" aria-hidden />} title="No plans yet" description="Start from a library template below or build your own" action={<Button size="sm" onClick={() => setEditing('new')} icon={<Plus className="h-4 w-4" aria-hidden />}>New plan</Button>} />
         ) : (
           <ul className="mt-2 divide-y divide-line">
             {plans.map((w) => {
@@ -118,8 +118,8 @@ export function PlanDays({ days, className }: { days: WorkoutDay[]; className?: 
   return (
     <div className={cn('grid gap-3 md:grid-cols-2', className)}>
       {days.map((d, i) => (
-        <div key={i} className="rounded-xl border border-line/70 bg-surface/50">
-          <p className="border-b border-line px-3.5 py-2 text-sm font-semibold">{d.title}</p>
+        <div key={i} className="rounded-xl border border-line bg-surface">
+          <p className="border-b border-line px-3.5 py-2 text-sm font-medium">{d.title}</p>
           <table className="w-full text-sm">
             <tbody>
               {d.exercises.map((e, j) => (

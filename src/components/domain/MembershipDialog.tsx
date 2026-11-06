@@ -131,8 +131,8 @@ export function MembershipDialog({ open, onClose, member, plans, memberships }: 
               {({ id, invalid, describedBy }) => <MoneyInput id={id} aria-invalid={invalid} aria-describedby={describedBy} value={form.values.discount} onChange={(e) => form.set('discount', e.target.value)} placeholder="0" />}
             </Field>
             <div className="rounded-xl border border-line px-3.5 py-2.5">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted">Net price</p>
-              <p className="tabular text-lg font-semibold">{formatINR(netPaise)}</p>
+              <p className="text-xs font-medium text-muted">Net price</p>
+              <p className="tabular text-lg font-medium">{formatINR(netPaise)}</p>
             </div>
             <Field label="Received now" hint="Leave empty if nothing was paid yet. Partial amounts are fine." error={form.errors.initialPayment}>
               {({ id, invalid, describedBy }) => <MoneyInput id={id} aria-invalid={invalid} aria-describedby={describedBy} value={form.values.initialPayment} onChange={(e) => form.set('initialPayment', e.target.value)} placeholder="0" />}

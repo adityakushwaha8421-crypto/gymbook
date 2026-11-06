@@ -8,8 +8,8 @@ export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon' | 'icon-sm'
 
 const variants: Record<ButtonVariant, string> = {
   primary: 'bg-accent text-accent-fg hover:bg-accent-hover [box-shadow:inset_0_1px_0_rgb(255_255_255/0.18),0_1px_2px_rgb(0_0_0/0.16),0_6px_14px_-8px_rgb(0_0_0/0.28)]',
-  secondary: 'bg-surface/70 text-ink border border-line/80 backdrop-blur-md hover:border-line-strong hover:bg-surface shadow-card',
-  outline: 'bg-transparent text-ink border border-line-strong hover:bg-surface/60',
+  secondary: 'bg-surface text-ink border border-line hover:border-line-strong hover:bg-sunken/60 shadow-card',
+  outline: 'bg-transparent text-ink border border-line-strong hover:bg-sunken/60',
   ghost: 'bg-transparent text-muted hover:bg-sunken/80 hover:text-ink',
   danger: 'bg-danger text-white hover:brightness-110 shadow-[0_1px_0_rgb(0_0_0/0.1)]',
 }

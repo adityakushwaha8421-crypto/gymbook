@@ -39,7 +39,7 @@ export function TrainerDetailPage() {
   const [booking, setBooking] = useState(false)
 
   const trainer = snap.data?.trainers.find((t) => t.id === id)
-  usePage(trainer ? trainer.name : 'Trainer', trainer ? `${trainer.specialty} trainer: assigned members and weekly schedule.` : undefined, { header: false })
+  usePage(trainer ? trainer.name : 'Trainer', trainer ? `${trainer.specialty} trainer: assigned members and weekly schedule` : undefined, { header: false })
 
   const schedules = useMemo(() => (snap.data?.schedules ?? []).filter((s) => s.trainerId === id).sort((a, b) => a.weekday - b.weekday || a.startMinutes - b.startMinutes), [snap.data, id])
   const members = useMemo(() => (snap.data ? memberRows(snap.data, today).filter((r) => r.member.trainerId === id && r.member.status !== 'archived') : []), [snap.data, id, today])
@@ -60,7 +60,7 @@ export function TrainerDetailPage() {
             <Avatar name={trainer.name} size="xl" />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-semibold leading-tight">{trainer.name}</h1>
+                <h1 className="text-3xl font-medium leading-tight">{trainer.name}</h1>
                 {trainer.sample ? <SampleBadge /> : null}
                 {archived ? <Badge tone="muted">Archived</Badge> : null}
               </div>
@@ -79,7 +79,7 @@ export function TrainerDetailPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader title="Assigned members" description={`${members.length} active member${members.length === 1 ? '' : 's'}`} />
-          {members.length === 0 ? <EmptyState compact title="No members assigned" description="Assign this trainer from a member’s edit page." /> : (
+          {members.length === 0 ? <EmptyState compact title="No members assigned" description="Assign this trainer from a member’s edit page" /> : (
             <ul className="divide-y divide-line">
               {members.map((r) => (
                 <li key={r.member.id}>
@@ -95,7 +95,7 @@ export function TrainerDetailPage() {
         </Card>
         <Card>
           <CardHeader title="Weekly schedule" description="Planned availability. Overlapping slots on the same day are rejected." action={<Button size="sm" variant="secondary" icon={<Plus className="h-4 w-4" aria-hidden />} onClick={() => setSlot('new')}>Add slot</Button>} />
-          {schedules.length === 0 ? <EmptyState compact title="No schedule yet" description="Add the days and hours this trainer is on the floor." /> : (
+          {schedules.length === 0 ? <EmptyState compact title="No schedule yet" description="Add the days and hours this trainer is on the floor" /> : (
             <ul className="divide-y divide-line">
               {schedules.map((s) => (
                 <li key={s.id} className="flex items-center gap-3 px-4 py-2.5 sm:px-5">
@@ -114,8 +114,8 @@ export function TrainerDetailPage() {
       </div>
 
       <Card>
-        <CardHeader title="Upcoming PT sessions" description="Next ten scheduled sessions for this trainer." action={!archived ? <Button size="sm" variant="secondary" icon={<CalendarPlus className="h-4 w-4" aria-hidden />} onClick={() => setBooking(true)}>Book session</Button> : undefined} />
-        {upcoming.length === 0 ? <EmptyState compact title="No upcoming sessions" description="Book one here or from a member’s page." /> : (
+        <CardHeader title="Upcoming PT sessions" description="Next ten scheduled sessions for this trainer" action={!archived ? <Button size="sm" variant="secondary" icon={<CalendarPlus className="h-4 w-4" aria-hidden />} onClick={() => setBooking(true)}>Book session</Button> : undefined} />
+        {upcoming.length === 0 ? <EmptyState compact title="No upcoming sessions" description="Book one here or from a member’s page" /> : (
           <ul className="divide-y divide-line">
             {upcoming.map((s) => (
               <li key={s.id} className="flex items-center gap-3 px-4 py-2.5 text-sm sm:px-5">

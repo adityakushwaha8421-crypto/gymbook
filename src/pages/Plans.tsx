@@ -22,7 +22,7 @@ import { useToast } from '@/components/ui/Toast'
 import { errorMessage } from '@/data/errors'
 
 export function PlansPage() {
-  usePage('Membership plans', 'Create and edit the plans you sell.')
+  usePage('Membership plans', 'Create and edit the plans you sell')
   const snap = useLiveQuery(loadSnapshot, [...SNAPSHOT_STORES])
   const [editing, setEditing] = useState<Plan | 'new' | null>(null)
   const [showArchived, setShowArchived] = useState(false)
@@ -68,7 +68,7 @@ export function PlansPage() {
       </PageActions>
       {plans.length === 0 ? (
         <Card>
-          <EmptyState icon={<CreditCard className="h-5 w-5" aria-hidden />} title="No plans yet" description="Create a plan such as “Monthly · ₹1,500” before selling memberships." action={<Button onClick={() => setEditing('new')} icon={<Plus className="h-4 w-4" aria-hidden />}>New plan</Button>} />
+          <EmptyState icon={<CreditCard className="h-5 w-5" aria-hidden />} title="No plans yet" description="Create a plan such as “Monthly · ₹1,500” before selling memberships" action={<Button onClick={() => setEditing('new')} icon={<Plus className="h-4 w-4" aria-hidden />}>New plan</Button>} />
         </Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -79,7 +79,7 @@ export function PlansPage() {
                 description={`${p.durationValue} ${p.durationUnit}${p.description ? ` · ${p.description}` : ''}`}
               />
               <div className="px-4 pb-4 pt-3 sm:px-5">
-                <p className="tabular text-2xl font-semibold">{formatINR(p.pricePaise)}</p>
+                <p className="tabular text-2xl font-medium">{formatINR(p.pricePaise)}</p>
                 <p className="text-xs text-muted">{usage.get(p.id) ?? 0} membership{(usage.get(p.id) ?? 0) === 1 ? '' : 's'} sold</p>
                 <div className="mt-3 flex gap-2">
                   <Button size="sm" variant="secondary" icon={<Pencil className="h-4 w-4" aria-hidden />} onClick={() => setEditing(p)}>Edit</Button>
@@ -138,7 +138,7 @@ function PlanDialog({ plan, onClose }: { plan?: Plan; onClose: () => void }) {
           </Field>
         </div>
         {preview ? <p className="text-xs text-muted">Example: starting {formatDate(today)} this plan would end on {formatDate(preview)} (inclusive).</p> : null}
-        <Field label="Price" required error={form.errors.price} hint="₹0 is allowed for free or trial plans.">
+        <Field label="Price" required error={form.errors.price} hint="₹0 is allowed for free or trial plans">
           {({ id, invalid, describedBy }) => <MoneyInput id={id} aria-invalid={invalid} aria-describedby={describedBy} value={form.values.price} onChange={(e) => form.set('price', e.target.value)} />}
         </Field>
         <Field label="Description" error={form.errors.description}>

@@ -14,7 +14,7 @@ import { EmptyState, ErrorState } from '@/components/ui/EmptyState'
 import { TrainerDialog } from '@/components/domain/TrainerDialog'
 
 export function TrainersPage() {
-  usePage('Trainers', 'Manage trainers, their specialties, assigned members and schedules.')
+  usePage('Trainers', 'Manage trainers, their specialties, assigned members and schedules')
   const snap = useLiveQuery(loadSnapshot, [...SNAPSHOT_STORES])
   const [adding, setAdding] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
@@ -48,7 +48,7 @@ export function TrainersPage() {
         <Button icon={<Plus className="h-4 w-4" aria-hidden />} onClick={() => setAdding(true)}>Add trainer</Button>
       </PageActions>
       {trainers.length === 0 ? (
-        <Card><EmptyState icon={<Dumbbell className="h-5 w-5" aria-hidden />} title="No trainers yet" description="Add trainers to assign members and plan weekly schedules." action={<Button onClick={() => setAdding(true)} icon={<Plus className="h-4 w-4" aria-hidden />}>Add trainer</Button>} /></Card>
+        <Card><EmptyState icon={<Dumbbell className="h-5 w-5" aria-hidden />} title="No trainers yet" description="Add trainers to assign members and plan weekly schedules" action={<Button onClick={() => setAdding(true)} icon={<Plus className="h-4 w-4" aria-hidden />}>Add trainer</Button>} /></Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {trainers.map((t) => (

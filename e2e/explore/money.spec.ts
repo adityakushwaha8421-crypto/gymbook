@@ -299,7 +299,7 @@ test.describe('2. membership sale', () => {
     await expect(dialog).toContainText('₹500.01 will remain outstanding')
     await submitSell(page, dialog)
     const article = page.getByRole('article')
-    await expect(article).toContainText('INV-00001')
+    await expect(article).toContainText('RK-00001')
     await expect(article).toContainText('Partly paid')
     let totals = await invoiceTotals(page)
     expect(totals).toMatchObject({ Subtotal: '₹1,500.00', Discount: '− ₹500.00', Total: '₹1,000.00', Paid: '₹499.99', 'Balance due': '₹500.01' })
@@ -319,11 +319,11 @@ test.describe('2. membership sale', () => {
     await expect(dialog.getByRole('alert')).toContainText(/cannot exceed the net price of ₹0.00/)
     await dialog.getByLabel('Received now').fill('')
     await submitSell(page, dialog)
-    await expect(page.getByRole('article')).toContainText('INV-00002')
+    await expect(page.getByRole('article')).toContainText('RK-00002')
     totals = await invoiceTotals(page)
     expect(totals).toMatchObject({ Subtotal: '₹1,500.00', Discount: '− ₹1,500.00', Total: '₹0.00', Paid: '₹0.00', 'Balance due': '₹0.00' })
     await expect(page.getByRole('article').locator('span', { hasText: /^Paid$/ })).toBeVisible()
-    const inv2 = (await readStore<Invoice>(page, 'invoices')).find((i) => i.number === 'INV-00002')!
+    const inv2 = (await readStore<Invoice>(page, 'invoices')).find((i) => i.number === 'RK-00002')!
     expect(inv2).toMatchObject({ totalPaise: 0, discountPaise: 150000, subtotalPaise: 150000 })
     const free = (await readStore<Membership>(page, 'memberships')).find((m) => m.invoiceId === inv2.id)!
     expect(free).toMatchObject({ pricePaise: 0, discountPaise: 150000, listPricePaise: 150000 })
@@ -383,7 +383,7 @@ test.describe('2. membership sale', () => {
     const counters = await readStore<Counter>(page, 'counters')
     expect(counters.find((c) => c.key === 'invoice')?.value).toBe(3)
     const numbers = (await readStore<Invoice>(page, 'invoices')).map((i) => i.number).sort()
-    expect(numbers).toEqual(['INV-00001', 'INV-00002', 'INV-00003'])
+    expect(numbers).toEqual(['RK-00001', 'RK-00002', 'RK-00003'])
   })
 
   test('end dates: 31 Jan month plan, Feb 29 2028, 12-month from a leap day, day plans', async ({ page }) => {
@@ -438,11 +438,11 @@ test.describe('3. invoice numbering', () => {
     await sellMembership(page)
 
     let invoices = await readStore<Invoice>(page, 'invoices')
-    expect(invoices.map((i) => i.number).sort()).toEqual(['INV-00001', 'INV-00002', 'INV-00003'])
+    expect(invoices.map((i) => i.number).sort()).toEqual(['RK-00001', 'RK-00002', 'RK-00003'])
 
-    // Void INV-00002 (no payments) from the member page.
+    // Void RK-00002 (no payments) from the member page.
     await page.goto(a + '?tab=payments')
-    const row = page.locator('li', { hasText: 'INV-00002' }).first()
+    const row = page.locator('li', { hasText: 'RK-00002' }).first()
     await row.getByRole('button', { name: 'Void' }).click()
     const confirm = page.getByRole('dialog')
     await expect(confirm.getByRole('button', { name: 'Void' })).toBeDisabled()
@@ -461,20 +461,20 @@ test.describe('3. invoice numbering', () => {
 
     invoices = await readStore<Invoice>(page, 'invoices')
     const numbers = invoices.map((i) => i.number).sort()
-    expect(numbers).toEqual(['INV-00001', 'INV-00002', 'INV-00003', 'INV-00004'])
+    expect(numbers).toEqual(['RK-00001', 'RK-00002', 'RK-00003', 'RK-00004'])
     expect(new Set(numbers).size).toBe(numbers.length)
-    expect(invoices.find((i) => i.number === 'INV-00002')).toMatchObject({ status: 'void', voidReason: 'Sold by mistake' })
+    expect(invoices.find((i) => i.number === 'RK-00002')).toMatchObject({ status: 'void', voidReason: 'Sold by mistake' })
     const counters = await readStore<Counter>(page, 'counters')
     expect(counters.find((c) => c.key === 'invoice')).toEqual({ key: 'invoice', value: 4 })
 
     // BUG probe: voiding the invoice leaves its membership in place and the member still looks active.
     const ms = await readStore<Membership>(page, 'memberships')
-    const voidedMs = ms.find((m) => m.invoiceId === invoices.find((i) => i.number === 'INV-00002')!.id)
+    const voidedMs = ms.find((m) => m.invoiceId === invoices.find((i) => i.number === 'RK-00002')!.id)
     // Voiding the invoice cancels the membership it sold; the record stays for history.
     expect(voidedMs?.cancelledAt).toBeTruthy()
-    expect(voidedMs?.cancelReason).toContain('INV-00002')
+    expect(voidedMs?.cancelReason).toContain('RK-00002')
     await page.goto(a + '?tab=memberships')
-    const voidedRow = page.locator('li', { hasText: 'INV-00002' }).first()
+    const voidedRow = page.locator('li', { hasText: 'RK-00002' }).first()
     await expect(voidedRow).toBeVisible()
     await expect(voidedRow).toContainText('Void')
     await expect(voidedRow).toContainText('Cancelled')
@@ -496,7 +496,7 @@ test.describe('4. payments, voids and adjustments', () => {
 
     // Overpay refused with the outstanding amount; values kept.
     dialog = await recordPaymentOnInvoice(page, '700.01', 'card')
-    await expect(dialog.getByRole('alert')).toContainText('Only ₹700.00 is outstanding on INV-00001')
+    await expect(dialog.getByRole('alert')).toContainText('Only ₹700.00 is outstanding on RK-00001')
     await expect(dialog.getByLabel('Amount received')).toHaveValue('700.01')
     // Zero refused by the schema.
     await dialog.getByLabel('Amount received').fill('0')
@@ -551,7 +551,7 @@ test.describe('4. payments, voids and adjustments', () => {
 
     // Void invoice is blocked while it has recorded payments (button hidden, service refuses).
     const invoice = (await readStore<Invoice>(page, 'invoices'))[0]
-    const invRow = page.locator('li', { hasText: 'INV-00001' }).first()
+    const invRow = page.locator('li', { hasText: 'RK-00001' }).first()
     await expect(invRow.getByRole('button', { name: 'Void' })).toHaveCount(0)
     expect(await svc(page, 'payments', 'voidInvoice', invoice.id, invoice.rev, 'test')).toMatchObject({ ok: false, error: /recorded payments/ })
     expect((await readStore<Invoice>(page, 'invoices'))[0].status).toBe('issued')
@@ -620,7 +620,7 @@ test.describe('4. payments, voids and adjustments', () => {
     await dialog.getByLabel('Amount').fill('500')
     await add.click()
     await expect(dialog).toBeHidden()
-    await expect(page.getByRole('status').filter({ hasText: 'INV-00001 is now ₹1,000.00' })).toBeVisible()
+    await expect(page.getByRole('status').filter({ hasText: 'RK-00001 is now ₹1,000.00' })).toBeVisible()
     let totals = await invoiceTotals(page)
     expect(totals).toMatchObject({ Subtotal: '₹1,500.00', Adjustments: '− ₹500.00', Total: '₹1,000.00', Paid: '₹400.00', 'Balance due': '₹600.00' })
     expect(totals.Discount).toBeUndefined()
@@ -667,7 +667,7 @@ test.describe('4. payments, voids and adjustments', () => {
     // Payments page invoice list reports the invoice as paid (balance ≤ 0) and the outstanding total excludes it.
     await page.goto('/payments?tab=invoices')
     await page.getByRole('tab', { name: 'Paid' }).click()
-    await expect(page.getByRole('main')).toContainText('INV-00001')
+    await expect(page.getByRole('main')).toContainText('RK-00001')
     await expect(page.getByRole('main')).toContainText('Overpaid')
     await expect(statCard(page.getByRole('main'), 'Outstanding (all time)')).toContainText('₹0.00')
   })
@@ -858,7 +858,7 @@ test.describe('7. double submit', () => {
     const dialog = await openSell(page, { receivedNow: '100' })
     await dialog.getByRole('button', { name: 'Sell and create invoice' }).dblclick()
     await expect(page).toHaveURL(/\/invoices\/inv_/)
-    await expect(page.getByRole('article')).toContainText('INV-00001')
+    await expect(page.getByRole('article')).toContainText('RK-00001')
     await page.waitForTimeout(500)
     expect((await readStore(page, 'memberships')).length).toBe(1)
     expect((await readStore(page, 'invoices')).length).toBe(1)

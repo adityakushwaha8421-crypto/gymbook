@@ -50,7 +50,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               exit={reduced ? { opacity: 0 } : { opacity: 0, y: isDesktop ? 6 : -6, scale: 0.98 }}
               transition={reduced ? fadeReduced : springDefault}
               role={t.tone === 'error' ? 'alert' : 'status'}
-              className="pointer-events-auto flex w-full max-w-sm items-start gap-2.5 glass-pop rounded-2xl px-3.5 py-3"
+              className="pointer-events-auto flex w-full max-w-sm items-start gap-2.5 surface-pop rounded-2xl px-3.5 py-3"
             >
               <span className="mt-0.5 shrink-0">
                 {t.tone === 'success' ? <CheckCircle2 className="h-4 w-4 text-success" aria-hidden /> : null}

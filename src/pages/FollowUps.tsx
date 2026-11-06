@@ -29,7 +29,7 @@ import { errorMessage } from '@/data/errors'
 const typeTone: Record<FollowUpType, Tone> = { expiry: 'warn', payment: 'danger', lead: 'info', other: 'neutral' }
 
 export function FollowUpsPage() {
-  usePage('Follow-ups', 'Expiry reminders, outstanding payments and leads to contact.')
+  usePage('Follow-ups', 'Expiry reminders, outstanding payments and leads to contact')
   const { today, settings } = useApp()
   const toast = useToast()
   const snap = useLiveQuery(loadSnapshot, [...SNAPSHOT_STORES])

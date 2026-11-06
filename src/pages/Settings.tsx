@@ -27,7 +27,7 @@ import { errorMessage } from '@/data/errors'
 const TIMEZONES = ['Asia/Kolkata', 'Asia/Dubai', 'Asia/Singapore', 'Asia/Kathmandu', 'Asia/Dhaka', 'Asia/Colombo', 'Asia/Karachi', 'Europe/London', 'America/New_York', 'Australia/Sydney', 'UTC']
 
 export function SettingsPage() {
-  usePage('Settings', 'Gym details, invoice settings, backup and data management.')
+  usePage('Settings', 'Gym details, invoice settings, backup and data management')
   const { settings, refreshSettings } = useApp()
   const location = useLocation()
   useEffect(() => {
@@ -72,7 +72,7 @@ function GymDetailsForm() {
   return (
     <form onSubmit={form.submit} noValidate>
       <DiscardGuard blocker={blocker} />
-      <Section title="Gym details" description="Shown in the header and on printed invoices.">
+      <Section title="Gym details" description="Shown in the header and on printed invoices">
         <Card>
         <CardBody className="flex flex-col gap-4">
           <div className="flex items-center gap-4">
@@ -88,7 +88,7 @@ function GymDetailsForm() {
             <Field label="Gym name" required error={form.errors.gymName}>
               {({ id, invalid }) => <Input id={id} aria-invalid={invalid} value={form.values.gymName} onChange={(e) => form.set('gymName', e.target.value)} />}
             </Field>
-            <Field label="Timezone" required hint="Used for “today”, expiry checks and report dates." error={form.errors.timezone}>
+            <Field label="Timezone" required hint="Used for “today”, expiry checks and report dates" error={form.errors.timezone}>
               {({ id, invalid }) =>
                 customTz ? (
                   <div className="flex gap-2">
@@ -110,10 +110,10 @@ function GymDetailsForm() {
             <Field label="Support phone" hint="Your gym’s own number, shown on invoices. Leave empty to hide." error={form.errors.phone}>
               {({ id, invalid }) => <Input id={id} type="tel" aria-invalid={invalid} value={form.values.phone} onChange={(e) => form.set('phone', e.target.value)} />}
             </Field>
-            <Field label="Support email" hint="Leave empty to hide." error={form.errors.email}>
+            <Field label="Support email" hint="Leave empty to hide" error={form.errors.email}>
               {({ id, invalid }) => <Input id={id} type="email" aria-invalid={invalid} value={form.values.email} onChange={(e) => form.set('email', e.target.value)} />}
             </Field>
-            <Field label="Address" hint="One line per row; printed on invoices." error={form.errors.address} className="sm:col-span-2">
+            <Field label="Address" hint="One line per row; printed on invoices" error={form.errors.address} className="sm:col-span-2">
               {({ id }) => <Textarea id={id} rows={3} value={form.values.address} onChange={(e) => form.set('address', e.target.value)} />}
             </Field>
           </div>
@@ -126,7 +126,7 @@ function GymDetailsForm() {
           <Field label="Invoice prefix" required hint="Numbers look like PREFIX-00042. Changing the prefix does not reset numbering." error={form.errors.invoicePrefix}>
             {({ id, invalid }) => <Input id={id} aria-invalid={invalid} value={form.values.invoicePrefix} onChange={(e) => form.set('invoicePrefix', e.target.value.toUpperCase())} />}
           </Field>
-          <Field label="GSTIN" hint="Optional, printed under the gym name." error={form.errors.gstin}>
+          <Field label="GSTIN" hint="Optional, printed under the gym name" error={form.errors.gstin}>
             {({ id }) => <Input id={id} value={form.values.gstin} onChange={(e) => form.set('gstin', e.target.value)} />}
           </Field>
           <Field label="Invoice footer" error={form.errors.invoiceFooter} className="sm:col-span-2">

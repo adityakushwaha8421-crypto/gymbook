@@ -11,7 +11,7 @@ export function PageSkeleton({ stats = 4, rows = 6, label = 'Loading' }: { stats
       {stats > 0 ? (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {Array.from({ length: stats }).map((_, i) => (
-            <div key={i} className="glass-card rounded-2xl p-5">
+            <div key={i} className="surface-card rounded-2xl p-5">
               <Skeleton className="h-3 w-20" />
               <Skeleton className="mt-3 h-6 w-24" />
               <Skeleton className="mt-2 h-3 w-28" />
@@ -19,7 +19,7 @@ export function PageSkeleton({ stats = 4, rows = 6, label = 'Loading' }: { stats
           ))}
         </div>
       ) : null}
-      <div className="glass-card rounded-2xl">
+      <div className="surface-card rounded-2xl">
         <div className="flex items-center justify-between border-b border-line px-5 py-4">
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-8 w-24" />

@@ -131,7 +131,7 @@ export function CommandPalette({ open, onClose, onToggleTheme }: { open: boolean
               }}
             >
               <motion.div
-                className="glass-pop overflow-hidden rounded-3xl"
+                className="surface-pop overflow-hidden rounded-3xl"
                 initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.98, y: -6 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.98, y: -4 }}
@@ -139,7 +139,7 @@ export function CommandPalette({ open, onClose, onToggleTheme }: { open: boolean
               >
                 <Dialog.Title className="sr-only">Command palette</Dialog.Title>
                 <Dialog.Description className="sr-only">Search members or jump to a page</Dialog.Description>
-                <div className="flex items-center gap-2 border-b border-line/70 px-4">
+                <div className="flex items-center gap-2 border-b border-line px-4">
                   <Search className="h-4 w-4 shrink-0 text-faint" aria-hidden />
                   <input
                     ref={inputRef}
@@ -169,7 +169,7 @@ export function CommandPalette({ open, onClose, onToggleTheme }: { open: boolean
                     lastGroup = group
                     return (
                       <div key={row.kind === 'member' ? row.member.id : row.command.id}>
-                        {showGroup ? <p className="px-3 pb-1 pt-2 text-2xs font-semibold uppercase tracking-[0.08em] text-faint">{group}</p> : null}
+                        {showGroup ? <p className="px-3 pb-1 pt-2 text-xs text-faint">{group}</p> : null}
                         <div
                           id={`cmd-${i}`}
                           role="option"

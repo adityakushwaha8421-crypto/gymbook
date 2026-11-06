@@ -22,7 +22,7 @@ export function FormModal({ dirty, saving, onClose, children, footer, ...rest }:
         open={confirm}
         onClose={() => setConfirm(false)}
         title="Discard unsaved changes?"
-        description="Your edits in this form haven’t been saved."
+        description="Your edits in this form haven’t been saved"
         confirmLabel="Discard"
         cancelLabel="Keep editing"
         danger

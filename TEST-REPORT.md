@@ -174,3 +174,29 @@ Follow-up the same day: on phones the page actions no longer float. They sit und
 | Vitest | 124 passed |
 | Playwright main + features + shell exploratory | 53 passed (one attendance test stalled for 7 minutes with no assertion error on the first run and passed in 9 s on rerun) |
 | Phone 375 px, tablet 768 px, desktop | checked in the browser |
+
+## Unslop pass (2026-11-06)
+
+The UI was reworked with the [unslop](https://github.com/heydamir/unslop) method by Damir Sokolovsky (@heydamir, CC BY 4.0): audit the signs, write a direction from the product, then fix spacing, colour, icons, copy, type, layout, details and motion in that order. Features, content and section order are unchanged.
+
+Audit, with where each sign lived:
+
+- Radial colour washes behind content (`body::before`) and glass cards with a white inner highlight (cards, stat tiles, sidebar, bars, dialogs, palette, toasts)
+- Logo as a gradient tile
+- Uppercase tracked labels (sidebar groups, table headers, palette and shortcut groups, activity dates, invoice labels, print headers)
+- Weight 600 on 45 headings and figures; negative tracking on 15 to 30 px text
+- Pills everywhere (badges, tab-bar indicator, sample-data link); radii of 14 to 24 px on controls and cards
+- Stat cards padded with icons; two charts of equal size in Reports; several hues per chart with no lead
+- Sidebar rows 1 px apart, group labels closer to the group above than to their own items
+- Greeting headline on onboarding, a sparkle icon tile, trailing periods on one-line subheads, a wordy search placeholder
+- A bouncy sheet spring, three different easing curves, an animated sidebar width
+
+What changed: graphite ramp and solid surfaces, crimson kept as the one accent, IBM Plex Sans and Mono, weights 400 and 500, sentence case, flat logo, radii 6/8/10/14/18, numbers-only stats, one lead series per chart with charts drawn at real pixel width (labels were shrinking to about 6 px on phones), a 2/3 main chart in Reports, sidebar spacing and 240 px width, one easing curve and no bounce, and a live dot reserved for "in the gym now".
+
+| Check | Result |
+| --- | --- |
+| Vitest | 124 passed |
+| Playwright, every suite | 109 passed (102 on the first run; 7 money tests still expected `INV-` invoice numbers from before the branding change and passed once updated) |
+| Contrast table, light and dark | every pair at least 4.6:1 |
+| Desktop 1280, dark, phone 375 | checked in the browser |
+| Typecheck, lint, production build | clean |

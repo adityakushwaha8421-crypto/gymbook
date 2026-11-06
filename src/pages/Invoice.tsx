@@ -55,7 +55,7 @@ export function InvoicePage() {
 
   return (
     <div className="min-h-dvh bg-canvas print:bg-white">
-      <div className="no-print glass sticky top-0 z-10 border-b border-line">
+      <div className="no-print bg-canvas sticky top-0 z-10 border-b border-line">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-2 px-4 py-2.5">
           <LinkButton to={`/members/${member.id}?tab=payments`} variant="ghost" size="sm" icon={<ArrowLeft className="h-4 w-4" aria-hidden />}>
             {member.name}
@@ -77,7 +77,7 @@ export function InvoicePage() {
           <div className="flex items-start gap-3">
             {settings.logoDataUrl ? <img src={settings.logoDataUrl} alt="" className="h-14 w-14 rounded-xl object-cover" /> : null}
             <div>
-              <h1 className="text-xl font-semibold">{settings.gymName}</h1>
+              <h1 className="text-xl font-medium">{settings.gymName}</h1>
               {gymLines.map((l, i) => (
                 <p key={i} className="text-sm text-muted">{l}</p>
               ))}
@@ -87,8 +87,8 @@ export function InvoicePage() {
             </div>
           </div>
           <div className="sm:text-right">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted">{invoice.status === 'void' ? 'Void invoice' : 'Invoice'}</p>
-            <p className="text-2xl font-semibold">{invoice.number}</p>
+            <p className="text-xs font-medium text-muted">{invoice.status === 'void' ? 'Void invoice' : 'Invoice'}</p>
+            <p className="text-2xl font-medium">{invoice.number}</p>
             <p className="text-sm text-muted">Issued {formatDate(invoice.issueDate, 'long')}</p>
             <div className="mt-1 sm:flex sm:justify-end"><PaymentStatusBadge status={bal.status} /></div>
           </div>
@@ -96,14 +96,14 @@ export function InvoicePage() {
 
         <section className="mt-8 grid gap-6 sm:grid-cols-2">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted">Billed to</p>
+            <p className="text-xs font-medium text-muted">Billed to</p>
             <p className="mt-1 font-medium">{member.name}</p>
             <p className="text-sm text-muted">{member.phone}</p>
             {member.email ? <p className="text-sm text-muted">{member.email}</p> : null}
           </div>
           {invoice.note ? (
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted">Note</p>
+              <p className="text-xs font-medium text-muted">Note</p>
               <p className="mt-1 text-sm">{invoice.note}</p>
             </div>
           ) : null}
@@ -111,7 +111,7 @@ export function InvoicePage() {
 
         <table className="mt-8 w-full text-sm">
           <thead>
-            <tr className="border-b border-line text-left text-xs font-semibold uppercase tracking-wider text-muted">
+            <tr className="border-b border-line text-left text-xs font-medium text-muted">
               <th className="py-2 pr-2">Description</th>
               <th className="py-2 px-2 text-right">Qty</th>
               <th className="py-2 px-2 text-right">Rate</th>
@@ -150,7 +150,7 @@ export function InvoicePage() {
         </div>
 
         <section className="mt-8">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted">Payments</p>
+          <p className="text-xs font-medium text-muted">Payments</p>
           {payments.length === 0 ? (
             <p className="mt-1 text-sm text-muted">No payments recorded against this invoice yet.</p>
           ) : (
@@ -184,7 +184,7 @@ export function InvoicePage() {
 
 function Row({ label, value, strong, tone }: { label: string; value: string; strong?: boolean; tone?: 'danger' | 'success' }) {
   return (
-    <div className={`flex justify-between py-1 ${strong ? 'border-t border-line font-semibold' : ''}`}>
+    <div className={`flex justify-between py-1 ${strong ? 'border-t border-line font-medium' : ''}`}>
       <dt>{label}</dt>
       <dd className={`tabular ${tone === 'danger' ? 'text-danger' : tone === 'success' ? 'text-success' : ''}`}>{value}</dd>
     </div>
@@ -217,7 +217,7 @@ function AdjustmentDialog({ invoiceId, invoiceNumber, currentDue, onClose }: { i
   }
 
   return (
-    <Modal open onClose={() => !busy && onClose()} title={`Adjust ${invoiceNumber}`} description="Corrections are added as separate lines so the original invoice stays intact." size="sm"
+    <Modal open onClose={() => !busy && onClose()} title={`Adjust ${invoiceNumber}`} description="Corrections are added as separate lines so the original invoice stays intact" size="sm"
       footer={<><Button variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button><Button onClick={submit} disabled={!valid} loading={busy} data-primary>Add adjustment</Button></>}
     >
       <div className="flex flex-col gap-3">

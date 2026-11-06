@@ -36,11 +36,11 @@ const groups: { title: string; items: { keys: string[]; label: string }[] }[] = 
 
 export function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
-    <Modal open={open} onClose={onClose} title="Keyboard shortcuts" description="Shortcuts work anywhere except inside text fields." size="lg">
+    <Modal open={open} onClose={onClose} title="Keyboard shortcuts" description="Shortcuts work anywhere except inside text fields" size="lg">
       <div className="grid gap-6 pb-2 sm:grid-cols-2">
         {groups.map((g) => (
           <div key={g.title}>
-            <p className="mb-2 text-2xs font-semibold uppercase tracking-[0.08em] text-faint">{g.title}</p>
+            <p className="mb-2 text-xs text-faint">{g.title}</p>
             <ul className="divide-y divide-line">
               {g.items.map((it) => (
                 <li key={it.label} className="flex items-center justify-between gap-3 py-2 text-sm">

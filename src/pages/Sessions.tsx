@@ -29,7 +29,7 @@ import type { Snapshot } from '@/data/snapshot'
 const statusTone: Record<SessionStatus, Tone> = { scheduled: 'info', completed: 'success', cancelled: 'muted', no_show: 'danger' }
 
 export function SessionsPage() {
-  usePage('PT sessions', 'Book and track personal-training sessions between trainers and members.')
+  usePage('PT sessions', 'Book and track personal-training sessions between trainers and members')
   const { today, timezone } = useApp()
   const toast = useToast()
   const snap = useLiveQuery(loadSnapshot, [...SNAPSHOT_STORES])
@@ -112,7 +112,7 @@ export function SessionsPage() {
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5 xl:justify-end">
-                      <Badge tone={statusTone[s.status]} dot>{labelFor(SESSION_STATUSES, s.status)}</Badge>
+                      <Badge tone={statusTone[s.status]}>{labelFor(SESSION_STATUSES, s.status)}</Badge>
                       {s.status === 'scheduled' ? (
                         <>
                           <Button size="sm" variant="secondary" icon={<Check className="h-4 w-4" aria-hidden />} onClick={() => act(() => setSessionStatus(s.id, s.rev, 'completed'), 'Session completed')}>Done</Button>
@@ -177,7 +177,7 @@ export function SessionDialog({ snap, existing, onClose, presetMemberId, presetT
   }, [form.values, snap, timezone, existing?.id])
 
   return (
-    <FormModal open onClose={onClose} dirty={form.dirty} saving={form.saving} title={existing ? 'Edit session' : 'Book a PT session'} description="Sessions are checked for double-booking of the trainer and the member."
+    <FormModal open onClose={onClose} dirty={form.dirty} saving={form.saving} title={existing ? 'Edit session' : 'Book a PT session'} description="Sessions are checked for double-booking of the trainer and the member"
       footer={(requestClose) => <><Button variant="secondary" onClick={requestClose} disabled={form.saving}>Cancel</Button><Button onClick={() => form.submit()} loading={form.saving} data-primary>{existing ? 'Save' : 'Book session'}</Button></>}
     >
       <form onSubmit={form.submit} noValidate className="flex flex-col gap-4">

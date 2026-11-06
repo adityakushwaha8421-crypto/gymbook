@@ -47,7 +47,7 @@ export function MemberDetailPage() {
   const [payInvoiceId, setPayInvoiceId] = useState<string | undefined>()
 
   const member = snap.data?.members.find((m) => m.id === id)
-  usePage(member ? member.name : 'Member', member ? `Profile, memberships, attendance and payments for ${member.name}.` : undefined, { header: false })
+  usePage(member ? member.name : 'Member', member ? `Profile, memberships, attendance and payments for ${member.name}` : undefined, { header: false })
 
   const data = useMemo(() => {
     if (!snap.data || !member) return null
@@ -95,11 +95,11 @@ export function MemberDetailPage() {
             <Avatar name={member.name} src={member.photoDataUrl} size="xl" />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-semibold leading-tight">{member.name}</h1>
+                <h1 className="text-3xl font-medium leading-tight">{member.name}</h1>
                 {member.memberCode ? <Badge tone="neutral" title="Member code: search this at check-in"><span className="font-mono">{member.memberCode}</span></Badge> : null}
                 {member.sample ? <SampleBadge /> : null}
                 {archived ? <Badge tone="muted">Archived</Badge> : <MembershipStateBadge state={data.state} />}
-                {data.openVisit ? <Badge tone="success">In the gym now</Badge> : null}
+                {data.openVisit ? <Badge tone="success" dot>In the gym now</Badge> : null}
               </div>
               <ContactLinks phone={member.phone} email={member.email} className="mt-1 text-sm" />
               <p className="mt-1 text-sm text-muted">
@@ -169,7 +169,7 @@ export function MemberDetailPage() {
                 { label: 'Record', value: `Updated ${formatDateTime(member.updatedAt, timezone)}` },
               ]} />
             </CardBody>
-            <CardHeader title="Profile" description="Emergency and health details are for staff only." />
+            <CardHeader title="Profile" description="Emergency and health details are for staff only" />
             <CardBody>
               <KeyValue items={[
                 { label: 'Member code', value: member.memberCode ? <span className="font-mono">{member.memberCode}</span> : '—' },
@@ -182,7 +182,7 @@ export function MemberDetailPage() {
             </CardBody>
           </Card>
           <Card>
-            <CardHeader title="Workout plan" description="Assigned programme; print a sheet for the floor." action={data.workout ? <Button size="sm" variant="secondary" icon={<Printer className="h-4 w-4" aria-hidden />} onClick={() => window.open(`/workouts/${data.workout!.id}/print?member=${member.id}`, '_blank', 'noopener')}>Print sheet</Button> : undefined} />
+            <CardHeader title="Workout plan" description="Assigned programme; print a sheet for the floor" action={data.workout ? <Button size="sm" variant="secondary" icon={<Printer className="h-4 w-4" aria-hidden />} onClick={() => window.open(`/workouts/${data.workout!.id}/print?member=${member.id}`, '_blank', 'noopener')}>Print sheet</Button> : undefined} />
             <CardBody className="flex flex-col gap-3">
               {data.workout ? (
                 <div>
@@ -206,7 +206,7 @@ export function MemberDetailPage() {
             </CardBody>
           </Card>
           <Card>
-            <CardHeader title="Activity" description="Changes to this member’s records." />
+            <CardHeader title="Activity" description="Changes to this member’s records" />
             {activity.data && activity.data.length === 0 ? <EmptyState compact title="No activity yet" /> : (
               <ul className="divide-y divide-line">
                 {(activity.data ?? []).slice(0, 15).map((a) => (
@@ -262,7 +262,7 @@ export function MemberDetailPage() {
 
       {tab === 'attendance' ? (
         <Card>
-          <CardHeader title="Attendance" description="Visits recorded by staff at the desk." />
+          <CardHeader title="Attendance" description="Visits recorded by staff at the desk" />
           {data.attendance.length === 0 ? <EmptyState compact title="No visits yet" /> : (
             <ul className="divide-y divide-line">
               {data.attendance.slice(0, 60).map((a) => (
@@ -285,7 +285,7 @@ export function MemberDetailPage() {
         <div className="grid gap-4 lg:grid-cols-2">
           <Card>
             <CardHeader title="Invoices" action={!archived ? <Button size="sm" variant="secondary" onClick={() => { setPayInvoiceId(undefined); setDialog('payment') }}>Record payment</Button> : undefined} />
-            {data.invoices.length === 0 ? <EmptyState compact title="No invoices" description="Invoices are created when a membership is sold." /> : (
+            {data.invoices.length === 0 ? <EmptyState compact title="No invoices" description="Invoices are created when a membership is sold" /> : (
               <ul className="divide-y divide-line">
                 {data.invoices.map((inv) => {
                   const bal = invoiceBalance(inv, data.payments, data.adjustments)
@@ -335,8 +335,8 @@ export function MemberDetailPage() {
 
       {tab === 'sessions' ? (
         <Card>
-          <CardHeader title="PT sessions" description="Personal-training sessions with a trainer." action={!archived ? <Button size="sm" variant="secondary" icon={<CalendarPlus className="h-4 w-4" aria-hidden />} onClick={() => setDialog('session')}>Book session</Button> : undefined} />
-          {data.sessions.length === 0 ? <EmptyState compact title="No sessions yet" description="Book a session with a trainer to track it here." /> : (
+          <CardHeader title="PT sessions" description="Personal-training sessions with a trainer" action={!archived ? <Button size="sm" variant="secondary" icon={<CalendarPlus className="h-4 w-4" aria-hidden />} onClick={() => setDialog('session')}>Book session</Button> : undefined} />
+          {data.sessions.length === 0 ? <EmptyState compact title="No sessions yet" description="Book a session with a trainer to track it here" /> : (
             <ul className="divide-y divide-line">
               {data.sessions.map((s) => {
                 const tone = ({ scheduled: 'info', completed: 'success', cancelled: 'muted', no_show: 'danger' } as const)[s.status]

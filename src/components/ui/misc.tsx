@@ -15,7 +15,7 @@ export function PageHeader({ title, description, actions, back, slot }: { title:
             {back.label}
           </Link>
         ) : null}
-        <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">{title}</h1>
+        <h1 className="text-3xl font-medium leading-tight sm:text-4xl">{title}</h1>
         {description ? <p className="mt-1 max-w-2xl text-sm text-muted">{description}</p> : null}
       </div>
       {actions || slot ? (
@@ -65,28 +65,31 @@ export function Avatar({ name, src, size = 'md' }: { name: string; src?: string;
   const dim = size === 'sm' ? 'h-7 w-7 text-2xs' : size === 'lg' ? 'h-14 w-14 text-lg' : size === 'xl' ? 'h-16 w-16 text-xl' : 'h-9 w-9 text-xs'
   if (src) return <img src={src} alt="" className={cn('shrink-0 rounded-full object-cover ring-1 ring-line', dim)} />
   return (
-    <span aria-hidden className={cn('flex shrink-0 select-none items-center justify-center rounded-full font-semibold ring-1 ring-inset ring-black/5 dark:ring-white/10', hueFor(name), dim)}>
+    <span aria-hidden className={cn('flex shrink-0 select-none items-center justify-center rounded-full font-medium ring-1 ring-inset ring-black/5 dark:ring-white/10', hueFor(name), dim)}>
       {initials || '?'}
     </span>
   )
 }
 
-export function Stat({ label, value, hint, tone, icon, to }: { label: ReactNode; value: ReactNode; hint?: ReactNode; tone?: 'danger' | 'warn' | 'success'; icon?: ReactNode; to?: string }) {
+/** The signature detail: someone is in the gym right now. Used for live presence only. */
+export function LiveDot() {
+  return <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-success" aria-hidden />
+}
+
+/** A stat is a label, a figure and a line of context. Nothing decorative. */
+export function Stat({ label, value, hint, tone, to }: { label: ReactNode; value: ReactNode; hint?: ReactNode; tone?: 'danger' | 'warn' | 'success'; to?: string }) {
   // Long amounts step down a size so a five-up row never breaks "−" away from its number.
   const len = typeof value === 'string' ? value.length : 0
-  const size = len >= 12 ? 'text-lg' : len >= 10 ? 'text-xl' : 'text-2xl'
+  const size = len >= 12 ? 'text-lg' : len >= 10 ? 'text-xl' : 'text-3xl'
   const body = (
     <>
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-medium text-muted">{label}</p>
-        {icon ? <span className="text-faint">{icon}</span> : null}
-      </div>
-      <p className={cn('tabular mt-2 font-semibold !leading-none [overflow-wrap:anywhere]', size, tone === 'danger' && 'text-danger', tone === 'warn' && 'text-warn', tone === 'success' && 'text-success')}>{value}</p>
+      <p className="text-xs text-muted">{label}</p>
+      <p className={cn('tabular mt-2 font-medium !leading-none [overflow-wrap:anywhere]', size, tone === 'danger' && 'text-danger', tone === 'warn' && 'text-warn', tone === 'success' && 'text-success')}>{value}</p>
       {hint ? <p className="mt-2 text-xs text-muted">{hint}</p> : null}
     </>
   )
-  const cls = 'glass-card block min-w-0 rounded-2xl px-5 py-4'
-  if (to) return <Link to={to} className={cn(cls, 'pressable transition-[border-color,box-shadow] hover:border-line-strong hover:shadow-pop')}>{body}</Link>
+  const cls = 'surface-card block min-w-0 rounded-2xl px-5 py-4'
+  if (to) return <Link to={to} className={cn(cls, 'pressable hover:border-line-strong')}>{body}</Link>
   return <div className={cls}>{body}</div>
 }
 
@@ -106,7 +109,7 @@ export function KeyValue({ items }: { items: { label: ReactNode; value: ReactNod
 export function Banner({ tone = 'info', children, action }: { tone?: 'info' | 'warn' | 'danger'; children: ReactNode; action?: ReactNode }) {
   const cls = tone === 'warn' ? 'border-warn/25 bg-warn-soft text-warn' : tone === 'danger' ? 'border-danger/25 bg-danger-soft text-danger' : 'border-info/25 bg-info-soft text-info'
   return (
-    <div className={cn('flex flex-col gap-2 rounded-xl border px-4 py-3 text-sm backdrop-blur-md sm:flex-row sm:items-center sm:justify-between', cls)} role={tone === 'danger' ? 'alert' : 'status'}>
+    <div className={cn('flex flex-col gap-2 rounded-xl border px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between', cls)} role={tone === 'danger' ? 'alert' : 'status'}>
       <div>{children}</div>
       {action ? <div className="shrink-0">{action}</div> : null}
     </div>
@@ -115,7 +118,7 @@ export function Banner({ tone = 'info', children, action }: { tone?: 'info' | 'w
 
 export function Tabs<T extends string>({ value, onChange, items, className }: { value: T; onChange: (v: T) => void; items: { value: T; label: ReactNode; count?: number }[]; className?: string }) {
   return (
-    <div role="tablist" className={cn('glass-inset scrollbar-none flex max-w-full gap-0.5 overflow-x-auto rounded-xl p-1', className)}>
+    <div role="tablist" className={cn('bg-sunken scrollbar-none flex max-w-full gap-0.5 overflow-x-auto rounded-xl p-1', className)}>
       {items.map((it) => (
         <button
           key={it.value}
@@ -124,12 +127,12 @@ export function Tabs<T extends string>({ value, onChange, items, className }: { 
           aria-selected={value === it.value}
           onClick={() => onChange(it.value)}
           className={cn(
-            'pressable flex h-8 min-w-0 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-sm font-medium',
+            'pressable flex h-8 min-w-0 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 text-sm font-medium',
             value === it.value ? 'bg-surface text-ink shadow-card' : 'text-muted hover:text-ink',
           )}
         >
           {it.label}
-          {it.count !== undefined ? <span className={cn('tabular rounded px-1 text-2xs', value === it.value ? 'bg-sunken text-muted' : 'text-faint')}>{it.count}</span> : null}
+          {it.count !== undefined ? <span className={cn('tabular font-mono text-xs', value === it.value ? 'text-muted' : 'text-faint')}>{it.count}</span> : null}
         </button>
       ))}
     </div>
@@ -159,7 +162,7 @@ export function Section({ title, description, children, id }: { title: ReactNode
   return (
     <section id={id} className="grid gap-4 border-b border-line py-6 first:pt-0 last:border-b-0 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10">
       <div>
-        <h2 className="text-md font-semibold">{title}</h2>
+        <h2 className="text-md font-medium">{title}</h2>
         {description ? <p className="mt-1 text-sm text-muted">{description}</p> : null}
       </div>
       <div className="min-w-0">{children}</div>

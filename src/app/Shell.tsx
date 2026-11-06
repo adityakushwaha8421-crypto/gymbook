@@ -46,7 +46,7 @@ function Logo({ name, logo, collapsed }: { name: string; logo?: string; collapse
       )}
       {!collapsed ? (
         <span className="min-w-0">
-          <span className="block truncate text-sm font-semibold leading-4">{name}</span>
+          <span className="block truncate text-sm font-medium leading-4">{name}</span>
           <span className="block text-2xs leading-3 text-faint">GymBook</span>
         </span>
       ) : null}
@@ -56,10 +56,10 @@ function Logo({ name, logo, collapsed }: { name: string; logo?: string; collapse
 
 function NavList({ onNavigate, collapsed }: { onNavigate?: () => void; collapsed?: boolean }) {
   return (
-    <nav aria-label="Main" className="flex flex-col gap-px">
+    <nav aria-label="Main" className="flex flex-col">
       {GROUPS.map((group) => (
-        <div key={group} className={cn('flex flex-col gap-px', group !== GROUPS[0] && (collapsed ? 'mt-2 border-t border-line pt-2' : 'mt-3'))}>
-          {!collapsed ? <p className="px-2.5 pb-1 pt-1 text-2xs font-semibold uppercase tracking-[0.08em] text-faint">{group}</p> : null}
+        <div key={group} className={cn('flex flex-col gap-0.5', group !== GROUPS[0] && (collapsed ? 'mt-2 border-t border-line pt-2' : 'mt-6'))}>
+          {!collapsed ? <p className="px-2.5 pb-2 text-xs text-faint">{group}</p> : null}
           {NAV.filter((n) => n.group === group).map((item) => (
         <NavLink
           key={item.to}
@@ -71,13 +71,13 @@ function NavList({ onNavigate, collapsed }: { onNavigate?: () => void; collapsed
             cn(
               'pressable group relative flex h-9 items-center gap-2.5 rounded-xl text-sm font-medium',
               collapsed ? 'justify-center px-0' : 'px-2.5',
-              isActive ? 'bg-surface text-ink shadow-card' : 'text-muted hover:bg-surface/60 hover:text-ink',
+              isActive ? 'bg-sunken text-ink shadow-[inset_0_0_0_1px_rgb(var(--c-line))]' : 'text-muted hover:bg-sunken/70 hover:text-ink',
             )
           }
         >
           {({ isActive }) => (
             <>
-              <item.icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-accent-ink' : 'text-faint group-hover:text-muted')} aria-hidden />
+              <item.icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-ink' : 'text-faint group-hover:text-muted')} aria-hidden />
               {!collapsed ? <span className="truncate">{item.label}</span> : <span className="sr-only">{item.label}</span>}
             </>
           )}
@@ -187,7 +187,7 @@ export function Shell() {
     <div className="flex min-h-dvh">
       {/* Sidebar (desktop) */}
       <aside
-        className="no-print glass sidebar-transition sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-line/70 lg:flex"
+        className="no-print bg-deep sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-line lg:flex"
         style={{ width: sidebarWidth }}
         aria-label="Sidebar"
       >
@@ -197,7 +197,7 @@ export function Shell() {
         <div className={cn('flex-1 overflow-y-auto py-3 scrollbar-thin', collapsed ? 'px-2' : 'px-2.5')}>
           <NavList collapsed={collapsed} />
         </div>
-        <div className={cn('flex flex-col gap-1 border-t border-line/70 py-2', collapsed ? 'items-center px-2' : 'px-2.5')}>
+        <div className={cn('flex flex-col gap-1 border-t border-line py-2', collapsed ? 'items-center px-2' : 'px-2.5')}>
           <button type="button" onClick={() => setHelp(true)} title="Keyboard shortcuts" className={cn('pressable flex h-9 items-center gap-2.5 rounded-lg text-sm text-muted hover:bg-sunken hover:text-ink', collapsed ? 'w-9 justify-center' : 'px-2.5')}>
             <Keyboard className="h-4 w-4 shrink-0" aria-hidden />
             {!collapsed ? <span className="flex-1 text-left">Shortcuts</span> : <span className="sr-only">Keyboard shortcuts</span>}
@@ -216,7 +216,7 @@ export function Shell() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="no-print glass sticky top-0 z-30 border-b border-line/70">
+        <header className="no-print bg-canvas sticky top-0 z-30 border-b border-line">
           <div className="flex h-14 items-center gap-2 px-3 sm:px-5 lg:h-16">
             <div className="min-w-0 lg:hidden">
               <Logo name={settings.gymName} logo={settings.logoDataUrl} />
@@ -224,16 +224,16 @@ export function Shell() {
             <button
               type="button"
               onClick={() => setPalette(true)}
-              className="pressable hidden h-9 w-72 min-w-0 shrink items-center gap-2 rounded-xl border border-line/80 bg-surface/60 px-3 text-sm text-faint shadow-card backdrop-blur-md hover:border-line-strong hover:bg-surface md:flex"
+              className="pressable hidden h-9 w-72 min-w-0 shrink items-center gap-2 rounded-xl border border-line bg-surface px-3 text-sm text-faint shadow-card hover:border-line-strong md:flex"
               aria-label="Search members and commands"
             >
               <Search className="h-4 w-4" aria-hidden />
-              <span className="min-w-0 flex-1 truncate text-left">Search members, commands…</span>
+              <span className="min-w-0 flex-1 truncate text-left">Search</span>
               <Kbd>⌘K</Kbd>
             </button>
             <div className="ml-auto flex items-center gap-1.5">
               {settings.dataMode === 'sample' ? (
-                <Link to="/settings#data" className="pressable hidden h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-info/25 bg-info-soft px-2.5 text-xs font-medium text-info hover:brightness-95 sm:inline-flex" title="Labelled sample data is loaded. Records marked “Sample” are not real. Click to manage.">
+                <Link to="/settings#data" className="pressable hidden h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2 text-xs text-muted hover:bg-sunken hover:text-ink sm:inline-flex" title="Labelled sample data is loaded. Records marked “Sample” are not real. Click to manage.">
                   <FlaskConical className="h-3.5 w-3.5" aria-hidden />
                   Sample data
                 </Link>
@@ -247,7 +247,7 @@ export function Shell() {
           </div>
         </header>
 
-        <main className="main-mobile-pad min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-8 lg:px-10">
+        <main className="main-mobile-pad min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
           <motion.div
             key={location.pathname}
             className="mx-auto w-full max-w-[1200px]"
@@ -268,7 +268,7 @@ export function Shell() {
       </div>
 
       {/* Bottom tab bar (phones and tablets) */}
-      <nav aria-label="Quick navigation" className="no-print glass fixed inset-x-0 bottom-0 z-30 border-t border-line/70 pb-safe lg:hidden">
+      <nav aria-label="Quick navigation" className="no-print bg-canvas fixed inset-x-0 bottom-0 z-30 border-t border-line pb-safe lg:hidden">
         <ul className="grid h-14 grid-cols-5">
           {[
             { to: '/', label: 'Home', icon: LayoutDashboard, end: true },
@@ -280,11 +280,11 @@ export function Shell() {
               <NavLink
                 to={item.to}
                 end={item.end}
-                className={({ isActive }) => cn('pressable flex h-full flex-col items-center justify-center gap-0.5 text-2xs font-medium', isActive ? 'text-accent-ink' : 'text-muted')}
+                className={({ isActive }) => cn('pressable flex h-full flex-col items-center justify-center gap-0.5 text-2xs font-medium', isActive ? 'text-ink' : 'text-muted')}
               >
                 {({ isActive }) => (
                   <>
-                    <span className={cn('flex h-7 w-11 items-center justify-center rounded-full', isActive && 'bg-accent-soft')}>
+                    <span className={cn('flex h-7 w-11 items-center justify-center rounded-lg', isActive && 'bg-sunken shadow-[inset_0_0_0_1px_rgb(var(--c-line))]')}>
                       <item.icon className="h-[18px] w-[18px]" aria-hidden />
                     </span>
                     {item.label}
@@ -294,8 +294,8 @@ export function Shell() {
             </li>
           ))}
           <li>
-            <button type="button" onClick={() => setDrawer(true)} className={cn('pressable flex h-full w-full flex-col items-center justify-center gap-0.5 text-2xs font-medium', drawer ? 'text-accent-ink' : 'text-muted')} aria-label="Open navigation" aria-expanded={drawer} aria-controls="mobile-nav">
-              <span className={cn('flex h-7 w-11 items-center justify-center rounded-full', drawer && 'bg-accent-soft')}>
+            <button type="button" onClick={() => setDrawer(true)} className={cn('pressable flex h-full w-full flex-col items-center justify-center gap-0.5 text-2xs font-medium', drawer ? 'text-ink' : 'text-muted')} aria-label="Open navigation" aria-expanded={drawer} aria-controls="mobile-nav">
+              <span className={cn('flex h-7 w-11 items-center justify-center rounded-lg', drawer && 'bg-sunken shadow-[inset_0_0_0_1px_rgb(var(--c-line))]')}>
                 <MoreHorizontal className="h-[18px] w-[18px]" aria-hidden />
               </span>
               More
@@ -323,7 +323,7 @@ export function Shell() {
               role="dialog"
               aria-modal="true"
               aria-label="Navigation"
-              className="glass-pop fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col overflow-y-auto rounded-r-3xl px-3 py-3 pb-safe lg:hidden"
+              className="surface-pop fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col overflow-y-auto rounded-r-2xl px-3 py-3 pb-safe lg:hidden"
               initial={reduced ? { opacity: 0 } : { x: '-100%' }}
               animate={reduced ? { opacity: 1 } : { x: 0 }}
               exit={reduced ? { opacity: 0 } : { x: '-100%' }}
@@ -343,7 +343,7 @@ export function Shell() {
                 </button>
               </div>
               <NavList onNavigate={() => setDrawer(false)} />
-              <div className="mt-auto flex items-center justify-between border-t border-line/70 pt-3 text-xs text-muted">
+              <div className="mt-auto flex items-center justify-between border-t border-line pt-3 text-xs text-muted">
                 <span>Theme</span>
                 <Button variant="secondary" size="sm" onClick={theme.toggle} icon={theme.resolved === 'dark' ? <Sun className="h-4 w-4" aria-hidden /> : <Moon className="h-4 w-4" aria-hidden />}>
                   {theme.resolved === 'dark' ? 'Light' : 'Dark'}

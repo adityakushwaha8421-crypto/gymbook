@@ -112,7 +112,7 @@ export function MemberPicker({ rows, value, onChange, placeholder = 'Search by n
         }}
       />
       {open ? (
-        <ul id={listId} role="listbox" className="absolute left-0 right-0 top-full z-20 mt-1 max-h-72 overflow-y-auto glass-pop rounded-2xl py-1.5">
+        <ul id={listId} role="listbox" className="absolute left-0 right-0 top-full z-20 mt-1 max-h-72 overflow-y-auto surface-pop rounded-2xl py-1.5">
           {results.length === 0 ? (
             <li className="px-3 py-2.5 text-sm text-muted">{term ? 'No members match.' : rows.length === 0 ? 'No members yet.' : 'Type to search members.'}</li>
           ) : (

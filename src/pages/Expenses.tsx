@@ -28,7 +28,7 @@ import { useToast } from '@/components/ui/Toast'
 const PAGE_SIZE = 25
 
 export function ExpensesPage() {
-  usePage('Expenses', 'Track rent, salaries, equipment and other gym costs.')
+  usePage('Expenses', 'Track rent, salaries, equipment and other gym costs')
   const { today } = useApp()
   const isDesktop = useIsDesktop()
   const toast = useToast()
@@ -81,7 +81,7 @@ export function ExpensesPage() {
       <Card>
         <CardHeader title="Expense records" />
         {filtered.length === 0 ? (
-          <EmptyState compact icon={<Wallet className="h-5 w-5" aria-hidden />} title="No expenses in this period" description="Add rent, salaries, equipment or other costs to see them in reports." action={<Button size="sm" onClick={() => setEditing('new')} icon={<Plus className="h-4 w-4" aria-hidden />}>Add expense</Button>} />
+          <EmptyState compact icon={<Wallet className="h-5 w-5" aria-hidden />} title="No expenses in this period" description="Add rent, salaries, equipment or other costs to see them in reports" action={<Button size="sm" onClick={() => setEditing('new')} icon={<Plus className="h-4 w-4" aria-hidden />}>Add expense</Button>} />
         ) : isDesktop ? (
           <div className="mt-3">
             <Table>
@@ -125,7 +125,7 @@ export function ExpensesPage() {
                     {e.note ? <p className="truncate text-xs text-muted">{e.note}</p> : null}
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <span className="tabular text-sm font-semibold">{formatINR(e.amountPaise)}</span>
+                    <span className="tabular text-sm font-medium">{formatINR(e.amountPaise)}</span>
                     <span className="flex gap-1">
                       <Button size="sm" variant="ghost" aria-label="Edit expense" icon={<Pencil className="h-4 w-4" aria-hidden />} onClick={() => setEditing(e)} />
                       <Button size="sm" variant="ghost" aria-label="Delete expense" icon={<Trash2 className="h-4 w-4" aria-hidden />} onClick={() => setDeleting(e)} />

@@ -20,7 +20,7 @@ import { PeriodPicker, type PresetName } from '@/components/domain/PeriodPicker'
 import { useToast } from '@/components/ui/Toast'
 
 export function ReportsPage() {
-  usePage('Reports', 'Revenue, outstanding balances, expenses, attendance and renewals over a period, with CSV export.')
+  usePage('Reports', 'Revenue, outstanding balances, expenses, attendance and renewals over a period, with CSV export')
   const { today, timezone, settings } = useApp()
   const toast = useToast()
   const snap = useLiveQuery(loadSnapshot, [...SNAPSHOT_STORES])
@@ -98,8 +98,8 @@ export function ReportsPage() {
         <Button variant="secondary" icon={<Printer className="h-4 w-4" aria-hidden />} onClick={() => window.print()}>Print summary</Button>
       </PageActions>
       <div className="print-only mb-2">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted">{settings.gymName} · report</p>
-        <h2 className="text-xl font-semibold">{formatDate(period.start)} – {formatDate(period.end)}</h2>
+        <p className="text-xs font-medium text-muted">{settings.gymName} · report</p>
+        <h2 className="text-xl font-medium">{formatDate(period.start)} – {formatDate(period.end)}</h2>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <PeriodPicker preset={preset} period={period} today={today} onChange={(p, per) => { setPreset(p); setPeriod(per) }} />
@@ -120,26 +120,29 @@ export function ReportsPage() {
         </CardBody>
       </Card>
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <Card>
-          <CardHeader title="Cash in vs. expenses" />
+      <div className="grid gap-5 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader title="Cash in vs expenses" />
           <CardBody>
-            <BarChart labels={labels} series={[
+            <BarChart height={280} labels={labels} series={[
               { key: 'received', label: 'Cash received', color: 'rgb(var(--c-success))', values: series.points.map((p) => p.received), format: formatINR },
-              { key: 'expenses', label: 'Expenses', color: 'rgb(var(--c-warn))', values: series.points.map((p) => p.expenses), format: formatINR },
+              { key: 'expenses', label: 'Expenses', color: 'rgb(var(--c-ink) / 0.2)', values: series.points.map((p) => p.expenses), format: formatINR },
             ]} />
           </CardBody>
         </Card>
         <Card>
           <CardHeader title="Attendance and memberships" description={`${attendanceTotal} visits by ${uniqueVisitors} member${uniqueVisitors === 1 ? '' : 's'} · ${newMemberships} new · ${renewals} renewal${renewals === 1 ? '' : 's'}`} />
           <CardBody>
-            <BarChart labels={labels} series={[
-              { key: 'attendance', label: 'Visits', color: 'rgb(var(--c-info))', values: series.points.map((p) => p.attendance), format: (v) => String(v) },
+            <BarChart height={220} labels={labels} series={[
+              { key: 'attendance', label: 'Visits', color: 'rgb(var(--c-ink) / 0.2)', values: series.points.map((p) => p.attendance), format: (v) => String(v) },
               { key: 'new', label: 'New memberships', color: 'rgb(var(--c-success))', values: series.points.map((p) => p.newMemberships), format: (v) => String(v) },
-              { key: 'renewals', label: 'Renewals', color: 'rgb(var(--c-faint))', values: series.points.map((p) => p.renewals), format: (v) => String(v) },
+              { key: 'renewals', label: 'Renewals', color: 'rgb(var(--c-ink) / 0.45)', values: series.points.map((p) => p.renewals), format: (v) => String(v) },
             ]} />
           </CardBody>
         </Card>
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-2">
         <Card>
           <CardHeader title="Received by method" />
           {byMethod.length === 0 ? <p className="px-5 pb-5 text-sm text-muted">No payments in this period.</p> : (

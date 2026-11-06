@@ -47,7 +47,7 @@ The training and operations areas were inspired by the feature set of the open-s
 
 ## Branding
 
-The build is branded for **R.K. Gym Fitness Centre**, Murbad (Thane): name, address, phone, the `RK` invoice prefix and the RK monogram logo live in `src/brand.ts` and are the defaults for a fresh install. The gym's Google Maps listing has no separate logo image, so the monogram was drawn in the red of the staff kit; `public/logo.svg` is the master and `node scripts/make-icons.mjs` regenerates the PNG app icons from it. Everything here can still be changed in Settings, and sample data no longer renames the gym.
+The build is branded for **R.K. Gym Fitness Centre**, Murbad (Thane): name, address, phone, the `RK` invoice prefix and the RK monogram logo live in `src/brand.ts` and are the defaults for a fresh install. The gym's Google Maps listing has no separate logo image, so a flat monogram was drawn in the red of the staff kit; `public/logo.svg` is the master and `node scripts/make-icons.mjs` regenerates the PNG app icons from it. Everything here can still be changed in Settings, and sample data no longer renames the gym.
 
 ## Deploying to GitHub Pages
 
@@ -55,11 +55,22 @@ Push the repository to GitHub and, under **Settings → Pages**, set the source 
 
 ## Design system
 
-- **Typography:** Inter Variable (OFL, bundled locally via `@fontsource-variable/inter`, no network fetch). Scale: 11 / 12 / 13 / 14 / 15 / 17 / 20 / 24 / 30 px with tightened tracking above 20 px.
-- **Colour:** neutral canvas/surface/sunken/line tokens, one crimson brand accent (R.K. Gym red) and four semantic tones: success (emerald), warn (gold), danger (red-orange) and info (blue), all defined as RGB triplets on `:root` in `src/index.css` and consumed through Tailwind (`bg-surface`, `text-muted`, `border-line`, …). Light and dark themes share the same token names; dark is applied with `data-theme="dark"` or follows `prefers-color-scheme` when no preference is stored. The theme toggle lives in the sidebar, the mobile drawer and the command palette. The accent is for brand and primary actions only; status always uses a semantic tone (Active, Paid, Completed and In service are success, never accent), and a focused field gets a neutral ink border so it cannot be mistaken for an invalid one.
-- **Glass surfaces:** three translucent layers over a soft ambient colour wash (`body::before`, three radial gradients in accent, info and warm tones). `.glass` is the chrome (top bar, sidebar, tab bar), `.glass-card` is content cards and stat tiles, `.glass-pop` is overlays (dialogs, sheets, command palette, menus, toasts); each is more opaque than the last so text stays readable. The opacities and blur are tokens (`--glass-*-alpha`, `--glass-blur`) and collapse to solid surfaces under `prefers-reduced-transparency`, in browsers without `backdrop-filter`, and in print.
-- **Spacing and radius:** Tailwind's 4 px grid; radii 8 / 10 / 14 / 18 / 24 px. Controls are 36 px on pointer devices and 44 px on touch screens (`.h-control`, via `pointer: coarse`).
-- **Motion:** `motion` springs for sheets and dialogs, 200 ms page-enter fade, 100 ms press scale on pointer-down. All of it collapses to cross-fades or nothing under `prefers-reduced-motion`.
+The look follows a written direction, set with the [unslop](https://github.com/heydamir/unslop) method by Damir Sokolovsky ([@heydamir](https://x.com/heydamir), CC BY 4.0):
+
+- **Product:** the front-desk book for R.K. Gym Fitness Centre in Murbad: members, check-ins, fees and trainers, on one device.
+- **Character:** sturdy, direct, quick.
+- **World:** the gym floor: iron plates, rubber mats, chalk and the red staff kit. Hence graphite neutrals and a crimson accent.
+- **Moments:** the cash chart on the dashboard and in Reports (one series leads, the rest sit in neutral steps), and a member's membership standing.
+- **Signature:** a small green dot wherever someone is in the gym right now, and nowhere else.
+
+Rules that follow from it:
+
+- **Typography:** IBM Plex Sans Variable for the interface and IBM Plex Mono for counts, keycaps and chart labels (both OFL, bundled locally via Fontsource, no network fetch). Weights 400 and 500 only; hierarchy comes from size and colour. Sentence case everywhere, no uppercase tracked labels, no negative tracking below display sizes. Page titles 28 to 32 px, card figures 28 px, body 14 px.
+- **Colour:** one graphite neutral ramp (deep, canvas, surface, raised, sunken, hairlines) with three text roles (ink, muted, faint), one crimson brand accent (R.K. Gym red) and four semantic tones: success (emerald), warn (gold), danger (red-orange) and info (blue), all defined as RGB triplets on `:root` in `src/index.css` and consumed through Tailwind (`bg-surface`, `text-muted`, `border-line`, …). Light and dark themes share the same token names; dark is applied with `data-theme="dark"` or follows `prefers-color-scheme` when no preference is stored. The theme toggle lives in the sidebar, the mobile drawer and the command palette. The accent is for brand and primary actions only; status always uses a semantic tone (Active, Paid, Completed and In service are success, never accent), and a focused field gets a neutral ink border so it cannot be mistaken for an invalid one.
+- **Surfaces:** solid, quiet chrome. Cards are a plain surface with a hairline (`.surface-card`), floating layers add one soft neutral shadow (`.surface-pop`). No colour washes, gradients, glows or glass. On dark, depth comes from surface steps and hairlines, not shadows.
+- **Spacing and radius:** a 4 px grid; radii 6 (tags, keycaps), 8 to 10 (controls, rows), 14 (cards, dialogs), 18 (palette, sheets). Sidebar 240 px with 36 px rows; group labels sit 24 px below the previous group and 8 px above their own items. Controls are 36 px on pointer devices and 44 px on touch screens (`.h-control`, via `pointer: coarse`).
+- **Stats and charts:** a stat is a label, a figure and a line of context, with no icon or sparkline. Charts are drawn at their real pixel width so labels stay 11 px on phones; one series carries colour, the others are neutral.
+- **Motion:** one easing curve, `cubic-bezier(0.22, 1, 0.36, 1)`; critically damped springs for sheets and dialogs, a 300 ms page-enter fade and rise, a 120 ms press scale. Nothing loops and layout properties are never animated. All of it collapses to cross-fades or nothing under `prefers-reduced-motion`.
 - **Components:** `src/components/ui` (Button, Field/Input/Select, Badge, Card, Table, Modal/bottom sheet, ConfirmDialog, Toast, Tabs, Stat, EmptyState, Skeleton, Pagination, Section, PageActions) and `src/components/domain` (member picker, membership/payment/trainer dialogs, check-in override).
 
 ### Mobile
