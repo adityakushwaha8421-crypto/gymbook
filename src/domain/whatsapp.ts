@@ -60,10 +60,11 @@ function planLines(plan: PlanFacts, today: ISODate): string[] {
   ]
 }
 
-function moneyLines(money: MoneyFacts): string[] {
+/** `withBalance` adds what is still owed; the welcome and membership messages leave it out on purpose. */
+function moneyLines(money: MoneyFacts, withBalance: boolean): string[] {
   const lines = [`🧾 *Invoice:* ${money.invoiceNumber}`, `💰 *Amount:* ${formatINRCompact(money.duePaise)}`]
   if (money.paidPaise > 0) lines.push(`✅ *Paid:* ${formatINRCompact(money.paidPaise)}${money.balancePaise === 0 ? ' (fully paid)' : ''}`)
-  if (money.balancePaise > 0) lines.push(`🔔 *Balance due:* ${formatINRCompact(money.balancePaise)}`)
+  if (withBalance && money.balancePaise > 0) lines.push(`🔔 *Balance due:* ${formatINRCompact(money.balancePaise)}`)
   if (money.balancePaise < 0) lines.push(`💳 *Credit with us:* ${formatINRCompact(-money.balancePaise)}`)
   return lines
 }
@@ -72,12 +73,12 @@ const join = (blocks: (string | string[] | null | undefined)[]) => blocks.flatMa
 
 /**
  * The member's name, plan, validity and what was paid. With `welcome` it opens as a welcome note for
- * someone who was just added; without a plan it is a welcome with the member ID only.
+ * someone who was just added; without a plan it is a short welcome.
+ * It carries neither the member ID nor the balance still due (owner's choice); the invoice message shows the balance.
  */
-export function membershipMessage(o: { gymName: string; gymPhone?: string; memberName: string; memberCode?: string; welcome?: boolean; plan?: PlanFacts; money?: MoneyFacts; today: ISODate }): string {
+export function membershipMessage(o: { gymName: string; gymPhone?: string; memberName: string; welcome?: boolean; plan?: PlanFacts; money?: MoneyFacts; today: ISODate }): string {
   const intro = [greeting(o.memberName), o.welcome ? `Welcome to ${o.gymName.trim()}! 🎉` : o.plan ? 'Here are your membership details:' : 'Thank you for being with us.']
-  if (o.memberCode) intro.push(`🆔 *Member ID:* ${o.memberCode}`)
-  return join([firstLine(o.gymName), intro, o.plan ? planLines(o.plan, o.today) : null, o.money ? moneyLines(o.money) : null, signOff(o.gymPhone)])
+  return join([firstLine(o.gymName), intro, o.plan ? planLines(o.plan, o.today) : null, o.money ? moneyLines(o.money, false) : null, signOff(o.gymPhone)])
 }
 
 /** The invoice as text: what was billed, the discount, and what is paid and still due. A link cannot carry the PDF itself. */
@@ -85,7 +86,7 @@ export function invoiceMessage(o: { gymName: string; gymPhone?: string; memberNa
   const items = o.lines.map((l) => `▪ ${l.description}: ${formatINRCompact(l.amountPaise)}`)
   if (o.discountPaise > 0) items.push(`🎁 *Discount:* -${formatINRCompact(o.discountPaise)}`)
   if (o.adjustmentsPaise !== 0) items.push(`📝 *Adjustment:* ${o.adjustmentsPaise > 0 ? '+' : '-'}${formatINRCompact(Math.abs(o.adjustmentsPaise))}`)
-  const [invoiceLine, ...rest] = moneyLines(o.money)
+  const [invoiceLine, ...rest] = moneyLines(o.money, true)
   return join([firstLine(o.gymName), [greeting(o.memberName), 'Here is your invoice:'], [invoiceLine, `📅 *Date:* ${formatDate(o.issueDate)}`], items, rest, signOff(o.gymPhone)])
 }
 

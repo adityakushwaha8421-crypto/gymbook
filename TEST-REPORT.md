@@ -289,3 +289,5 @@ Asked for: after adding a member, an option to send them the invoice or a WhatsA
 | Desktop 1100 and phone 375 | banner and dialog checked on screenshots; no horizontal overflow, no console errors |
 | Not checked | an actual WhatsApp chat: the link and its text were verified, but no message was opened in WhatsApp or sent |
 | Typecheck, build | clean |
+
+**Changed the same day, at the owner's request:** the Welcome / Membership message no longer shows the member ID or the "Balance due" line. It still shows the invoice number, amount and what was paid. The Invoice message keeps its balance line, since an invoice that hides what is owed would mislead. 149 unit tests and the 3 WhatsApp browser tests pass with the new text.

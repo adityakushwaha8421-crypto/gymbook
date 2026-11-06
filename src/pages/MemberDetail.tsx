@@ -102,7 +102,7 @@ export function MemberDetailPage() {
       {
         key: 'details',
         label: welcome ? 'Welcome' : 'Membership',
-        text: membershipMessage({ ...gym, memberCode: member.memberCode, welcome, plan: current ? { planName: current.planName, startDate: current.startDate, endDate: current.endDate } : undefined, money: moneyFor(current?.invoiceId), today }),
+        text: membershipMessage({ ...gym, welcome, plan: current ? { planName: current.planName, startDate: current.startDate, endDate: current.endDate } : undefined, money: moneyFor(current?.invoiceId), today }),
       },
     ]
     const latest = data.invoices.find((i) => i.status !== 'void')
@@ -138,7 +138,7 @@ export function MemberDetailPage() {
             </span>
           }
         >
-          <strong className="font-medium">New member saved.</strong> Send a welcome message with {data.current ? 'the plan, expiry date and amount paid' : 'the member ID'} on WhatsApp?
+          <strong className="font-medium">New member saved.</strong> Send a welcome message{data.current ? ' with the plan, expiry date and amount paid' : ''} on WhatsApp?
         </Banner>
       ) : null}
       <Card>

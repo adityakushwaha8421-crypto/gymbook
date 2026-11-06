@@ -19,7 +19,7 @@ describe('whatsapp: links', () => {
   })
   it('every emoji used is a single code point, with no variation selector or joiner', () => {
     const all = [
-      membershipMessage({ ...gym, memberCode: 'GB-0001', welcome: true, plan, money: { invoiceNumber: 'RK-00001', duePaise: 100, paidPaise: 50, balancePaise: 50 }, today }),
+      membershipMessage({ ...gym, welcome: true, plan, money: { invoiceNumber: 'RK-00001', duePaise: 100, paidPaise: 50, balancePaise: 50 }, today }),
       membershipMessage({ ...gym, plan, money: { invoiceNumber: 'RK-00001', duePaise: 100, paidPaise: 200, balancePaise: -100 }, today }),
       invoiceMessage({ ...gym, issueDate: today, lines: [{ description: 'x', amountPaise: 100 }], discountPaise: 10, adjustmentsPaise: -5, money: { invoiceNumber: 'RK-00001', duePaise: 85, paidPaise: 0, balancePaise: 85 } }),
       expiryMessage({ ...gym, planName: 'Monthly', endDate: today, today }),
@@ -38,14 +38,13 @@ describe('whatsapp: daysLeftLabel', () => {
 })
 
 describe('whatsapp: membershipMessage', () => {
-  it('welcome with plan and a part payment', () => {
-    expect(membershipMessage({ ...gym, memberCode: 'GB-0012', welcome: true, plan, money: { invoiceNumber: 'RK-00012', duePaise: 140000, paidPaise: 50000, balancePaise: 90000 }, today })).toBe(
+  it('welcome with plan and a part payment: no member ID and no balance line', () => {
+    expect(membershipMessage({ ...gym, welcome: true, plan, money: { invoiceNumber: 'RK-00012', duePaise: 140000, paidPaise: 50000, balancePaise: 90000 }, today })).toBe(
       [
         '💪 *R.K. Gym Fitness Centre*',
         '',
         'Hi Rahul Patil 👋',
         'Welcome to R.K. Gym Fitness Centre! 🎉',
-        '🆔 *Member ID:* GB-0012',
         '',
         '📋 *Plan:* Monthly',
         '📅 *From:* 6 Nov 2026',
@@ -54,21 +53,21 @@ describe('whatsapp: membershipMessage', () => {
         '🧾 *Invoice:* RK-00012',
         '💰 *Amount:* ₹1,400',
         '✅ *Paid:* ₹500',
-        '🔔 *Balance due:* ₹900',
         '',
         'Thank you 🙏',
         '📞 098920 80444',
       ].join('\n'),
     )
   })
-  it('fully paid says so and has no balance line; nothing paid has no paid line', () => {
+  it('fully paid says so; nothing paid has no paid line; what is still owed is never mentioned', () => {
     const paid = membershipMessage({ ...gym, plan, money: { invoiceNumber: 'RK-00001', duePaise: 150000, paidPaise: 150000, balancePaise: 0 }, today })
     expect(paid).toContain('✅ *Paid:* ₹1,500 (fully paid)')
     expect(paid).not.toContain('Balance due')
     expect(paid).toContain('Here are your membership details:')
     const unpaid = membershipMessage({ ...gym, plan, money: { invoiceNumber: 'RK-00001', duePaise: 150000, paidPaise: 0, balancePaise: 150000 }, today })
     expect(unpaid).not.toContain('Paid:')
-    expect(unpaid).toContain('🔔 *Balance due:* ₹1,500')
+    expect(unpaid).not.toContain('Balance due')
+    expect(unpaid).toContain('💰 *Amount:* ₹1,500')
     const credit = membershipMessage({ ...gym, plan, money: { invoiceNumber: 'RK-00001', duePaise: 150000, paidPaise: 160050, balancePaise: -10050 }, today })
     expect(credit).toContain('💳 *Credit with us:* ₹100.50')
   })
@@ -78,8 +77,8 @@ describe('whatsapp: membershipMessage', () => {
     expect(m).toContain('⏳ *Valid till:* 9 Feb 2027\n')
   })
   it('without a plan it is a short welcome; the Sample label and a missing gym phone are left out', () => {
-    expect(membershipMessage({ gymName: 'Test Gym', memberName: 'Sample Aarav Shah', memberCode: 'GB-0003', welcome: true, today })).toBe(
-      ['💪 *Test Gym*', '', 'Hi Aarav Shah 👋', 'Welcome to Test Gym! 🎉', '🆔 *Member ID:* GB-0003', '', 'Thank you 🙏'].join('\n'),
+    expect(membershipMessage({ gymName: 'Test Gym', memberName: 'Sample Aarav Shah', welcome: true, today })).toBe(
+      ['💪 *Test Gym*', '', 'Hi Aarav Shah 👋', 'Welcome to Test Gym! 🎉', '', 'Thank you 🙏'].join('\n'),
     )
   })
 })
