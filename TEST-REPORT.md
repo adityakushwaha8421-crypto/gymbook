@@ -200,3 +200,16 @@ What changed: graphite ramp and solid surfaces, crimson kept as the one accent, 
 | Contrast table, light and dark | every pair at least 4.6:1 |
 | Desktop 1280, dark, phone 375 | checked in the browser |
 | Typecheck, lint, production build | clean |
+
+## Cleanup and sub-path fixes (2026-11-06)
+
+- Removed dead code: 13 functions and one hook file nothing called, the unused accent badge tone, an unused CSS class and two unused Tailwind tokens.
+- Removed the Developer tools section from Settings. The simulated save failure used by the failure-handling tests is now armed through a session flag that is read in development builds only; a production build ignores it.
+- Fixed two links that left the app when it is served from a sub-path (GitHub Pages `/gymbook/`): "Reset everything" navigated to the domain root, and the workout sheet "Print" buttons opened `/workouts/…` without the base path. Both now go through `appUrl()` in `src/lib/appUrl.ts`.
+
+| Check | Result |
+| --- | --- |
+| Vitest | 124 passed |
+| Playwright main + features + shell exploratory | 53 passed |
+| Production build served under `/gymbook/` | no Developer section; the failure flag is ignored and the save succeeds; Print opens `/gymbook/workouts/…/print`; Reset lands on `/gymbook/` |
+| Typecheck, lint | clean |

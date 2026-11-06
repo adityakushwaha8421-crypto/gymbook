@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { appUrl } from '@/lib/appUrl'
 import { Plus, Pencil, Archive, ArchiveRestore, Dumbbell, Copy, ChevronDown, ChevronUp, Trash2, Printer } from 'lucide-react'
 import { usePage } from '@/app/AppContext'
 import { useLiveQuery } from '@/hooks/useLiveQuery'
@@ -78,7 +79,7 @@ export function WorkoutsPage() {
                       {w.description ? <p className="mt-0.5 text-sm text-muted">{w.description}</p> : null}
                     </button>
                     <div className="flex shrink-0 flex-wrap gap-1.5">
-                      <Button size="sm" variant="ghost" icon={<Printer className="h-4 w-4" aria-hidden />} onClick={() => window.open(`/workouts/${w.id}/print`, '_blank', 'noopener')}>Print</Button>
+                      <Button size="sm" variant="ghost" icon={<Printer className="h-4 w-4" aria-hidden />} onClick={() => window.open(appUrl(`/workouts/${w.id}/print`), '_blank', 'noopener')}>Print</Button>
                       <Button size="sm" variant="ghost" icon={<Pencil className="h-4 w-4" aria-hidden />} onClick={() => setEditing(w)}>Edit</Button>
                       <Button size="sm" variant="ghost" icon={w.archived ? <ArchiveRestore className="h-4 w-4" aria-hidden /> : <Archive className="h-4 w-4" aria-hidden />} onClick={async () => { try { await setWorkoutArchived(w.id, w.rev, !w.archived); toast.success(w.archived ? 'Plan restored' : 'Plan archived') } catch (err) { toast.error('Could not update', errorMessage(err)) } }}>{w.archived ? 'Restore' : 'Archive'}</Button>
                     </div>

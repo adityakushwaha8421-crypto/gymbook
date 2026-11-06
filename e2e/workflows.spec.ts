@@ -210,8 +210,8 @@ test.describe('concurrency and failures', () => {
   test('a failed save shows an error and keeps the form; retry succeeds', async ({ page }) => {
     await onboard(page, 'empty')
     await page.goto('/settings')
-    await page.getByRole('button', { name: 'Make the next save fail' }).click()
-    await expect(page.getByText(/^Armed/)).toBeVisible()
+    await expect(page.getByText('Developer tools')).toHaveCount(0) // no test switch in the UI
+    await page.evaluate(() => sessionStorage.setItem('gymbook-fail-next-save', '1'))
     await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Expenses' }).click()
     await page.getByRole('button', { name: 'Add expense' }).first().click()
     const dialog = page.getByRole('dialog')

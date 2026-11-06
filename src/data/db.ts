@@ -180,7 +180,7 @@ export async function writeTx<S extends StoreNames<GymDB>, T>(
 ): Promise<T> {
   const db = await getDb()
   if (consumeSaveFailure()) {
-    throw new StorageError('simulated', 'Simulated storage failure: nothing was saved. (Enabled from Settings → Developer tools.)')
+    throw new StorageError('simulated', 'Simulated storage failure: nothing was saved.')
   }
   let tx: WriteTx<S>
   try {

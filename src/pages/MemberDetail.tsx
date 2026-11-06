@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { appUrl } from '@/lib/appUrl'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { Pencil, Archive, ArchiveRestore, Receipt, CreditCard, ClipboardCheck, LogOut, FileText, Ban, CalendarPlus, Printer, Check, X, UserX } from 'lucide-react'
 import { SessionDialog } from './Sessions'
@@ -182,7 +183,7 @@ export function MemberDetailPage() {
             </CardBody>
           </Card>
           <Card>
-            <CardHeader title="Workout plan" description="Assigned programme; print a sheet for the floor" action={data.workout ? <Button size="sm" variant="secondary" icon={<Printer className="h-4 w-4" aria-hidden />} onClick={() => window.open(`/workouts/${data.workout!.id}/print?member=${member.id}`, '_blank', 'noopener')}>Print sheet</Button> : undefined} />
+            <CardHeader title="Workout plan" description="Assigned programme; print a sheet for the floor" action={data.workout ? <Button size="sm" variant="secondary" icon={<Printer className="h-4 w-4" aria-hidden />} onClick={() => window.open(appUrl(`/workouts/${data.workout!.id}/print?member=${member.id}`), '_blank', 'noopener')}>Print sheet</Button> : undefined} />
             <CardBody className="flex flex-col gap-3">
               {data.workout ? (
                 <div>

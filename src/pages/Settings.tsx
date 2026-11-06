@@ -6,8 +6,7 @@ import { updateSettings } from '@/data/services/settings'
 import { exportBackup, validateBackup, importBackup, type ImportPreview } from '@/data/backup'
 import { removeSampleRecords, seedSampleData } from '@/data/sample'
 import { deleteDatabase } from '@/data/db'
-import { armSaveFailure, isSaveFailureArmed } from '@/data/failpoint'
-import { subscribe } from '@/data/events'
+import { appUrl } from '@/lib/appUrl'
 import { settingsForm, type SettingsFormValues } from '@/domain/validation'
 import { useForm } from '@/lib/forms'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
@@ -38,7 +37,6 @@ export function SettingsPage() {
       <GymDetailsForm key={settings.rev} />
       <BackupSection />
       <DataSection onChanged={refreshSettings} />
-      <DeveloperSection />
     </div>
   )
 }
@@ -270,22 +268,7 @@ function DataSection({ onChanged }: { onChanged: () => Promise<void> }) {
       <ConfirmDialog open={confirm === 'loadSample'} onClose={() => setConfirm(null)} title="Load sample data?" description="Adds a labelled set of fictional members, plans, payments and visits alongside your existing records. You can remove them again later." confirmLabel="Load sample data"
         onConfirm={async () => { await seedSampleData(settings.timezone); await onChanged(); toast.success('Sample data loaded') }} />
       <ConfirmDialog open={confirm === 'reset'} onClose={() => setConfirm(null)} title="Reset everything?" description="Permanently deletes all GymBook data in this browser, including settings. Export a backup first. This cannot be undone." confirmLabel="Delete all data" danger typeToConfirm="RESET"
-        onConfirm={async () => { await deleteDatabase(); window.location.assign('/') }} />
-    </Section>
-  )
-}
-
-function DeveloperSection() {
-  const [armed, setArmed] = useState(isSaveFailureArmed())
-  useEffect(() => subscribe(() => setArmed(isSaveFailureArmed())), [])
-  return (
-    <Section title="Developer tools" description="For testing error handling. Has no effect on stored data.">
-      <Card>
-        <CardBody className="flex flex-wrap items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => { armSaveFailure(); setArmed(true) }} disabled={armed}>Make the next save fail</Button>
-          <span className="text-sm text-muted">{armed ? 'Armed: the next write in this tab will fail with a simulated storage error.' : 'Use this to confirm forms keep their input and show an error when storage fails.'}</span>
-        </CardBody>
-      </Card>
+        onConfirm={async () => { await deleteDatabase(); window.location.assign(appUrl('/')) }} />
     </Section>
   )
 }

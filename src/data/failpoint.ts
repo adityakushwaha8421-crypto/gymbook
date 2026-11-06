@@ -5,16 +5,25 @@
  */
 let armed = false
 
+/** Session flag end-to-end tests set to arm the failure. Read in development builds only. */
+export const FAIL_NEXT_SAVE_KEY = 'gymbook-fail-next-save'
+
 export function armSaveFailure(): void {
   armed = true
 }
 
-export function isSaveFailureArmed(): boolean {
-  return armed
-}
-
 export function consumeSaveFailure(): boolean {
-  const was = armed
+  let was = armed
   armed = false
+  if (import.meta.env.DEV) {
+    try {
+      if (sessionStorage.getItem(FAIL_NEXT_SAVE_KEY)) {
+        sessionStorage.removeItem(FAIL_NEXT_SAVE_KEY)
+        was = true
+      }
+    } catch {
+      // Storage unavailable: nothing to consume.
+    }
+  }
   return was
 }

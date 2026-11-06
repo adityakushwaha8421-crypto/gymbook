@@ -601,15 +601,13 @@ test.describe('4. sample data', () => {
 })
 
 /* ======================================================================== */
-test.describe('5. developer fail-point', () => {
+test.describe('5. simulated save failure', () => {
   test('armed failure: settings save shows error, values preserved, retry works', async ({ page }) => {
     await onboard(page, 'empty')
     await page.goto('/settings')
     const rev0 = (await settingsRow(page)).rev
-    const arm = page.getByRole('button', { name: 'Make the next save fail' })
-    await arm.click()
-    await expect(arm).toBeDisabled()
-    await expect(page.getByText(/^Armed/)).toBeVisible()
+    await expect(page.getByText('Developer tools')).toHaveCount(0)
+    await page.evaluate(() => sessionStorage.setItem('gymbook-fail-next-save', '1'))
     await page.getByLabel('Gym name').fill('Failing Gym')
     await page.getByLabel('Invoice footer').fill('Footer text')
     await page.getByRole('button', { name: 'Save settings' }).click()
@@ -625,9 +623,8 @@ test.describe('5. developer fail-point', () => {
     const s = await settingsRow(page)
     expect(s.gymName).toBe('Failing Gym')
     expect(s.rev).toBe(rev0 + 1)
-    const armAfter = page.getByRole('button', { name: 'Make the next save fail' })
-    if (!(await armAfter.isEnabled())) log('bug', `after the armed failure fired, 'Make the next save fail' stays disabled and text reads: ${await page.getByText(/^Armed|^Use this/).innerText()}`)
-    expect.soft(await armAfter.isEnabled(), 'fail-point button should re-arm after the failure was consumed').toBe(true)
+    // The flag is single-use: a further save goes through.
+    expect(await page.evaluate(() => sessionStorage.getItem('gymbook-fail-next-save'))).toBeNull()
   })
 })
 
