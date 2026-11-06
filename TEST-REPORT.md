@@ -278,7 +278,7 @@ Asked for: after adding a member, an option to send them the invoice or a WhatsA
 - **The dialog:** shows the message ready to send and lets the desk edit it. "Open WhatsApp" opens a chat with the member's number and the text filled in; "Copy" copies it. GymBook never sends anything itself.
 - **Three messages** (`src/domain/whatsapp.ts`): *Welcome / Membership* (name, member ID, plan, start, valid-till date with days left, invoice number, amount, paid, balance due), *Invoice* (what was billed, discount, adjustment, paid, due) and *Expiry reminder*. A member added without a plan gets a short welcome with the member ID.
 - **Also on:** a WhatsApp button on every member's page and on each invoice. The Upcoming expiries list on Follow-ups now sends the same emoji reminder.
-- **Emoji** are single code points, with no variation selectors or joined sequences, because those are the ones that survive a `wa.me` link everywhere; a unit test enforces it.
+- **Emoji** are single code points, with no variation selectors or joined sequences, the plainest form for older phones; a unit test enforces it.
 - **Limit:** a WhatsApp link can carry text only, so the invoice goes as text, not as a PDF. To send the PDF, use "Print / save PDF" on the invoice and attach the file in WhatsApp.
 
 | Check | Result |
@@ -291,3 +291,5 @@ Asked for: after adding a member, an option to send them the invoice or a WhatsA
 | Typecheck, build | clean |
 
 **Changed the same day, at the owner's request:** the Welcome / Membership message no longer shows the member ID or the "Balance due" line. It still shows the invoice number, amount and what was paid. The Invoice message keeps its balance line, since an invoice that hides what is owed would mislead. 149 unit tests and the 3 WhatsApp browser tests pass with the new text.
+
+**Emoji arrived as "�" in a real chat (fixed the same day).** The owner sent a message and every emoji showed as a replacement box. Cause: the short `wa.me` link answers with a redirect to `api.whatsapp.com`, and that redirect replaces each emoji in the text with U+FFFD (visible in its `Location` header: `%F0%9F%92%AA` goes in, `%EF%BF%BD` comes out). `whatsappUrl` now links to `https://api.whatsapp.com/send?phone=…&text=…` directly, which passes the text through untouched; every emoji the messages use was sent through that page with a dummy number and came back intact (0 replacement characters). This was missed earlier because only the link's own text was checked, not what WhatsApp does with it. 149 unit tests and the 6 WhatsApp and follow-up browser tests pass; not yet re-confirmed in a real chat.

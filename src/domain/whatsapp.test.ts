@@ -14,8 +14,11 @@ describe('whatsapp: links', () => {
   it('emoji, bold marks and new lines survive the link', () => {
     const text = '💪 *Gym*\n\nHi Rahul 👋 & welcome'
     const url = new URL(whatsappUrl('9892080444', text))
-    expect(url.origin + url.pathname).toBe('https://wa.me/919892080444')
+    // never the short wa.me form: its redirect turns every emoji into U+FFFD
+    expect(url.origin + url.pathname).toBe('https://api.whatsapp.com/send')
+    expect(url.searchParams.get('phone')).toBe('919892080444')
     expect(url.searchParams.get('text')).toBe(text)
+    expect(url.href).toContain('text=%F0%9F%92%AA%20*Gym*%0A%0AHi%20Rahul%20%F0%9F%91%8B%20%26%20welcome')
   })
   it('every emoji used is a single code point, with no variation selector or joiner', () => {
     const all = [

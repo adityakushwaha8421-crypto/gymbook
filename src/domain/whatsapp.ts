@@ -6,20 +6,25 @@ import { formatINRCompact } from './money'
  * WhatsApp messages the front desk can send to a member. GymBook only writes the text and opens
  * WhatsApp with it; the person at the desk presses send there.
  *
- * Emoji are single code points on purpose (no variation selectors or joined sequences), because
- * those are the ones that survive a wa.me link on every phone and on WhatsApp Web.
- * `*text*` is WhatsApp's own bold.
+ * Emoji are single code points on purpose (no variation selectors or joined sequences), the plainest
+ * form for older phones. `*text*` is WhatsApp's own bold.
  */
 
-/** Digits for a wa.me link. A bare 10-digit number is taken as Indian; a "+" number is kept as typed. */
+/** Digits for a WhatsApp link. A bare 10-digit number is taken as Indian; a "+" number is kept as typed. */
 export function toWaNumber(phone: string): string {
   const digits = phone.replace(/\D/g, '')
   if (phone.trim().startsWith('+')) return digits
   return digits.length === 10 ? `91${digits}` : digits
 }
 
+/**
+ * Link that opens a WhatsApp chat with the text filled in.
+ * It must point at api.whatsapp.com directly. The short wa.me form answers with a redirect that
+ * replaces every emoji in the text with U+FFFD, so the message arrives full of "�" boxes
+ * (seen in a real chat and in the redirect's Location header, 2026-11-06).
+ */
 export function whatsappUrl(phone: string, text: string): string {
-  return `https://wa.me/${toWaNumber(phone)}?text=${encodeURIComponent(text)}`
+  return `https://api.whatsapp.com/send?phone=${toWaNumber(phone)}&text=${encodeURIComponent(text)}`
 }
 
 /** Sample records are labelled "Sample …" in the app; the label does not belong in a greeting. */

@@ -1045,7 +1045,8 @@ test.describe('9. add member with a plan', () => {
 test.describe('10. WhatsApp message after adding a member', () => {
   const waText = async (link: ReturnType<Page['getByRole']>) => {
     const url = new URL((await link.getAttribute('href'))!)
-    return { to: url.origin + url.pathname, text: url.searchParams.get('text') }
+    expect(url.origin + url.pathname).toBe('https://api.whatsapp.com/send')
+    return { to: url.searchParams.get('phone'), text: url.searchParams.get('text') }
   }
   const gymPhone = async (page: Page) => (await readStore<{ phone?: string }>(page, 'settings'))[0].phone
 
@@ -1077,7 +1078,7 @@ test.describe('10. WhatsApp message after adding a member', () => {
     await expect(dialog.getByRole('tab')).toHaveText(['Welcome', 'Invoice', 'Expiry reminder'])
 
     const welcome = membershipMessage({ ...gym, welcome: true, plan: { planName: 'Monthly', startDate: today, endDate: end }, money, today })
-    expect(await waText(open)).toEqual({ to: 'https://wa.me/919820012345', text: welcome })
+    expect(await waText(open)).toEqual({ to: '919820012345', text: welcome })
     await expect(dialog.getByLabel('Message')).toHaveValue(welcome)
     for (const part of ['Hi Rahul Patil 👋', '🎉', '📋 *Plan:* Monthly', `⏳ *Valid till:* ${formatDate(end)}`, '💰 *Amount:* ₹1,400', '✅ *Paid:* ₹500']) expect(welcome).toContain(part)
     // the welcome leaves out the member ID and what is still owed
@@ -1122,7 +1123,7 @@ test.describe('10. WhatsApp message after adding a member', () => {
     const dialog = page.getByRole('dialog', { name: 'Send on WhatsApp' })
     await expect(dialog.getByRole('tab')).toHaveCount(0)
     const got = await waText(dialog.getByRole('link', { name: 'Open WhatsApp' }))
-    expect(got.to).toBe('https://wa.me/442079460958')
+    expect(got.to).toBe('442079460958')
     expect(got.text).toBe(membershipMessage({ gymName: 'Test Gym', gymPhone: await gymPhone(page), memberName: 'Only Name', welcome: true, today: todayInTz(TZ) }))
     expect(got.text).not.toContain('Member ID')
     await page.keyboard.press('Escape')
@@ -1151,7 +1152,7 @@ test.describe('10. WhatsApp message after adding a member', () => {
     const dialog = page.getByRole('dialog', { name: 'Send on WhatsApp' })
     await expect(dialog.getByRole('tab')).toHaveCount(0)
     const got = await waText(dialog.getByRole('link', { name: 'Open WhatsApp' }))
-    expect(got.to).toBe('https://wa.me/919820000032')
+    expect(got.to).toBe('919820000032')
     for (const part of ['Hi Invoice Person 👋', '🧾 *Invoice:* RK-00001', '▪ Monthly membership', '💰 *Amount:* ₹1,500', '✅ *Paid:* ₹1,500 (fully paid)', 'Thank you 🙏']) expect(got.text).toContain(part)
     expect(got.text).not.toContain('Balance due')
   })
