@@ -25,7 +25,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { MemberPicker } from '@/components/domain/MemberPicker'
 import { useToast } from '@/components/ui/Toast'
 import { errorMessage } from '@/data/errors'
-import { expiryMessage, whatsappUrl } from '@/domain/whatsapp'
+import { expiryMessage, whatsappUrl, type MessageLang } from '@/domain/whatsapp'
 
 const typeTone: Record<FollowUpType, Tone> = { expiry: 'warn', payment: 'danger', lead: 'info', other: 'neutral' }
 
@@ -123,7 +123,7 @@ export function FollowUpsPage() {
             <>
               <ul className="divide-y divide-line">
                 {(showAllExpiries ? expiries : expiries.slice(0, EXPIRY_PREVIEW)).map((x) => {
-                  const msg = expiryMessage({ gymName: settings.gymName, gymPhone: settings.phone, memberName: x.member.name, planName: x.membership.planName, endDate: x.endDate, today })
+                  const reminder = (lang: MessageLang) => expiryMessage({ gymName: settings.gymName, gymPhone: settings.phone, memberName: x.member.name, planName: x.membership.planName, endDate: x.endDate, today, lang })
                   return (
                     <li key={x.member.id} className="flex flex-col gap-2 px-4 py-3 sm:px-5">
                       <div className="flex items-start gap-3">
@@ -140,7 +140,8 @@ export function FollowUpsPage() {
                       </div>
                       <div className="flex flex-wrap gap-1.5 pl-11">
                         <a className="pressable inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-2.5 text-sm hover:bg-sunken" href={`tel:${x.member.phone.replace(/[^\d+]/g, '')}`}><Phone className="h-4 w-4" aria-hidden />Call</a>
-                        <a className="pressable inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-2.5 text-sm hover:bg-sunken" href={whatsappHref(x.member.phone, msg)} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-4 w-4" aria-hidden />WhatsApp</a>
+                        <a className="pressable inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-2.5 text-sm hover:bg-sunken" href={whatsappHref(x.member.phone, reminder('en'))} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-4 w-4" aria-hidden />WhatsApp</a>
+                        <a lang="mr" title="WhatsApp reminder in Marathi" className="pressable inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-2.5 text-sm hover:bg-sunken" href={whatsappHref(x.member.phone, reminder('mr'))} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-4 w-4" aria-hidden />मराठी</a>
                         <span className="flex-1" />
                         {!x.hasOpenFollowUp ? (
                           <Button size="sm" variant="secondary" icon={<Plus className="h-4 w-4" aria-hidden />} onClick={() => setEditing({ prefill: { type: 'expiry', memberId: x.member.id, dueDate: today, note: `${x.membership.planName} ends ${formatDate(x.endDate)}; offer renewal` } })}>Add follow-up</Button>

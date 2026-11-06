@@ -581,6 +581,24 @@ test.describe('follow-ups', () => {
     const waWeek = new URL((await rows.filter({ hasText: 'Chitra Week' }).getByRole('link', { name: 'WhatsApp' }).getAttribute('href'))!)
     expect(waWeek.searchParams.get('text')).toContain(`⏳ Your *Monthly* membership ends on *${formatDate(addDays(t, 7))}* (7 days left).`)
 
+    // the same reminder in Marathi, one tap away
+    const mrLink = ashaRow.getByRole('link', { name: 'मराठी' })
+    const mr = new URL((await mrLink.getAttribute('href'))!)
+    expect(mr.origin + mr.pathname).toBe('https://api.whatsapp.com/send')
+    expect(mr.searchParams.get('phone')).toBe(`91${digits}`)
+    expect(mr.searchParams.get('text')).toBe(expiryMessage({ gymName: 'Test Gym', gymPhone: (await readStore<{ phone?: string }>(page, 'settings'))[0].phone, memberName: 'Asha Today', planName: 'Monthly', endDate: t, today: t, lang: 'mr' }))
+    expect(mr.searchParams.get('text')).toContain('नमस्कार Asha Today 👋\n⏳ आपले *Monthly* सदस्यत्व *आज* संपत आहे.')
+    await expect(mrLink).toHaveAttribute('target', '_blank')
+    await expect(mrLink).toHaveAttribute('rel', /noopener/)
+    await expect(rows.getByRole('link', { name: 'मराठी' })).toHaveCount(3)
+    // the extra button does not push a phone-width row off screen
+    const size = page.viewportSize()!
+    await page.setViewportSize({ width: 375, height: 812 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0)
+    await expect(mrLink).toBeVisible()
+    if (process.env.SHOT_DIR) await page.screenshot({ path: `${process.env.SHOT_DIR}/expiry-phone.png` })
+    await page.setViewportSize(size)
+
     // the lapsed member is offered under Suggested instead; members still covered are not
     const suggested = page.getByRole('heading', { name: 'Suggested' }).locator('xpath=ancestor::*[contains(@class,"rounded-2xl")][1]')
     await expect(suggested.getByRole('listitem')).toHaveCount(1)

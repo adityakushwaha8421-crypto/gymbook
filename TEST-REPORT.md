@@ -301,7 +301,8 @@ Asked for: a Marathi button in "Send on WhatsApp", for Marathi-speaking members.
 - **Switch:** the dialog has "English | मराठी" beside the message tabs. All three messages (welcome / membership, invoice, expiry reminder) exist in both languages, on the member page and on invoices.
 - **Remembered:** the language used last is kept on this device (`localStorage`), so a desk that sends in Marathi does not switch every time. Edits are kept per message and per language.
 - **What is translated:** the gym's own words and the month names ("6 नोव्हेंबर 2026"). Member names, plan names, invoice numbers and invoice line descriptions go as they are stored. Digits stay Latin so dates match the rupee amounts.
-- **Not changed:** the app's own screens stay in English, and the one-tap WhatsApp link in the Upcoming expiries list on Follow-ups still sends the English reminder (the Marathi one is on the member's page under WhatsApp → Expiry reminder).
+- **Upcoming expiries on Follow-ups (added the same day, on request):** each row has a second link, "मराठी", beside "WhatsApp"; it opens the same reminder in Marathi. Checked at 375 px: the row wraps, nothing overflows. The follow-ups browser tests (3) pass with the new assertions.
+- **Not changed:** the app's own screens stay in English.
 
 | Check | Result |
 | --- | --- |
