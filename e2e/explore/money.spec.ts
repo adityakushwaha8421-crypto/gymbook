@@ -786,7 +786,8 @@ test.describe('5. payments page', () => {
     await createPlan(page, 'Monthly', 1, 'months', '1500')
     const memberUrl = await addMember(page, 'Plural Person', '98200 18000')
     await sellMembership(page, { receivedNow: '500' })
-    await recordPaymentOnInvoice(page, '200')
+    // wait for the save before leaving the page, or the payment may never be written
+    await expect(await recordPaymentOnInvoice(page, '200')).toBeHidden()
     await page.goto(memberUrl + '?tab=payments')
     await page.locator('li', { hasText: '₹200.00' }).first().getByRole('button', { name: 'Void' }).click()
     const d = page.getByRole('dialog')

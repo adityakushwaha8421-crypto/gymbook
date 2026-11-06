@@ -89,12 +89,12 @@ function MemberFormInner({ mode, member }: { mode: 'new' | 'edit'; member?: Memb
       const sold = await createMemberWithMembership(values, { planId: sale.planId, startDate: sale.planStartDate, discountPaise: sale.planDiscount, initialPaymentPaise: sale.planReceived, paymentMethod: sale.planPaymentMethod, issueDate: today }, { requestKey })
       toast.success(`Added ${sold.member.name}`, `${sold.membership.planName} sold · invoice ${sold.invoiceNumber} created${sold.payment ? ` · ${formatINR(sold.payment.amountPaise)} recorded` : ''}`)
       leaveRef.current()
-      navigate(`/members/${sold.member.id}`, { replace: true })
+      navigate(`/members/${sold.member.id}`, { replace: true, state: { justAdded: true } })
     } else {
       const created = await createMember(values, { requestKey: requestKey })
       toast.success(`Added ${created.name}`)
       leaveRef.current()
-      navigate(`/members/${created.id}`, { replace: true })
+      navigate(`/members/${created.id}`, { replace: true, state: { justAdded: true } })
     }
   })
 

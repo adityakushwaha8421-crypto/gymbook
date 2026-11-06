@@ -1,6 +1,7 @@
 import { test, expect, type Page, type Locator } from '@playwright/test'
 import { onboard, createPlan, addMember, sellMembership, readStore, inr } from '../helpers'
 import { addDays, todayInTz, formatDate, instantToDateInTz } from '../../src/domain/dates'
+import { expiryMessage } from '../../src/domain/whatsapp'
 
 const TZ = 'Asia/Kolkata'
 const today = () => todayInTz(TZ)
@@ -573,10 +574,11 @@ test.describe('follow-ups', () => {
     await expect(ashaRow.getByRole('link', { name: 'Call' })).toHaveAttribute('href', `tel:${digits}`)
     const wa = new URL((await ashaRow.getByRole('link', { name: 'WhatsApp' }).getAttribute('href'))!)
     expect(wa.origin + wa.pathname).toBe(`https://wa.me/91${digits}`)
-    expect(wa.searchParams.get('text')).toBe('Hi Asha Today, this is Test Gym. Your Monthly membership ends today. Renew at the desk to keep coming in.')
+    expect(wa.searchParams.get('text')).toBe(expiryMessage({ gymName: 'Test Gym', gymPhone: (await readStore<{ phone?: string }>(page, 'settings'))[0].phone, memberName: 'Asha Today', planName: 'Monthly', endDate: t, today: t }))
+    expect(wa.searchParams.get('text')).toContain('Hi Asha Today 👋\n⏳ Your *Monthly* membership ends *today*.')
     await expect(ashaRow.getByRole('link', { name: 'WhatsApp' })).toHaveAttribute('rel', /noopener/)
     const waWeek = new URL((await rows.filter({ hasText: 'Chitra Week' }).getByRole('link', { name: 'WhatsApp' }).getAttribute('href'))!)
-    expect(waWeek.searchParams.get('text')).toBe(`Hi Chitra Week, this is Test Gym. Your Monthly membership ends on ${formatDate(addDays(t, 7))}. Renew at the desk to keep coming in.`)
+    expect(waWeek.searchParams.get('text')).toContain(`⏳ Your *Monthly* membership ends on *${formatDate(addDays(t, 7))}* (7 days left).`)
 
     // the lapsed member is offered under Suggested instead; members still covered are not
     const suggested = page.getByRole('heading', { name: 'Suggested' }).locator('xpath=ancestor::*[contains(@class,"rounded-2xl")][1]')

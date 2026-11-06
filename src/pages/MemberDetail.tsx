@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { appUrl } from '@/lib/appUrl'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { Pencil, Archive, ArchiveRestore, Receipt, CreditCard, ClipboardCheck, LogOut, FileText, Ban, Printer } from 'lucide-react'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Pencil, Archive, ArchiveRestore, Receipt, CreditCard, ClipboardCheck, LogOut, FileText, Ban, Printer, MessageCircle } from 'lucide-react'
 import { assignWorkout } from '@/data/services/workouts'
 import { labelFor as labelOf, GENDERS } from '@/domain/types'
 import { ageOn } from '@/domain/dates'
@@ -29,6 +29,8 @@ import { PaymentDialog } from '@/components/domain/PaymentDialog'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useCheckIn } from '@/components/domain/CheckInDialog'
 import { useToast } from '@/components/ui/Toast'
+import { WhatsAppDialog, type WhatsAppOption } from '@/components/domain/WhatsAppDialog'
+import { expiryMessage, invoiceMessage, membershipMessage, type MoneyFacts } from '@/domain/whatsapp'
 import { errorMessage } from '@/data/errors'
 
 const TABS = ['overview', 'memberships', 'attendance', 'payments'] as const
@@ -36,8 +38,13 @@ type Tab = (typeof TABS)[number]
 
 export function MemberDetailPage() {
   const { id = '' } = useParams()
-  const { today, timezone } = useApp()
+  const { today, timezone, settings } = useApp()
   const toast = useToast()
+  const location = useLocation()
+  const navigate = useNavigate()
+  // Set once by the Add member page so the new member's page can offer a welcome message.
+  const [justAdded, setJustAdded] = useState(() => (location.state as { justAdded?: boolean } | null)?.justAdded === true)
+  const [share, setShare] = useState<'welcome' | 'details' | null>(null)
   const [params, setParams] = useSearchParams()
   const tab: Tab = TABS.find((t) => t === params.get('tab')) ?? 'overview'
   const snap = useLiveQuery(loadSnapshot, [...SNAPSHOT_STORES])
@@ -74,6 +81,40 @@ export function MemberDetailPage() {
   }
 
   const archived = member.status === 'archived'
+
+  const dismissJustAdded = () => {
+    setJustAdded(false)
+    // Drop the one-time cue from history so a refresh or Back does not bring the offer back.
+    if (location.state) navigate(location.pathname + location.search, { replace: true, state: null })
+  }
+
+  /** Messages the desk can send: plan and payment details, the latest invoice, and a renewal reminder. */
+  const shareOptions = (welcome: boolean): WhatsAppOption[] => {
+    const gym = { gymName: settings.gymName, gymPhone: settings.phone, memberName: member.name }
+    const moneyFor = (invoiceId: string | undefined): MoneyFacts | undefined => {
+      const inv = data.invoices.find((i) => i.id === invoiceId && i.status !== 'void')
+      if (!inv) return undefined
+      const b = invoiceBalance(inv, data.payments, data.adjustments)
+      return { invoiceNumber: inv.number, duePaise: b.duePaise, paidPaise: b.paidPaise, balancePaise: b.balancePaise }
+    }
+    const current = data.current
+    const options: WhatsAppOption[] = [
+      {
+        key: 'details',
+        label: welcome ? 'Welcome' : 'Membership',
+        text: membershipMessage({ ...gym, memberCode: member.memberCode, welcome, plan: current ? { planName: current.planName, startDate: current.startDate, endDate: current.endDate } : undefined, money: moneyFor(current?.invoiceId), today }),
+      },
+    ]
+    const latest = data.invoices.find((i) => i.status !== 'void')
+    if (latest) {
+      const b = invoiceBalance(latest, data.payments, data.adjustments)
+      options.push({ key: 'invoice', label: 'Invoice', text: invoiceMessage({ ...gym, issueDate: latest.issueDate, lines: latest.lines, discountPaise: latest.discountPaise, adjustmentsPaise: b.adjustmentsPaise, money: moneyFor(latest.id)! }) })
+    }
+    // The reminder is about the last day of cover, so a renewal already on file moves it forward.
+    const last = data.memberships.filter((m) => !m.cancelledAt && compareDates(m.startDate, today) <= 0).sort((a, b) => compareDates(b.endDate, a.endDate))[0]
+    if (last && data.coverEnd === last.endDate) options.push({ key: 'expiry', label: 'Expiry reminder', text: expiryMessage({ ...gym, planName: last.planName, endDate: last.endDate, today }) })
+    return options
+  }
   const setTab = (t: Tab) => setParams(t === 'overview' ? {} : { tab: t }, { replace: true })
 
   const onCheckOut = async (visitId: string, rev: number) => {
@@ -88,6 +129,18 @@ export function MemberDetailPage() {
   return (
     <div className="flex flex-col gap-4">
       <Link to="/members" className="inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-ink">← Members</Link>
+      {justAdded && !archived ? (
+        <Banner
+          action={
+            <span className="flex flex-wrap gap-2">
+              <Button size="sm" variant="secondary" icon={<MessageCircle className="h-4 w-4" aria-hidden />} onClick={() => setShare('welcome')}>Send on WhatsApp</Button>
+              <Button size="sm" variant="ghost" onClick={dismissJustAdded}>Not now</Button>
+            </span>
+          }
+        >
+          <strong className="font-medium">New member saved.</strong> Send a welcome message with {data.current ? 'the plan, expiry date and amount paid' : 'the member ID'} on WhatsApp?
+        </Banner>
+      ) : null}
       <Card>
         <CardBody className="flex flex-col gap-4">
           <div className="flex items-start gap-4">
@@ -124,6 +177,9 @@ export function MemberDetailPage() {
                 )}
               </>
             ) : null}
+            <Button variant="secondary" size="sm" icon={<MessageCircle className="h-4 w-4" aria-hidden />} onClick={() => setShare('details')}>
+              WhatsApp
+            </Button>
             <LinkButton to={`/members/${member.id}/edit`} variant="ghost" size="sm" icon={<Pencil className="h-4 w-4" aria-hidden />}>
               Edit
             </LinkButton>
@@ -357,6 +413,18 @@ export function MemberDetailPage() {
         }}
       />
       {checkInDialog}
+      {share ? (
+        <WhatsAppDialog
+          name={member.name}
+          phone={member.phone}
+          options={shareOptions(share === 'welcome')}
+          onClose={() => {
+            // The welcome offer has been used (or looked at); the WhatsApp button in the header stays.
+            if (share === 'welcome') dismissJustAdded()
+            setShare(null)
+          }}
+        />
+      ) : null}
     </div>
   )
 }

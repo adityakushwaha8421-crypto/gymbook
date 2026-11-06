@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Printer, ArrowLeft, Receipt, SlidersHorizontal } from 'lucide-react'
+import { Printer, ArrowLeft, Receipt, SlidersHorizontal, MessageCircle } from 'lucide-react'
 import { useApp } from '@/app/AppContext'
 import { useLiveQuery } from '@/hooks/useLiveQuery'
 import { loadSnapshot, SNAPSHOT_STORES } from '@/data/snapshot'
@@ -18,6 +18,8 @@ import { Modal } from '@/components/ui/Modal'
 import { Field, Input, MoneyInput, Select, FormError } from '@/components/ui/Field'
 import { useToast } from '@/components/ui/Toast'
 import { errorMessage } from '@/data/errors'
+import { WhatsAppDialog } from '@/components/domain/WhatsAppDialog'
+import { invoiceMessage } from '@/domain/whatsapp'
 
 export function InvoicePage() {
   const { id = '' } = useParams()
@@ -25,6 +27,7 @@ export function InvoicePage() {
   const snap = useLiveQuery(loadSnapshot, [...SNAPSHOT_STORES])
   const [payOpen, setPayOpen] = useState(false)
   const [adjOpen, setAdjOpen] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
 
   const invoice = snap.data?.invoices.find((i) => i.id === id)
   const member = invoice ? snap.data?.members.find((m) => m.id === invoice.memberId) : undefined
@@ -66,6 +69,9 @@ export function InvoicePage() {
             ) : null}
             {bal.balancePaise > 0 && member.status !== 'archived' ? (
               <Button size="sm" variant="secondary" icon={<Receipt className="h-4 w-4" aria-hidden />} onClick={() => setPayOpen(true)}>Record payment</Button>
+            ) : null}
+            {invoice.status === 'issued' ? (
+              <Button size="sm" variant="secondary" icon={<MessageCircle className="h-4 w-4" aria-hidden />} onClick={() => setShareOpen(true)}>WhatsApp</Button>
             ) : null}
             <Button size="sm" icon={<Printer className="h-4 w-4" aria-hidden />} onClick={() => window.print()}>Print / save PDF</Button>
           </div>
@@ -177,6 +183,14 @@ export function InvoicePage() {
       </article>
 
       {payOpen ? <PaymentDialog open onClose={() => setPayOpen(false)} member={member} invoices={snap.data.invoices} payments={snap.data.payments} adjustments={snap.data.adjustments} preferredInvoiceId={invoice.id} /> : null}
+      {shareOpen ? (
+        <WhatsAppDialog
+          name={member.name}
+          phone={member.phone}
+          options={[{ key: 'invoice', label: 'Invoice', text: invoiceMessage({ gymName: settings.gymName, gymPhone: settings.phone, memberName: member.name, issueDate: invoice.issueDate, lines: invoice.lines, discountPaise: invoice.discountPaise, adjustmentsPaise: bal.adjustmentsPaise, money: { invoiceNumber: invoice.number, duePaise: bal.duePaise, paidPaise: bal.paidPaise, balancePaise: bal.balancePaise } }) }]}
+          onClose={() => setShareOpen(false)}
+        />
+      ) : null}
       {adjOpen ? <AdjustmentDialog invoiceId={invoice.id} invoiceNumber={invoice.number} currentDue={bal.duePaise} onClose={() => setAdjOpen(false)} /> : null}
     </div>
   )

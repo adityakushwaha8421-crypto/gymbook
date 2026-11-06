@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test'
 import { deflateSync } from 'node:zlib'
 import { onboard, createPlan, addMember, sellMembership, readStore } from '../helpers'
 import { todayInTz, addDays, formatDate, membershipEndDate } from '../../src/domain/dates'
+import { membershipMessage, invoiceMessage, expiryMessage } from '../../src/domain/whatsapp'
 
 const TZ = 'Asia/Kolkata'
 
@@ -1035,5 +1036,120 @@ test.describe('9. add member with a plan', () => {
     await page.goto(page.url() + '/edit')
     await expect(page.getByLabel('Full name')).toHaveValue('Changed Mind')
     await expect(page.getByRole('heading', { name: 'Membership plan' })).toHaveCount(0)
+  })
+})
+
+// =====================================================================
+// 10. WhatsApp message after adding a member
+// =====================================================================
+test.describe('10. WhatsApp message after adding a member', () => {
+  const waText = async (link: ReturnType<Page['getByRole']>) => {
+    const url = new URL((await link.getAttribute('href'))!)
+    return { to: url.origin + url.pathname, text: url.searchParams.get('text') }
+  }
+  const gymPhone = async (page: Page) => (await readStore<{ phone?: string }>(page, 'settings'))[0].phone
+
+  it('member with a plan: welcome, invoice and expiry messages carry the name, plan, expiry and amounts', async ({ page }) => {
+    await onboard(page, 'empty')
+    await createPlan(page, 'Monthly', 1, 'months', '1500')
+    await page.goto('/members/new')
+    await fillAdd(page, { name: 'Rahul Patil', phone: '98200 12345' })
+    await page.getByLabel('Plan', { exact: true }).selectOption({ label: 'Monthly · 1 months · ₹1,500.00' })
+    await page.getByLabel('Discount').fill('100')
+    await page.getByLabel('Received now').fill('500')
+    await page.getByRole('button', { name: 'Add member and create invoice' }).click()
+    await expect(page).toHaveURL(/\/members\/mem_/)
+
+    const today = todayInTz(TZ)
+    const end = membershipEndDate(today, 1, 'months')
+    const gym = { gymName: 'Test Gym', gymPhone: await gymPhone(page), memberName: 'Rahul Patil' }
+    const money = { invoiceNumber: 'RK-00001', duePaise: 140000, paidPaise: 50000, balancePaise: 90000 }
+
+    const banner = page.getByRole('status').filter({ hasText: 'New member saved.' })
+    await expect(banner).toContainText('the plan, expiry date and amount paid')
+    await banner.getByRole('button', { name: 'Send on WhatsApp' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Send on WhatsApp' })
+    await expect(dialog).toContainText('Rahul Patil (98200 12345)')
+    const open = dialog.getByRole('link', { name: 'Open WhatsApp' })
+    await expect(open).toBeFocused()
+    await expect(open).toHaveAttribute('target', '_blank')
+    await expect(open).toHaveAttribute('rel', /noopener/)
+    await expect(dialog.getByRole('tab')).toHaveText(['Welcome', 'Invoice', 'Expiry reminder'])
+
+    const welcome = membershipMessage({ ...gym, memberCode: 'GB-0001', welcome: true, plan: { planName: 'Monthly', startDate: today, endDate: end }, money, today })
+    expect(await waText(open)).toEqual({ to: 'https://wa.me/919820012345', text: welcome })
+    await expect(dialog.getByLabel('Message')).toHaveValue(welcome)
+    for (const part of ['Hi Rahul Patil 👋', '🎉', '📋 *Plan:* Monthly', `⏳ *Valid till:* ${formatDate(end)}`, '💰 *Amount:* ₹1,400', '✅ *Paid:* ₹500', '🔔 *Balance due:* ₹900']) expect(welcome).toContain(part)
+
+    await dialog.getByRole('tab', { name: 'Invoice' }).click()
+    const [inv] = await readStore<{ lines: { description: string; amountPaise: number }[] }>(page, 'invoices')
+    expect((await waText(open)).text).toBe(invoiceMessage({ ...gym, issueDate: today, lines: inv.lines, discountPaise: 10000, adjustmentsPaise: 0, money }))
+    await dialog.getByRole('tab', { name: 'Expiry reminder' }).click()
+    expect((await waText(open)).text).toBe(expiryMessage({ ...gym, planName: 'Monthly', endDate: end, today }))
+
+    // an edit goes into the link, and is kept while looking at another message
+    await dialog.getByRole('tab', { name: 'Welcome' }).click()
+    await dialog.getByLabel('Message').fill('Hi Rahul 👋 see you at 6 am')
+    expect((await waText(open)).text).toBe('Hi Rahul 👋 see you at 6 am')
+    await dialog.getByRole('tab', { name: 'Invoice' }).click()
+    await dialog.getByRole('tab', { name: 'Welcome' }).click()
+    await expect(dialog.getByLabel('Message')).toHaveValue('Hi Rahul 👋 see you at 6 am')
+
+    // closing the offer removes the banner for good; the header button stays
+    await dialog.getByRole('button', { name: 'Not now' }).click()
+    await expect(dialog).toBeHidden()
+    await expect(banner).toHaveCount(0)
+    await page.reload()
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Rahul Patil')
+    await expect(banner).toHaveCount(0)
+    await page.getByRole('button', { name: 'WhatsApp', exact: true }).click()
+    await expect(dialog.getByRole('tab')).toHaveText(['Membership', 'Invoice', 'Expiry reminder'])
+    expect((await waText(open)).text).toBe(membershipMessage({ ...gym, memberCode: 'GB-0001', plan: { planName: 'Monthly', startDate: today, endDate: end }, money, today }))
+    expect((await waText(open)).text).toContain('Here are your membership details:')
+  })
+
+  it('member without a plan: a short welcome with the member ID, and "Not now" dismisses the offer', async ({ page }) => {
+    await onboard(page, 'empty')
+    await page.goto('/members/new')
+    await fillAdd(page, { name: 'Only Name', phone: '+44 20 7946 0958' })
+    await submitAdd(page)
+    await expect(page).toHaveURL(/\/members\/mem_/)
+    const banner = page.getByRole('status').filter({ hasText: 'New member saved.' })
+    await expect(banner).toContainText('the member ID')
+    await banner.getByRole('button', { name: 'Send on WhatsApp' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Send on WhatsApp' })
+    await expect(dialog.getByRole('tab')).toHaveCount(0)
+    const got = await waText(dialog.getByRole('link', { name: 'Open WhatsApp' }))
+    expect(got.to).toBe('https://wa.me/442079460958')
+    expect(got.text).toBe(membershipMessage({ gymName: 'Test Gym', gymPhone: await gymPhone(page), memberName: 'Only Name', memberCode: 'GB-0001', welcome: true, today: todayInTz(TZ) }))
+    await page.keyboard.press('Escape')
+    await expect(banner).toHaveCount(0)
+
+    // the offer shows only right after adding: a second member gets it, opening an older member does not
+    const first = page.url()
+    await page.goto('/members/new')
+    await fillAdd(page, { name: 'Second One', phone: '98200 00031' })
+    await submitAdd(page)
+    await expect(banner).toBeVisible()
+    await banner.getByRole('button', { name: 'Not now' }).click()
+    await expect(banner).toHaveCount(0)
+    await page.goto(first)
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Only Name')
+    await expect(banner).toHaveCount(0)
+  })
+
+  it('invoice page: WhatsApp sends the invoice as text', async ({ page }) => {
+    await onboard(page, 'empty')
+    await createPlan(page, 'Monthly', 1, 'months', '1500')
+    await addMember(page, 'Invoice Person', '98200 00032')
+    await page.getByRole('button', { name: 'Not now' }).click()
+    await sellMembership(page, { receivedNow: '1500' })
+    await page.getByRole('button', { name: 'WhatsApp', exact: true }).click()
+    const dialog = page.getByRole('dialog', { name: 'Send on WhatsApp' })
+    await expect(dialog.getByRole('tab')).toHaveCount(0)
+    const got = await waText(dialog.getByRole('link', { name: 'Open WhatsApp' }))
+    expect(got.to).toBe('https://wa.me/919820000032')
+    for (const part of ['Hi Invoice Person 👋', '🧾 *Invoice:* RK-00001', '▪ Monthly membership', '💰 *Amount:* ₹1,500', '✅ *Paid:* ₹1,500 (fully paid)', 'Thank you 🙏']) expect(got.text).toContain(part)
+    expect(got.text).not.toContain('Balance due')
   })
 })

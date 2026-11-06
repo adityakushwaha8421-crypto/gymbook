@@ -25,6 +25,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { MemberPicker } from '@/components/domain/MemberPicker'
 import { useToast } from '@/components/ui/Toast'
 import { errorMessage } from '@/data/errors'
+import { expiryMessage, whatsappUrl } from '@/domain/whatsapp'
 
 const typeTone: Record<FollowUpType, Tone> = { expiry: 'warn', payment: 'danger', lead: 'info', other: 'neutral' }
 
@@ -90,7 +91,7 @@ export function FollowUpsPage() {
     return { name: f.leadName ?? (f.type === 'lead' ? 'Lead' : 'No contact'), phone: f.leadPhone, email: f.leadEmail }
   }
 
-  const whatsappHref = (phone: string, text: string) => `https://wa.me/${toWaNumber(phone)}?text=${encodeURIComponent(text)}`
+  const whatsappHref = whatsappUrl
 
   return (
     <div className="flex flex-col gap-4">
@@ -122,8 +123,7 @@ export function FollowUpsPage() {
             <>
               <ul className="divide-y divide-line">
                 {(showAllExpiries ? expiries : expiries.slice(0, EXPIRY_PREVIEW)).map((x) => {
-                  const when = x.daysLeft === 0 ? 'today' : x.daysLeft === 1 ? 'tomorrow' : `on ${formatDate(x.endDate)}`
-                  const msg = `Hi ${x.member.name.replace(/^Sample\s+/i, '')}, this is ${settings.gymName}. Your ${x.membership.planName} membership ends ${when}. Renew at the desk to keep coming in.`
+                  const msg = expiryMessage({ gymName: settings.gymName, gymPhone: settings.phone, memberName: x.member.name, planName: x.membership.planName, endDate: x.endDate, today })
                   return (
                     <li key={x.member.id} className="flex flex-col gap-2 px-4 py-3 sm:px-5">
                       <div className="flex items-start gap-3">
@@ -242,12 +242,6 @@ export function FollowUpsPage() {
       <ConfirmDialog open={deleting !== null} onClose={() => setDeleting(null)} title="Delete this follow-up?" description="Completed follow-ups can be deleted to tidy the list. This cannot be undone." confirmLabel="Delete" danger onConfirm={async () => { if (deleting) { await deleteFollowUp(deleting.id); toast.success('Deleted') } }} />
     </div>
   )
-}
-
-function toWaNumber(phone: string): string {
-  const digits = phone.replace(/\D/g, '')
-  if (phone.trim().startsWith('+')) return digits
-  return digits.length === 10 ? `91${digits}` : digits
 }
 
 function FollowUpDialog({ existing, prefill, rows, onClose }: { existing?: FollowUp; prefill?: Partial<FollowUpFormValues>; rows: ReturnType<typeof memberRows>; onClose: () => void }) {

@@ -269,3 +269,23 @@ Asked for: run the tests and fix things; a camera option for the member photo; a
 | Add member with plan | checked in the browser at 1100 and 375 px; no horizontal overflow |
 | Not checked | a real phone or webcam: the camera was exercised only with Chromium's fake device |
 | Typecheck, build | clean |
+
+## WhatsApp messages for members (2026-11-06)
+
+Asked for: after adding a member, an option to send them the invoice or a WhatsApp message about the amount paid and the expiry, with their name and proper emoji.
+
+- **After adding a member:** the member's page opens with a notice, "New member saved", and a "Send on WhatsApp" button ("Not now" hides it; it does not come back on refresh). It is a notice and not a pop-up, so the desk is never blocked.
+- **The dialog:** shows the message ready to send and lets the desk edit it. "Open WhatsApp" opens a chat with the member's number and the text filled in; "Copy" copies it. GymBook never sends anything itself.
+- **Three messages** (`src/domain/whatsapp.ts`): *Welcome / Membership* (name, member ID, plan, start, valid-till date with days left, invoice number, amount, paid, balance due), *Invoice* (what was billed, discount, adjustment, paid, due) and *Expiry reminder*. A member added without a plan gets a short welcome with the member ID.
+- **Also on:** a WhatsApp button on every member's page and on each invoice. The Upcoming expiries list on Follow-ups now sends the same emoji reminder.
+- **Emoji** are single code points, with no variation selectors or joined sequences, because those are the ones that survive a `wa.me` link everywhere; a unit test enforces it.
+- **Limit:** a WhatsApp link can carry text only, so the invoice goes as text, not as a PDF. To send the PDF, use "Print / save PDF" on the invoice and attach the file in WhatsApp.
+
+| Check | Result |
+| --- | --- |
+| Vitest | 149 passed (10 new for the messages and links) |
+| Playwright, every suite | 115 of 116 passed on the full run. The one failure was an older payments test that left the page before its payment was saved (a race in the test, not in the app); it now waits for the save and passed 4 times in a row. The full suite was not run again after that one-line test change |
+| New browser tests | 3: member with a plan (all three messages, editing, banner dismissal), member without a plan, invoice page |
+| Desktop 1100 and phone 375 | banner and dialog checked on screenshots; no horizontal overflow, no console errors |
+| Not checked | an actual WhatsApp chat: the link and its text were verified, but no message was opened in WhatsApp or sent |
+| Typecheck, build | clean |
