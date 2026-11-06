@@ -22,22 +22,25 @@ export type Gender = 'female' | 'male' | 'other'
 export interface Member extends BaseRecord {
   name: string
   phone: string
-  email?: string
   joiningDate: ISODate
   status: MemberStatus
   notes?: string
   photoDataUrl?: string
-  trainerId?: string
   archivedAt?: ISODateTime
   /** Short unique code printed on the member card and accepted by check-in search (e.g. GB-0042). */
   memberCode?: string
   dateOfBirth?: ISODate
   gender?: Gender
-  emergencyName?: string
-  emergencyPhone?: string
+  heightCm?: number
+  weightKg?: number
   goal?: string
   healthNotes?: string
   workoutPlanId?: string
+  /** No longer collected or shown. Kept so records and backups made by earlier versions stay intact. */
+  email?: string
+  trainerId?: string
+  emergencyName?: string
+  emergencyPhone?: string
 }
 
 export type SessionStatus = 'scheduled' | 'completed' | 'cancelled' | 'no_show'
@@ -302,42 +305,6 @@ export const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: 'upi', label: 'UPI' },
   { value: 'bank', label: 'Bank transfer' },
   { value: 'card', label: 'Card' },
-]
-
-export const EXPENSE_CATEGORIES: { value: ExpenseCategory; label: string }[] = [
-  { value: 'rent', label: 'Rent' },
-  { value: 'salary', label: 'Salaries' },
-  { value: 'equipment', label: 'Equipment' },
-  { value: 'maintenance', label: 'Maintenance' },
-  { value: 'utilities', label: 'Utilities' },
-  { value: 'marketing', label: 'Marketing' },
-  { value: 'supplies', label: 'Supplies' },
-  { value: 'other', label: 'Other' },
-]
-
-export const SESSION_STATUSES: { value: SessionStatus; label: string }[] = [
-  { value: 'scheduled', label: 'Scheduled' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'cancelled', label: 'Cancelled' },
-  { value: 'no_show', label: 'No-show' },
-]
-
-export const EQUIPMENT_STATUSES: { value: EquipmentStatus; label: string }[] = [
-  { value: 'ok', label: 'In service' },
-  { value: 'needs_service', label: 'Needs service' },
-  { value: 'out_of_order', label: 'Out of order' },
-]
-
-export const INCIDENT_STATUSES: { value: IncidentStatus; label: string }[] = [
-  { value: 'open', label: 'Open' },
-  { value: 'in_progress', label: 'In progress' },
-  { value: 'resolved', label: 'Resolved' },
-]
-
-export const INCIDENT_SEVERITIES: { value: IncidentSeverity; label: string }[] = [
-  { value: 'low', label: 'Low' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'high', label: 'High' },
 ]
 
 export const GENDERS: { value: Gender; label: string }[] = [

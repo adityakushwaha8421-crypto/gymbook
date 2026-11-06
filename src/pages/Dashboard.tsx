@@ -1,15 +1,14 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ClipboardCheck, Receipt, ArrowRight, Activity, Wrench, TrendingUp, TrendingDown, Minus } from 'lucide-react'
-import { Badge } from '@/components/ui/Badge'
+import { ClipboardCheck, Receipt, ArrowRight, Activity, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { PageActions } from '@/components/ui/PageActions'
 import { usePage, useApp } from '@/app/AppContext'
 import { useLiveQuery } from '@/hooks/useLiveQuery'
 import { loadSnapshot, SNAPSHOT_STORES } from '@/data/snapshot'
 import { listRecentActivity } from '@/data/services/activity'
-import { dashboardMetrics, financeSeries, financeSummary, periodPreset, todayOps, monthComparison, type Period } from '@/domain/metrics'
+import { dashboardMetrics, financeSeries, financeSummary, periodPreset, monthComparison, type Period } from '@/domain/metrics'
 import { formatINRCompact, formatINR } from '@/domain/money'
-import { formatDate, formatDateTime, diffDays, formatMonthKey, formatTime } from '@/domain/dates'
+import { formatDate, formatDateTime, diffDays, formatMonthKey } from '@/domain/dates'
 import { Stat, Avatar, LiveDot } from '@/components/ui/misc'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { LinkButton } from '@/components/ui/Button'
@@ -31,11 +30,10 @@ export function Dashboard() {
   const metrics = useMemo(() => (snap.data ? dashboardMetrics(snap.data, today, timezone) : null), [snap.data, today, timezone])
   const finance = useMemo(() => (snap.data ? financeSummary(snap.data, period, timezone) : null), [snap.data, period, timezone])
   const series = useMemo(() => (snap.data ? financeSeries(snap.data, period, timezone) : null), [snap.data, period, timezone])
-  const ops = useMemo(() => (snap.data ? todayOps(snap.data, today, timezone) : null), [snap.data, today, timezone])
   const mom = useMemo(() => (snap.data ? monthComparison(snap.data, today, timezone) : null), [snap.data, today, timezone])
 
   if (snap.error) return <ErrorState message={snap.error} />
-  if (!snap.data || !metrics || !finance || !series || !ops || !mom) return <PageLoading />
+  if (!snap.data || !metrics || !finance || !series || !mom) return <PageLoading />
 
   const labels = series.points.map((p) => (series.granularity === 'day' ? p.key.slice(8) + '/' + p.key.slice(5, 7) : formatMonthKey(p.key)))
 
@@ -58,22 +56,25 @@ export function Dashboard() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
-        <Card>
-          <CardHeader title="Today’s PT sessions" description={ops.sessionsToday.length ? `${ops.sessionsToday.length} booked` : 'Nothing booked today'} action={<Link to="/sessions" className="text-sm font-medium text-accent-ink hover:underline">All sessions →</Link>} />
-          {ops.sessionsToday.length === 0 ? <EmptyState compact title="No sessions today" /> : (
-            <ul className="divide-y divide-line">
-              {ops.sessionsToday.slice(0, 6).map(({ session: s, memberName, trainerName }) => (
-                <li key={s.id} className="flex items-center gap-3 px-4 py-2 text-sm sm:px-5">
-                  <span className="tabular w-16 shrink-0 text-muted">{formatTime(s.startAt, timezone)}</span>
-                  <Link to={`/members/${s.memberId}?tab=sessions`} className="min-w-0 flex-1 truncate font-medium hover:underline">{memberName}</Link>
-                  <span className="hidden truncate text-xs text-muted sm:inline">{trainerName}</span>
-                  <Badge tone={s.status === 'completed' ? 'success' : s.status === 'scheduled' ? 'info' : 'muted'}>{s.status === 'no_show' ? 'No-show' : s.status[0].toUpperCase() + s.status.slice(1)}</Badge>
-                </li>
-              ))}
-            </ul>
-          )}
+        <Card className="lg:col-span-2">
+          <CardHeader
+            title="Money"
+            description="Cash received is what actually came in. Invoiced is what was billed. Outstanding is the gap across all time."
+            action={<PeriodPicker preset={preset} period={period} today={today} onChange={(p, per) => { setPreset(p); setPeriod(per) }} />}
+          />
+          <CardBody className="flex flex-col gap-4">
+            <div className="grid grid-cols-2 gap-3">
+              <MoneyCell label="Cash received" value={finance.receivedPaise} hint={`${finance.paymentsCount} payment${finance.paymentsCount === 1 ? '' : 's'}`} />
+              <MoneyCell label="Invoiced" value={finance.invoicedPaise} hint={`${finance.invoicesCount} invoice${finance.invoicesCount === 1 ? '' : 's'}`} />
+            </div>
+            <BarChart
+              labels={labels}
+              series={[{ key: 'received', label: 'Cash received', color: 'rgb(var(--c-success))', values: series.points.map((p) => p.received), format: formatINR }]}
+              height={280}
+            />
+          </CardBody>
         </Card>
-        <Card>
+        <Card className="lg:self-start">
           <CardHeader title="This month so far" description="Compared with the same days last month" />
           <ul className="divide-y divide-line">
             <Delta label="Cash received" now={mom.received[0]} prev={mom.received[1]} fmt={formatINRCompact} />
@@ -81,39 +82,7 @@ export function Dashboard() {
             <Delta label="Visits" now={mom.visits[0]} prev={mom.visits[1]} fmt={String} />
           </ul>
         </Card>
-        <Card>
-          <CardHeader title="Equipment" description={ops.openIncidents ? `${ops.openIncidents} open incident${ops.openIncidents === 1 ? '' : 's'}${ops.highIncidents ? `, ${ops.highIncidents} high` : ''}` : 'No open incidents'} action={<Link to="/equipment" className="text-sm font-medium text-accent-ink hover:underline">Equipment →</Link>} />
-          <CardBody className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-line bg-sunken/50 px-3.5 py-3"><p className="text-xs font-medium text-muted">Out of order</p><p className={`tabular mt-1 text-lg font-medium ${ops.outOfOrder ? 'text-danger' : ''}`}>{ops.outOfOrder}</p></div>
-            <div className="rounded-xl border border-line bg-sunken/50 px-3.5 py-3"><p className="text-xs font-medium text-muted">Needs service</p><p className={`tabular mt-1 text-lg font-medium ${ops.needsService ? 'text-warn' : ''}`}>{ops.needsService}</p></div>
-            <p className="col-span-2 flex items-center gap-1.5 text-xs text-muted"><Wrench className="h-3.5 w-3.5" aria-hidden />{ops.openIncidents ? 'Review incidents before the next shift.' : 'All equipment is in service.'}</p>
-          </CardBody>
-        </Card>
       </div>
-
-      <Card>
-        <CardHeader
-          title="Money"
-          description="Cash received is what actually came in. Invoiced is what was billed. Outstanding is the gap across all time."
-          action={<PeriodPicker preset={preset} period={period} today={today} onChange={(p, per) => { setPreset(p); setPeriod(per) }} />}
-        />
-        <CardBody className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <MoneyCell label="Cash received" value={finance.receivedPaise} hint={`${finance.paymentsCount} payment${finance.paymentsCount === 1 ? '' : 's'}`} />
-            <MoneyCell label="Invoiced" value={finance.invoicedPaise} hint={`${finance.invoicesCount} invoice${finance.invoicesCount === 1 ? '' : 's'}`} />
-            <MoneyCell label="Expenses" value={finance.expensesPaise} hint={`${finance.expensesCount} record${finance.expensesCount === 1 ? '' : 's'}`} />
-            <MoneyCell label="Net cash" value={finance.netCashPaise} hint="received − expenses" tone={finance.netCashPaise < 0 ? 'danger' : 'success'} />
-          </div>
-          <BarChart
-            labels={labels}
-            series={[
-              { key: 'received', label: 'Cash received', color: 'rgb(var(--c-success))', values: series.points.map((p) => p.received), format: formatINR },
-              { key: 'expenses', label: 'Expenses', color: 'rgb(var(--c-ink) / 0.2)', values: series.points.map((p) => p.expenses), format: formatINR },
-            ]}
-            height={280}
-          />
-        </CardBody>
-      </Card>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Card>
@@ -192,11 +161,11 @@ function Delta({ label, now, prev, fmt }: { label: string; now: number; prev: nu
   )
 }
 
-function MoneyCell({ label, value, hint, tone }: { label: string; value: number; hint?: string; tone?: 'danger' | 'success' }) {
+function MoneyCell({ label, value, hint }: { label: string; value: number; hint?: string }) {
   return (
     <div className="rounded-xl border border-line bg-sunken/50 px-3.5 py-3">
       <p className="text-xs font-medium text-muted">{label}</p>
-      <p className={`tabular mt-1 text-lg font-medium leading-6 [overflow-wrap:anywhere] ${tone === 'danger' ? 'text-danger' : tone === 'success' ? 'text-success' : ''}`}>{formatINR(value)}</p>
+      <p className="tabular mt-1 text-lg font-medium leading-6 [overflow-wrap:anywhere]">{formatINR(value)}</p>
       {hint ? <p className="text-xs text-muted">{hint}</p> : null}
     </div>
   )

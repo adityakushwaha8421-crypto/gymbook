@@ -11,7 +11,6 @@ import { invoiceBalance, memberBalance } from '@/domain/membership'
 import { exportBackup, validateBackup, importBackup } from './backup'
 import { seedSampleData, removeSampleRecords } from './sample'
 import { armSaveFailure } from './failpoint'
-import { saveSchedule, createTrainer } from './services/trainers'
 import { StorageError } from './errors'
 
 const TZ = 'Asia/Kolkata'
@@ -189,16 +188,6 @@ describe('sample data', () => {
   })
 })
 
-describe('trainer schedules', () => {
-  it('rejects overlapping slots', async () => {
-    const t = await createTrainer({ name: 'Coach', phone: '9000000000', specialty: 'Strength' })
-    await saveSchedule(t.id, { weekday: 1, startTime: '06:00', endTime: '10:00', label: 'Morning' })
-    await expect(saveSchedule(t.id, { weekday: 1, startTime: '09:00', endTime: '11:00', label: 'Late' })).rejects.toThrow(/Overlaps/)
-    await saveSchedule(t.id, { weekday: 1, startTime: '10:00', endTime: '11:00', label: 'Adjacent' })
-    await saveSchedule(t.id, { weekday: 2, startTime: '09:00', endTime: '11:00', label: 'Other day' })
-  })
-})
-
 describe('voiding an invoice cancels its membership', () => {
   it('marks the membership cancelled, hides it from current/renewal logic and blocks check-in', async () => {
     const { member, plan } = await memberAndPlan()
@@ -217,8 +206,7 @@ describe('voiding an invoice cancels its membership', () => {
   })
 })
 
-describe('PT sessions, equipment and workouts', () => {
-  const tz = 'Asia/Kolkata'
+describe('member codes, measurements and workouts', () => {
   it('assigns sequential member codes and finds members by code', async () => {
     const a = await createMember({ name: 'Code One', phone: '9000000001', joiningDate: today })
     const b = await createMember({ name: 'Code Two', phone: '9000000002', joiningDate: today })
@@ -227,47 +215,6 @@ describe('PT sessions, equipment and workouts', () => {
     const { filterMembers } = await import('@/components/domain/MemberPicker')
     expect(filterMembers([{ member: a }, { member: b }], 'gb-0002').map((r) => r.member.name)).toEqual(['Code Two'])
     expect(filterMembers([{ member: a }, { member: b }], 'GB0001').map((r) => r.member.name)).toEqual(['Code One'])
-  })
-
-  it('refuses double-booking a trainer or a member, allows adjacent sessions', async () => {
-    const { createTrainer } = await import('./services/trainers')
-    const { saveSession, setSessionStatus, listSessions, deleteSession } = await import('./services/sessions')
-    const t1 = await createTrainer({ name: 'Coach A', phone: '9000000010', specialty: 'Strength' })
-    const t2 = await createTrainer({ name: 'Coach B', phone: '9000000011', specialty: 'Yoga' })
-    const m1 = await createMember({ name: 'Session One', phone: '9000000003', joiningDate: today })
-    const m2 = await createMember({ name: 'Session Two', phone: '9000000004', joiningDate: today })
-    const base = { startAt: `${today}T09:00`, startAtInstant: new Date(`${today}T03:30:00.000Z`).toISOString(), durationMinutes: 60, note: undefined }
-    const s1 = await saveSession({ ...base, trainerId: t1.id, memberId: m1.id }, tz)
-    // same trainer, overlapping start
-    await expect(saveSession({ ...base, trainerId: t1.id, memberId: m2.id, startAtInstant: new Date(`${today}T04:00:00.000Z`).toISOString() }, tz)).rejects.toThrow(/Coach A already has a session/)
-    // same member, other trainer, overlapping
-    await expect(saveSession({ ...base, trainerId: t2.id, memberId: m1.id, startAtInstant: new Date(`${today}T04:00:00.000Z`).toISOString() }, tz)).rejects.toThrow(/Session One already has a session/)
-    // adjacent (starts exactly when the first ends) is fine
-    const s2 = await saveSession({ ...base, trainerId: t1.id, memberId: m2.id, startAtInstant: new Date(`${today}T04:30:00.000Z`).toISOString() }, tz)
-    expect(s2.status).toBe('scheduled')
-    // a cancelled session no longer blocks the slot
-    await setSessionStatus(s1.id, s1.rev, 'cancelled')
-    const s3 = await saveSession({ ...base, trainerId: t1.id, memberId: m1.id }, tz)
-    expect(s3.id).not.toBe(s1.id)
-    expect((await listSessions()).length).toBe(3)
-    await expect(deleteSession(s1.id)).rejects.toThrow(/Only scheduled/)
-    await deleteSession(s3.id)
-    expect((await listSessions()).length).toBe(2)
-  })
-
-  it('tracks equipment incidents through their lifecycle', async () => {
-    const { createEquipment, reportIncident, setIncidentStatus, setEquipmentArchived, listEquipment, listIncidents } = await import('./services/equipment')
-    const eq = await createEquipment({ name: 'Treadmill X', category: 'Cardio', status: 'ok', location: undefined, serial: undefined, purchasedOn: undefined, notes: undefined })
-    const inc = await reportIncident({ equipmentId: eq.id, title: 'Belt slipping', severity: 'high', reportedBy: 'Reception', note: undefined, markEquipment: 'out_of_order' })
-    expect((await listEquipment())[0].status).toBe('out_of_order')
-    const fresh = (await listEquipment())[0]
-    await expect(setEquipmentArchived(fresh.id, fresh.rev, true)).rejects.toThrow(/open incidents/)
-    const prog = await setIncidentStatus(inc.id, inc.rev, 'in_progress')
-    await expect(setIncidentStatus(prog.id, prog.rev, 'resolved', { resolution: '' })).rejects.toThrow(/resolved/)
-    const done = await setIncidentStatus(prog.id, prog.rev, 'resolved', { resolution: 'Belt replaced', equipmentStatus: 'ok' })
-    expect(done.resolvedAt).toBeTruthy()
-    expect((await listEquipment())[0].status).toBe('ok')
-    expect((await listIncidents())[0].resolution).toBe('Belt replaced')
   })
 
   it('copies a library template and assigns it to a member', async () => {
@@ -284,18 +231,48 @@ describe('PT sessions, equipment and workouts', () => {
     expect((await listWorkouts()).length).toBe(1)
   })
 
-  it('backs up and restores the new stores', async () => {
-    const { createEquipment } = await import('./services/equipment')
+  it('stores height and weight, updates them and clears them', async () => {
+    const m = await createMember({ name: 'Measured Person', phone: '9000000006', joiningDate: today, heightCm: 172, weightKg: 68.5 })
+    expect(m.heightCm).toBe(172)
+    expect(m.weightKg).toBe(68.5)
+    const next = await updateMember(m.id, m.rev, { name: m.name, phone: m.phone, joiningDate: today, heightCm: 173, weightKg: undefined })
+    expect(next.heightCm).toBe(173)
+    expect(next.weightKg).toBeUndefined()
+    const b = await exportBackup()
+    const preview = validateBackup(JSON.stringify(b))
+    expect(preview.ok).toBe(true)
+    await importBackup(preview.backup!)
+    expect((await getMember(m.id))!.heightCm).toBe(173)
+  })
+
+  it('editing a member made by an earlier version keeps its email, trainer and emergency contact', async () => {
+    const m = await createMember({ name: 'Older Record', phone: '9000000007', joiningDate: today })
+    const db = await getDb()
+    await db.put('members', { ...m, email: 'old@example.com', trainerId: 'tr_old', emergencyName: 'Kin', emergencyPhone: '98200 00009' })
+    const next = await updateMember(m.id, m.rev, { name: 'Older Record Edited', phone: m.phone, joiningDate: today, heightCm: 180 })
+    expect(next).toMatchObject({ name: 'Older Record Edited', heightCm: 180, email: 'old@example.com', trainerId: 'tr_old', emergencyName: 'Kin', emergencyPhone: '98200 00009' })
+  })
+
+  it('records of removed sections survive a backup round trip', async () => {
     const { createWorkoutFromTemplate } = await import('./services/workouts')
-    await createEquipment({ name: 'Rack', category: 'Strength', status: 'ok', location: undefined, serial: undefined, purchasedOn: undefined, notes: undefined })
+    const stamp = { createdAt: '2026-10-01T00:00:00.000Z', updatedAt: '2026-10-01T00:00:00.000Z', rev: 1 }
+    const db = await getDb()
+    await db.put('equipment', { ...stamp, id: 'eq_1', name: 'Rack', category: 'Strength', status: 'ok', archived: false })
+    await db.put('expenses', { ...stamp, id: 'exp_1', date: today, category: 'rent', amountPaise: 4500000, method: 'bank' })
+    await db.put('trainers', { ...stamp, id: 'tr_1', name: 'Coach', phone: '9000000010', specialty: 'Strength', status: 'active' })
     await createWorkoutFromTemplate('fat-loss-circuit')
     const b = await exportBackup()
     expect(b.data.equipment.length).toBe(1)
+    expect(b.data.expenses.length).toBe(1)
+    expect(b.data.trainers.length).toBe(1)
     expect(b.data.workouts.length).toBe(1)
     const preview = validateBackup(JSON.stringify(b))
     expect(preview.ok).toBe(true)
-    expect(preview.counts.equipment).toBe(1)
     await importBackup(preview.backup!)
-    expect((await exportBackup()).data.workouts[0].name).toBe('Fat-loss circuits')
+    const again = await exportBackup()
+    expect(again.data.equipment[0].name).toBe('Rack')
+    expect(again.data.expenses[0].amountPaise).toBe(4500000)
+    expect(again.data.trainers[0].name).toBe('Coach')
+    expect(again.data.workouts[0].name).toBe('Fat-loss circuits')
   })
 })

@@ -5,7 +5,6 @@ import { usePage, useApp } from '@/app/AppContext'
 import { useLiveQuery } from '@/hooks/useLiveQuery'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import { listMembers, createMember, updateMember, findPossibleDuplicates, getMember } from '@/data/services/members'
-import { listTrainers } from '@/data/services/trainers'
 import { memberForm, type MemberFormValues } from '@/domain/validation'
 import { useForm } from '@/lib/forms'
 import { fileToSmallDataUrl } from '@/lib/image'
@@ -20,7 +19,7 @@ import { useToast } from '@/components/ui/Toast'
 import { DiscardGuard } from '@/components/domain/DiscardGuard'
 import { errorMessage } from '@/data/errors'
 
-type Values = { name: string; phone: string; email: string; joiningDate: string; trainerId: string; notes: string; photoDataUrl?: string; dateOfBirth: string; gender: '' | 'female' | 'male' | 'other'; emergencyName: string; emergencyPhone: string; goal: string; healthNotes: string }
+type Values = { name: string; phone: string; joiningDate: string; notes: string; photoDataUrl?: string; dateOfBirth: string; gender: '' | 'female' | 'male' | 'other'; heightCm: string; weightKg: string; goal: string; healthNotes: string }
 
 export function MemberFormPage({ mode }: { mode: 'new' | 'edit' }) {
   const { id } = useParams()
@@ -41,7 +40,6 @@ function MemberFormInner({ mode, member }: { mode: 'new' | 'edit'; member?: Memb
   const navigate = useNavigate()
   const toast = useToast()
   const members = useLiveQuery(listMembers, ['members'])
-  const trainers = useLiveQuery(listTrainers, ['trainers'])
   const fileRef = useRef<HTMLInputElement>(null)
   const [photoError, setPhotoError] = useState<string | null>(null)
 
@@ -49,15 +47,13 @@ function MemberFormInner({ mode, member }: { mode: 'new' | 'edit'; member?: Memb
     () => ({
       name: member?.name ?? '',
       phone: member?.phone ?? '',
-      email: member?.email ?? '',
       joiningDate: member?.joiningDate ?? today,
-      trainerId: member?.trainerId ?? '',
       notes: member?.notes ?? '',
       photoDataUrl: member?.photoDataUrl,
       dateOfBirth: member?.dateOfBirth ?? '',
       gender: member?.gender ?? '',
-      emergencyName: member?.emergencyName ?? '',
-      emergencyPhone: member?.emergencyPhone ?? '',
+      heightCm: member?.heightCm !== undefined ? String(member.heightCm) : '',
+      weightKg: member?.weightKg !== undefined ? String(member.weightKg) : '',
       goal: member?.goal ?? '',
       healthNotes: member?.healthNotes ?? '',
     }),
@@ -105,9 +101,9 @@ function MemberFormInner({ mode, member }: { mode: 'new' | 'edit'; member?: Memb
 
   const duplicates = useMemo(() => {
     if (!members.data) return []
-    if (form.values.phone.replace(/\D/g, '').length < 8 && !form.values.email && form.values.name.length < 4) return []
-    return findPossibleDuplicates(members.data, { phone: form.values.phone, email: form.values.email, name: form.values.name }, member?.id)
-  }, [members.data, form.values.phone, form.values.email, form.values.name, member?.id])
+    if (form.values.phone.replace(/\D/g, '').length < 8 && form.values.name.length < 4) return []
+    return findPossibleDuplicates(members.data, { phone: form.values.phone, name: form.values.name }, member?.id)
+  }, [members.data, form.values.phone, form.values.name, member?.id])
 
   const onPhoto = async (file: File | undefined) => {
     if (!file) return
@@ -152,25 +148,8 @@ function MemberFormInner({ mode, member }: { mode: 'new' | 'edit'; member?: Memb
             <Field label="Phone" required error={form.errors.phone}>
               {({ id, invalid, describedBy }) => <Input id={id} type="tel" inputMode="tel" aria-invalid={invalid} aria-describedby={describedBy} value={form.values.phone} onChange={(e) => form.set('phone', e.target.value)} autoComplete="off" />}
             </Field>
-            <Field label="Email" error={form.errors.email}>
-              {({ id, invalid, describedBy }) => <Input id={id} type="email" inputMode="email" aria-invalid={invalid} aria-describedby={describedBy} value={form.values.email} onChange={(e) => form.set('email', e.target.value)} autoComplete="off" />}
-            </Field>
             <Field label="Joining date" required error={form.errors.joiningDate}>
               {({ id, invalid }) => <Input id={id} type="date" aria-invalid={invalid} value={form.values.joiningDate} onChange={(e) => form.set('joiningDate', e.target.value)} />}
-            </Field>
-            <Field label="Trainer" hint="Optional. Trainers are managed under Trainers." error={form.errors.trainerId}>
-              {({ id, describedBy }) => (
-                <Select id={id} aria-describedby={describedBy} value={form.values.trainerId} onChange={(e) => form.set('trainerId', e.target.value)}>
-                  <option value="">No trainer</option>
-                  {(trainers.data ?? [])
-                    .filter((t) => t.status === 'active' || t.id === form.values.trainerId)
-                    .map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}{t.status === 'archived' ? ' (archived)' : ''}
-                      </option>
-                    ))}
-                </Select>
-              )}
             </Field>
             <Field label="Notes" error={form.errors.notes} className="sm:col-span-2">
               {({ id }) => <Textarea id={id} value={form.values.notes} onChange={(e) => form.set('notes', e.target.value)} placeholder="Preferred timings, how they found the gym…" />}
@@ -194,17 +173,20 @@ function MemberFormInner({ mode, member }: { mode: 'new' | 'edit'; member?: Memb
                   </Select>
                 )}
               </Field>
-              <Field label="Emergency contact" error={form.errors.emergencyName}>
-                {({ id }) => <Input id={id} value={form.values.emergencyName} onChange={(e) => form.set('emergencyName', e.target.value)} placeholder="Name" autoComplete="off" />}
-              </Field>
-              <Field label="Emergency phone" error={form.errors.emergencyPhone}>
-                {({ id, invalid }) => <Input id={id} type="tel" inputMode="tel" aria-invalid={invalid} value={form.values.emergencyPhone} onChange={(e) => form.set('emergencyPhone', e.target.value)} autoComplete="off" />}
-              </Field>
-              <Field label="Fitness goal" error={form.errors.goal}>
+              {/* Two short number fields share a row, also on phones. */}
+              <div className="grid grid-cols-2 gap-4 sm:col-span-2">
+                <Field label="Height (cm)" error={form.errors.heightCm}>
+                  {({ id, invalid, describedBy }) => <Input id={id} inputMode="decimal" aria-invalid={invalid} aria-describedby={describedBy} value={form.values.heightCm} onChange={(e) => form.set('heightCm', e.target.value)} placeholder="172" autoComplete="off" />}
+                </Field>
+                <Field label="Weight (kg)" error={form.errors.weightKg}>
+                  {({ id, invalid, describedBy }) => <Input id={id} inputMode="decimal" aria-invalid={invalid} aria-describedby={describedBy} value={form.values.weightKg} onChange={(e) => form.set('weightKg', e.target.value)} placeholder="68.5" autoComplete="off" />}
+                </Field>
+              </div>
+              <Field label="Fitness goal" error={form.errors.goal} className="sm:col-span-2">
                 {({ id }) => <Input id={id} list="member-goals" value={form.values.goal} onChange={(e) => form.set('goal', e.target.value)} placeholder="Fat loss, Strength, Mobility…" />}
               </Field>
               <datalist id="member-goals">{['Fat loss', 'Strength', 'Muscle gain', 'General fitness', 'Mobility', 'Endurance'].map((g) => <option key={g} value={g} />)}</datalist>
-              <Field label="Health notes" hint="Injuries, conditions, medication the trainers should know about" error={form.errors.healthNotes} className="sm:col-span-2">
+              <Field label="Health notes" hint="Injuries, conditions, medication the staff should know about" error={form.errors.healthNotes} className="sm:col-span-2">
                 {({ id, describedBy }) => <Textarea id={id} aria-describedby={describedBy} rows={2} value={form.values.healthNotes} onChange={(e) => form.set('healthNotes', e.target.value)} />}
               </Field>
             </div>
@@ -217,7 +199,7 @@ function MemberFormInner({ mode, member }: { mode: 'new' | 'edit'; member?: Memb
           ) : null}
           {duplicates.length > 0 ? (
             <Banner tone="warn">
-              <strong>Possible duplicate.</strong> {duplicates.length === 1 ? 'A member' : `${duplicates.length} members`} already use this phone, email or name:{' '}
+              <strong>Possible duplicate.</strong> {duplicates.length === 1 ? 'A member' : `${duplicates.length} members`} already use this phone or name:{' '}
               {duplicates.slice(0, 3).map((d, i) => (
                 <span key={d.id}>
                   {i > 0 ? ', ' : ''}

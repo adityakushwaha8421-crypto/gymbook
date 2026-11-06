@@ -111,7 +111,7 @@ export function MembersPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <SearchInput value={qLocal} onChange={(v) => { setQLocal(v); update({ q: v }) }} placeholder="Search name, phone or email" className="sm:w-80" />
+        <SearchInput value={qLocal} onChange={(v) => { setQLocal(v); update({ q: v }) }} placeholder="Search name or phone" className="sm:w-80" />
         <div className="flex flex-wrap items-center gap-2">
           <Select aria-label="Sort by" value={`${sort}:${dir}`} onChange={(e) => { const [s, d] = e.target.value.split(':'); update({ sort: s, dir: d }) }} className="w-full text-sm sm:w-auto">
             <option value="name:asc">Name A–Z</option>

@@ -1,5 +1,5 @@
 import { readTx } from './db'
-import type { Adjustment, Attendance, Equipment, Expense, FollowUp, Incident, Invoice, Member, Membership, Payment, Plan, Session, Trainer, TrainerSchedule, WorkoutPlan } from '@/domain/types'
+import type { Adjustment, Attendance, FollowUp, Invoice, Member, Membership, Payment, Plan, WorkoutPlan } from '@/domain/types'
 
 export interface Snapshot {
   members: Member[]
@@ -9,19 +9,13 @@ export interface Snapshot {
   adjustments: Adjustment[]
   payments: Payment[]
   attendance: Attendance[]
-  trainers: Trainer[]
-  schedules: TrainerSchedule[]
-  expenses: Expense[]
   followups: FollowUp[]
-  sessions: Session[]
-  equipment: Equipment[]
-  incidents: Incident[]
   workouts: WorkoutPlan[]
 }
 
-export const SNAPSHOT_STORES = ['members', 'plans', 'memberships', 'invoices', 'adjustments', 'payments', 'attendance', 'trainers', 'schedules', 'expenses', 'followups', 'sessions', 'equipment', 'incidents', 'workouts'] as const
+export const SNAPSHOT_STORES = ['members', 'plans', 'memberships', 'invoices', 'adjustments', 'payments', 'attendance', 'followups', 'workouts'] as const
 
-/** Load every business store in one read transaction for derived views. */
+/** Load every store the app's views are derived from, in one read transaction. */
 export async function loadSnapshot(): Promise<Snapshot> {
   return readTx([...SNAPSHOT_STORES], async (tx) => ({
     members: await tx.objectStore('members').getAll(),
@@ -31,13 +25,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
     adjustments: await tx.objectStore('adjustments').getAll(),
     payments: await tx.objectStore('payments').getAll(),
     attendance: await tx.objectStore('attendance').getAll(),
-    trainers: await tx.objectStore('trainers').getAll(),
-    schedules: await tx.objectStore('schedules').getAll(),
-    expenses: await tx.objectStore('expenses').getAll(),
     followups: await tx.objectStore('followups').getAll(),
-    sessions: await tx.objectStore('sessions').getAll(),
-    equipment: await tx.objectStore('equipment').getAll(),
-    incidents: await tx.objectStore('incidents').getAll(),
     workouts: await tx.objectStore('workouts').getAll(),
   }))
 }

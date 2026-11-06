@@ -2,8 +2,8 @@ import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { NavLink, Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import {
-  LayoutDashboard, Users, CreditCard, ClipboardCheck, Receipt, Dumbbell, Wallet, BellRing, BarChart3, Settings as SettingsIcon,
-  X, UserPlus, Search, Sun, Moon, PanelLeftClose, PanelLeftOpen, Keyboard, FlaskConical, MoreHorizontal, CalendarClock, Wrench, Activity as ActivityIcon, NotebookPen,
+  LayoutDashboard, Users, CreditCard, ClipboardCheck, Receipt, BellRing, BarChart3, Settings as SettingsIcon,
+  X, UserPlus, Search, Sun, Moon, PanelLeftClose, PanelLeftOpen, Keyboard, FlaskConical, MoreHorizontal, Activity as ActivityIcon, NotebookPen,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { HeaderContext, useApp } from './AppContext'
@@ -22,17 +22,13 @@ const NAV = [
   { to: '/attendance', label: 'Attendance', icon: ClipboardCheck, key: 'a', group: 'Front desk' },
   { to: '/payments', label: 'Payments', icon: Receipt, key: 'y', group: 'Front desk' },
   { to: '/follow-ups', label: 'Follow-ups', icon: BellRing, key: 'f', group: 'Front desk' },
-  { to: '/sessions', label: 'PT sessions', icon: CalendarClock, key: 'c', group: 'Training' },
-  { to: '/workouts', label: 'Workout plans', icon: NotebookPen, key: 'w', group: 'Training' },
-  { to: '/trainers', label: 'Trainers', icon: Dumbbell, key: 't', group: 'Training' },
-  { to: '/plans', label: 'Plans', icon: CreditCard, key: 'p', group: 'Operations' },
-  { to: '/equipment', label: 'Equipment', icon: Wrench, key: 'q', group: 'Operations' },
-  { to: '/expenses', label: 'Expenses', icon: Wallet, key: 'e', group: 'Operations' },
+  { to: '/plans', label: 'Plans', icon: CreditCard, key: 'p', group: 'Manage' },
+  { to: '/workouts', label: 'Workout plans', icon: NotebookPen, key: 'w', group: 'Manage' },
   { to: '/reports', label: 'Reports', icon: BarChart3, key: 'r', group: 'Insights' },
   { to: '/activity', label: 'Activity', icon: ActivityIcon, key: 'l', group: 'Insights' },
   { to: '/settings', label: 'Settings', icon: SettingsIcon, key: 's', group: 'Insights' },
 ]
-const GROUPS = ['Front desk', 'Training', 'Operations', 'Insights']
+const GROUPS = ['Front desk', 'Manage', 'Insights']
 
 const SIDEBAR_KEY = 'gymbook-sidebar'
 

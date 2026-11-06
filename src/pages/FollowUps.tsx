@@ -75,7 +75,7 @@ export function FollowUpsPage() {
   const contactFor = (f: FollowUp): { name: string; phone?: string; email?: string; member?: Member } => {
     if (f.memberId) {
       const m = memberById.get(f.memberId)
-      return { name: m?.name ?? 'Unknown member', phone: m?.phone, email: m?.email, member: m }
+      return { name: m?.name ?? 'Unknown member', phone: m?.phone, member: m }
     }
     return { name: f.leadName ?? (f.type === 'lead' ? 'Lead' : 'No contact'), phone: f.leadPhone, email: f.leadEmail }
   }

@@ -14,19 +14,20 @@ import { Pagination, paginate } from '@/components/ui/Pagination'
 import { PageLoading } from '@/components/ui/Spinner'
 import { EmptyState, ErrorState } from '@/components/ui/EmptyState'
 
-const KINDS: { value: ActivityKind; label: string; tone: Tone }[] = [
+/** `retired` kinds belong to features that were removed: old log rows keep their label, the filter no longer offers them. */
+const KINDS: { value: ActivityKind; label: string; tone: Tone; retired?: true }[] = [
   { value: 'member', label: 'Members', tone: 'neutral' },
   { value: 'membership', label: 'Memberships', tone: 'success' },
   { value: 'payment', label: 'Payments', tone: 'success' },
   { value: 'invoice', label: 'Invoices', tone: 'info' },
   { value: 'attendance', label: 'Attendance', tone: 'info' },
-  { value: 'session', label: 'PT sessions', tone: 'info' },
-  { value: 'expense', label: 'Expenses', tone: 'warn' },
-  { value: 'trainer', label: 'Trainers', tone: 'neutral' },
-  { value: 'equipment', label: 'Equipment', tone: 'warn' },
   { value: 'workout', label: 'Workouts', tone: 'neutral' },
   { value: 'followup', label: 'Follow-ups', tone: 'neutral' },
   { value: 'system', label: 'System', tone: 'muted' },
+  { value: 'session', label: 'PT sessions', tone: 'muted', retired: true },
+  { value: 'expense', label: 'Expenses', tone: 'muted', retired: true },
+  { value: 'trainer', label: 'Trainers', tone: 'muted', retired: true },
+  { value: 'equipment', label: 'Equipment', tone: 'muted', retired: true },
 ]
 const PAGE_SIZE = 50
 
@@ -62,7 +63,7 @@ export function ActivityPage() {
         <SearchInput value={q} onChange={(v) => { setQ(v); setPage(1) }} placeholder="Search activity" className="sm:w-80" />
         <Select aria-label="Kind" value={kind} onChange={(e) => { setKind(e.target.value as 'all' | ActivityKind); setPage(1) }} className="w-full text-sm sm:w-auto">
           <option value="all">All kinds</option>
-          {KINDS.map((k) => (
+          {KINDS.filter((k) => !k.retired).map((k) => (
             <option key={k.value} value={k.value}>{k.label}</option>
           ))}
         </Select>

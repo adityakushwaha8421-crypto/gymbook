@@ -139,18 +139,13 @@ export function Tabs<T extends string>({ value, onChange, items, className }: { 
   )
 }
 
-export function ContactLinks({ phone, email, className }: { phone?: string; email?: string; className?: string }) {
+export function ContactLinks({ phone, className }: { phone?: string; className?: string }) {
   const tel = phone?.replace(/[^\d+]/g, '')
   return (
     <span className={cn('flex flex-wrap items-center gap-x-3 gap-y-0.5', className)}>
       {phone ? (
         <a href={`tel:${tel}`} className="tabular text-ink hover:text-accent-ink hover:underline">
           {phone}
-        </a>
-      ) : null}
-      {email ? (
-        <a href={`mailto:${email}`} className="break-all text-ink hover:text-accent-ink hover:underline">
-          {email}
         </a>
       ) : null}
     </span>

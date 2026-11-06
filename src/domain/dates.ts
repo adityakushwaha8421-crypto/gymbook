@@ -192,14 +192,6 @@ export function formatIsoLocal(instant: ISODateTime, timezone: string): string {
   return `${g('year')}-${g('month')}-${g('day')} ${g('hour')}:${g('minute')}`
 }
 
-export function formatMinutes(mins: number): string {
-  const h = Math.floor(mins / 60) % 24
-  const m = mins % 60
-  const suffix = h >= 12 ? 'pm' : 'am'
-  const hh = h % 12 === 0 ? 12 : h % 12
-  return `${hh}:${pad(m)} ${suffix}`
-}
-
 export function formatDuration(fromInstant: ISODateTime, toInstant: ISODateTime): string {
   const ms = new Date(toInstant).getTime() - new Date(fromInstant).getTime()
   if (!Number.isFinite(ms) || ms < 0) return '—'
@@ -209,8 +201,6 @@ export function formatDuration(fromInstant: ISODateTime, toInstant: ISODateTime)
   const m = mins % 60
   return m === 0 ? `${h} h` : `${h} h ${m} min`
 }
-
-export const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 /** Enumerate every ISODate from start to end inclusive. */
 export function eachDay(start: ISODate, end: ISODate): ISODate[] {
@@ -248,13 +238,6 @@ export function localDateTimeToInstant(value: string, timezone: string): ISODate
     guess += diff
   }
   return new Date(guess).toISOString()
-}
-
-/** Inverse of localDateTimeToInstant: "YYYY-MM-DDTHH:mm" in the timezone, for datetime-local inputs. */
-export function instantToLocalDateTime(instant: ISODateTime, timezone: string): string {
-  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: timezone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).formatToParts(new Date(instant))
-  const g = (t: string) => parts.find((p) => p.type === t)?.value ?? '00'
-  return `${g('year')}-${g('month')}-${g('day')}T${g('hour')}:${g('minute')}`
 }
 
 /** Age in whole years on a given date. */

@@ -7,14 +7,9 @@ const PlansPage = lazy(() => import('@/pages/Plans').then((m) => ({ default: m.P
 const AttendancePage = lazy(() => import('@/pages/Attendance').then((m) => ({ default: m.AttendancePage })))
 const PaymentsPage = lazy(() => import('@/pages/Payments').then((m) => ({ default: m.PaymentsPage })))
 const InvoicePage = lazy(() => import('@/pages/Invoice').then((m) => ({ default: m.InvoicePage })))
-const TrainersPage = lazy(() => import('@/pages/Trainers').then((m) => ({ default: m.TrainersPage })))
-const TrainerDetailPage = lazy(() => import('@/pages/TrainerDetail').then((m) => ({ default: m.TrainerDetailPage })))
-const ExpensesPage = lazy(() => import('@/pages/Expenses').then((m) => ({ default: m.ExpensesPage })))
 const FollowUpsPage = lazy(() => import('@/pages/FollowUps').then((m) => ({ default: m.FollowUpsPage })))
 const ReportsPage = lazy(() => import('@/pages/Reports').then((m) => ({ default: m.ReportsPage })))
 const SettingsPage = lazy(() => import('@/pages/Settings').then((m) => ({ default: m.SettingsPage })))
-const SessionsPage = lazy(() => import('@/pages/Sessions').then((m) => ({ default: m.SessionsPage })))
-const EquipmentPage = lazy(() => import('@/pages/Equipment').then((m) => ({ default: m.EquipmentPage })))
 const WorkoutsPage = lazy(() => import('@/pages/Workouts').then((m) => ({ default: m.WorkoutsPage })))
 const WorkoutPrintPage = lazy(() => import('@/pages/WorkoutPrint').then((m) => ({ default: m.WorkoutPrintPage })))
 const ActivityPage = lazy(() => import('@/pages/Activity').then((m) => ({ default: m.ActivityPage })))
@@ -70,14 +65,9 @@ export const router = createBrowserRouter([
           { path: '/plans', element: <PlansPage /> },
           { path: '/attendance', element: <AttendancePage /> },
           { path: '/payments', element: <PaymentsPage /> },
-          { path: '/trainers', element: <TrainersPage /> },
-          { path: '/trainers/:id', element: <TrainerDetailPage /> },
-          { path: '/expenses', element: <ExpensesPage /> },
           { path: '/follow-ups', element: <FollowUpsPage /> },
           { path: '/reports', element: <ReportsPage /> },
           { path: '/settings', element: <SettingsPage /> },
-          { path: '/sessions', element: <SessionsPage /> },
-          { path: '/equipment', element: <EquipmentPage /> },
           { path: '/workouts', element: <WorkoutsPage /> },
           { path: '/activity', element: <ActivityPage /> },
         ],

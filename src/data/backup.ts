@@ -36,6 +36,8 @@ const memberS = z.object({
   gender: z.enum(['female', 'male', 'other']).optional(),
   emergencyName: z.string().optional(),
   emergencyPhone: z.string().optional(),
+  heightCm: z.number().positive().optional(),
+  weightKg: z.number().positive().optional(),
   goal: z.string().optional(),
   healthNotes: z.string().optional(),
   workoutPlanId: z.string().optional(),

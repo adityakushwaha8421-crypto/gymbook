@@ -212,32 +212,33 @@ test.describe('concurrency and failures', () => {
     await page.goto('/settings')
     await expect(page.getByText('Developer tools')).toHaveCount(0) // no test switch in the UI
     await page.evaluate(() => sessionStorage.setItem('gymbook-fail-next-save', '1'))
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Expenses' }).click()
-    await page.getByRole('button', { name: 'Add expense' }).first().click()
+    await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Plans', exact: true }).click()
+    await page.getByRole('button', { name: 'New plan' }).first().click()
     const dialog = page.getByRole('dialog')
-    await dialog.getByLabel('Amount').fill('2500')
-    await dialog.getByLabel('Vendor').fill('Sample Supplies')
-    await dialog.getByRole('button', { name: 'Add expense' }).click()
+    await dialog.getByLabel('Plan name').fill('Monthly')
+    await dialog.getByLabel('Price').fill('1500')
+    await dialog.getByRole('button', { name: 'Create plan' }).click()
     await expect(dialog.getByRole('alert')).toContainText('Simulated storage failure')
-    await expect(dialog.getByLabel('Amount')).toHaveValue('2500')
-    await expect(dialog.getByLabel('Vendor')).toHaveValue('Sample Supplies')
-    expect((await readStore(page, 'expenses')).length).toBe(0)
-    await dialog.getByRole('button', { name: 'Add expense' }).click()
+    await expect(dialog.getByLabel('Plan name')).toHaveValue('Monthly')
+    await expect(dialog.getByLabel('Price')).toHaveValue('1500')
+    expect((await readStore(page, 'plans')).length).toBe(0)
+    await dialog.getByRole('button', { name: 'Create plan' }).click()
     await expect(dialog).toBeHidden()
-    await expect(page.getByRole('status').filter({ hasText: 'Expense recorded' })).toBeVisible()
-    expect((await readStore(page, 'expenses')).length).toBe(1)
+    await expect(page.getByRole('status').filter({ hasText: 'Plan created' })).toBeVisible()
+    expect((await readStore(page, 'plans')).length).toBe(1)
   })
 
   test('double-clicking a submit creates one record', async ({ page }) => {
     await onboard(page, 'empty')
-    await page.goto('/expenses')
-    await page.getByRole('button', { name: 'Add expense' }).first().click()
+    await page.goto('/plans')
+    await page.getByRole('button', { name: 'New plan' }).first().click()
     const dialog = page.getByRole('dialog')
-    await dialog.getByLabel('Amount').fill('100')
-    await dialog.getByRole('button', { name: 'Add expense' }).dblclick()
+    await dialog.getByLabel('Plan name').fill('Quarterly')
+    await dialog.getByLabel('Price').fill('4000')
+    await dialog.getByRole('button', { name: 'Create plan' }).dblclick()
     await expect(dialog).toBeHidden()
-    await expect(page.getByRole('status').filter({ hasText: 'Expense recorded' })).toBeVisible()
-    expect((await readStore(page, 'expenses')).length).toBe(1)
+    await expect(page.getByRole('status').filter({ hasText: 'Plan created' })).toBeVisible()
+    expect((await readStore(page, 'plans')).length).toBe(1)
   })
 })
 
@@ -247,11 +248,10 @@ test.describe('dashboard and reports derive from records', () => {
     type Pay = { status: string; receivedAt: string; amountPaise: number; invoiceId?: string; memberId: string }
     type Inv = { id: string; status: string; issueDate: string; totalPaise: number; memberId: string }
     type Adj = { invoiceId: string; amountPaise: number }
-    const [payments, invoices, adjustments, expenses, members, memberships, attendance] = await Promise.all([
+    const [payments, invoices, adjustments, members, memberships, attendance] = await Promise.all([
       readStore<Pay>(page, 'payments'),
       readStore<Inv>(page, 'invoices'),
       readStore<Adj>(page, 'adjustments'),
-      readStore<{ date: string; amountPaise: number }>(page, 'expenses'),
       readStore<{ id: string; status: string }>(page, 'members'),
       readStore<{ memberId: string; startDate: string; endDate: string }>(page, 'memberships'),
       readStore<{ checkInAt: string }>(page, 'attendance'),
@@ -261,7 +261,6 @@ test.describe('dashboard and reports derive from records', () => {
     const dateOf = (iso: string) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso))
     const received = payments.filter((p) => p.status === 'recorded' && dateOf(p.receivedAt) >= start && dateOf(p.receivedAt) <= today).reduce((s, p) => s + p.amountPaise, 0)
     const invoiced = invoices.filter((i) => i.status === 'issued' && i.issueDate >= start && i.issueDate <= today).reduce((s, i) => s + i.totalPaise, 0)
-    const spent = expenses.filter((e) => e.date >= start && e.date <= today).reduce((s, e) => s + e.amountPaise, 0)
     const outstanding = members
       .filter((m) => m.status !== 'archived')
       .reduce((s, m) => {
@@ -275,8 +274,7 @@ test.describe('dashboard and reports derive from records', () => {
     const main = page.getByRole('main')
     await expect(main).toContainText(inr(received))
     await expect(main).toContainText(inr(invoiced))
-    await expect(main).toContainText(inr(spent))
-    await expect(main).toContainText(inr(received - spent).replace('-₹', '-₹'))
+    await expect(main).not.toContainText(/Expenses|Net cash/)
     const compact = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(outstanding / 100)
     await expect(main).toContainText(outstanding % 100 === 0 ? compact : inr(outstanding))
     await expect(main.getByText('Active members', { exact: true }).first().locator('xpath=ancestor::*[contains(@class,"rounded-2xl")][1]')).toContainText(String(active))
@@ -298,7 +296,7 @@ test.describe('dashboard and reports derive from records', () => {
 })
 
 test.describe('navigation, layout and accessibility', () => {
-  const routes = ['/', '/members', '/members/new', '/plans', '/attendance', '/payments', '/payments?tab=invoices', '/trainers', '/expenses', '/follow-ups', '/reports', '/settings']
+  const routes = ['/', '/members', '/members/new', '/plans', '/attendance', '/payments', '/payments?tab=invoices', '/follow-ups', '/workouts', '/activity', '/reports', '/settings']
 
   for (const width of [320, 390, 768, 1024, 1440]) {
     test(`no horizontal overflow at ${width}px`, async ({ page }) => {
@@ -379,11 +377,11 @@ test.describe('navigation, layout and accessibility', () => {
     await page.getByRole('link', { name: 'Go to the dashboard' }).click()
     await expect(page).toHaveTitle(/Dashboard/)
     await page.goto('/members')
-    await page.goto('/expenses')
+    await page.goto('/plans')
     await page.goBack()
     await expect(page).toHaveURL(/\/members$/)
     await page.goForward()
-    await expect(page).toHaveURL(/\/expenses$/)
+    await expect(page).toHaveURL(/\/plans$/)
   })
 
   test('duplicate phone warns but does not block saving', async ({ page }) => {

@@ -1,6 +1,6 @@
 # GymBook
 
-A browser-based management app for a gym or fitness studio: members, membership plans, attendance, payments and invoices, trainers, expenses, follow-ups and reports.
+A browser-based management app for a gym or fitness studio: members, membership plans, attendance, payments and invoices, workout plans, follow-ups and reports.
 
 Everything runs in the browser. There is no server, no account and no external API. Data is stored in the browser's IndexedDB.
 
@@ -38,9 +38,8 @@ The first `test:e2e` run needs the Chromium browser once: `npx playwright instal
 
 ## What it covers
 
-- **Front desk:** dashboard with today's sessions, equipment alerts and month-over-month trends; members with a unique member code (searchable at check-in), emergency contact, fitness goal and health notes; attendance; payments and invoices; follow-ups.
-- **Training:** personal-training sessions between trainers and members with double-booking checks and roster hints, status tracking (scheduled, completed, cancelled, no-show); workout plans from a built-in library or custom-built, assignable to members with a printable sheet; trainers with weekly schedules.
-- **Operations:** membership plans, equipment register with an incident workflow (open → in progress → resolved) that updates the machine's condition, expenses.
+- **Front desk:** dashboard with money for the period and month-over-month trends; members with a unique member code (searchable at check-in), date of birth, gender, height, weight, fitness goal and health notes; attendance; payments and invoices; follow-ups.
+- **Manage:** membership plans; workout plans from a built-in library or custom-built, assignable to members with a printable sheet.
 - **Insights:** reports with CSV export and a printable summary, a filterable activity log, settings with backup and restore.
 
 The training and operations areas were inspired by the feature set of the open-source GymSphere project (kasuncsb/Gym-Management-System, MIT), re-thought for a single-desk, browser-local app: no accounts, roles, server or AI chat.
@@ -57,7 +56,7 @@ Push the repository to GitHub and, under **Settings → Pages**, set the source 
 
 The look follows a written direction, set with the [unslop](https://github.com/heydamir/unslop) method by Damir Sokolovsky ([@heydamir](https://x.com/heydamir), CC BY 4.0):
 
-- **Product:** the front-desk book for R.K. Gym Fitness Centre in Murbad: members, check-ins, fees and trainers, on one device.
+- **Product:** the front-desk book for R.K. Gym Fitness Centre in Murbad: members, check-ins and fees, on one device.
 - **Character:** sturdy, direct, quick.
 - **World:** the gym floor: iron plates, rubber mats, chalk and the red staff kit. Hence graphite neutrals and a crimson accent.
 - **Moments:** the cash chart on the dashboard and in Reports (one series leads, the rest sit in neutral steps), and a member's membership standing.
@@ -71,7 +70,7 @@ Rules that follow from it:
 - **Spacing and radius:** a 4 px grid; radii 6 (tags, keycaps), 8 to 10 (controls, rows), 14 (cards, dialogs), 18 (palette, sheets). Sidebar 240 px with 36 px rows; group labels sit 24 px below the previous group and 8 px above their own items. Controls are 36 px on pointer devices and 44 px on touch screens (`.h-control`, via `pointer: coarse`).
 - **Stats and charts:** a stat is a label, a figure and a line of context, with no icon or sparkline. Charts are drawn at their real pixel width so labels stay 11 px on phones; one series carries colour, the others are neutral.
 - **Motion:** one easing curve, `cubic-bezier(0.22, 1, 0.36, 1)`; critically damped springs for sheets and dialogs, a 300 ms page-enter fade and rise, a 120 ms press scale. Nothing loops and layout properties are never animated. All of it collapses to cross-fades or nothing under `prefers-reduced-motion`.
-- **Components:** `src/components/ui` (Button, Field/Input/Select, Badge, Card, Table, Modal/bottom sheet, ConfirmDialog, Toast, Tabs, Stat, EmptyState, Skeleton, Pagination, Section, PageActions) and `src/components/domain` (member picker, membership/payment/trainer dialogs, check-in override).
+- **Components:** `src/components/ui` (Button, Field/Input/Select, Badge, Card, Table, Modal/bottom sheet, ConfirmDialog, Toast, Tabs, Stat, EmptyState, Skeleton, Pagination, Section, PageActions) and `src/components/domain` (member picker, membership and payment dialogs, check-in override).
 
 ### Mobile
 
@@ -83,7 +82,7 @@ A production build registers a small service worker (`public/sw.js`) that caches
 
 ### Keyboard shortcuts
 
-`⌘K` / `Ctrl+K` or `/` opens the command palette (search members, jump to pages, run actions). `N` adds a member, `[` collapses the sidebar, `?` shows all shortcuts, and `G` followed by a letter jumps to a page (`G M` members, `G A` attendance, `G C` PT sessions, `G Q` equipment, …). Shortcuts are ignored while typing in a field or while a dialog is open.
+`⌘K` / `Ctrl+K` or `/` opens the command palette (search members, jump to pages, run actions). `N` adds a member, `[` collapses the sidebar, `?` shows all shortcuts, and `G` followed by a letter jumps to a page (`G M` members, `G A` attendance, `G Y` payments, `G W` workout plans, …). Shortcuts are ignored while typing in a field or while a dialog is open.
 
 ## Architecture
 
@@ -107,7 +106,8 @@ Rules that matter:
 - **Plan details are snapshotted** onto each membership and invoice line at sale time, so editing a plan later never changes what was sold.
 - **Invoice numbers are allocated inside the same IndexedDB transaction** as the invoice, so they are unique and never reused.
 - **Corrections are additive.** Payments and invoices are voided with a reason, and invoice totals are changed through adjustment records. History is kept.
-- **Archiving** hides members, plans and trainers; it never deletes financial history.
+- **Archiving** hides members and plans; it never deletes financial history.
+- **Removed sections keep their data.** Trainers, PT sessions, Equipment and Expenses were taken out of the app, and the member form no longer asks for email, trainer or emergency contact. The IndexedDB stores and backup format still carry any such records made earlier, so old backups restore and nothing is deleted; the app just no longer shows them.
 - **Repository/service boundary.** Pages call functions in `data/services/*`; those are the only code that opens transactions. Moving persistence to an HTTP API later means reimplementing that layer, not the pages.
 
 ## Reconstructed vs. observed

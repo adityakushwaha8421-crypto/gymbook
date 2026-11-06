@@ -26,6 +26,26 @@ export const optionalText = (max: number) =>
     .optional()
     .transform((v) => (v === '' ? undefined : v))
 
+/** Optional body measurement typed by a person: blank → undefined, otherwise a number with at most one decimal. */
+export const optionalMeasure = (opts: { min: number; max: number; unit: string; example: string }) =>
+  z
+    .string()
+    .trim()
+    .optional()
+    .transform((v, ctx) => {
+      if (v === undefined || v === '') return undefined
+      if (!/^\d{1,3}(\.\d)?$/.test(v)) {
+        ctx.addIssue({ code: 'custom', message: `Enter a number in ${opts.unit}, like ${opts.example}` })
+        return z.NEVER
+      }
+      const n = Number(v)
+      if (n < opts.min || n > opts.max) {
+        ctx.addIssue({ code: 'custom', message: `Enter between ${opts.min} and ${opts.max} ${opts.unit}` })
+        return z.NEVER
+      }
+      return n
+    })
+
 /** Rupee text typed by a person → paise. */
 export const rupeesInput = (opts: { min?: number; max?: number; allowZero?: boolean; label?: string } = {}) =>
   z
@@ -66,9 +86,7 @@ export function normalizePhone(phone: string): string {
 export const memberForm = z.object({
   name: trimmed(80).min(2, 'Name must be at least 2 characters'),
   phone: phoneSchema,
-  email: optionalEmail,
   joiningDate: isoDate.refine((v) => v >= '1950-01-01', 'Joining date looks too far in the past').refine((v) => v <= addDays(todayInTz(DEFAULT_TIMEZONE), 366), 'Joining date can be at most a year ahead'),
-  trainerId: optionalText(80),
   notes: optionalText(1000),
   photoDataUrl: z.string().max(400_000, 'Photo is too large; use a smaller image').optional(),
   dateOfBirth: z
@@ -81,14 +99,8 @@ export const memberForm = z.object({
     .enum(['female', 'male', 'other', ''])
     .optional()
     .transform((v) => (v === '' || v === undefined ? undefined : v)),
-  emergencyName: optionalText(80),
-  emergencyPhone: z
-    .string()
-    .trim()
-    .max(20)
-    .optional()
-    .transform((v) => (v === '' ? undefined : v))
-    .refine((v) => v === undefined || /^[+(\d][\d\s()-]{6,19}$/.test(v), 'Enter a valid phone number'),
+  heightCm: optionalMeasure({ min: 50, max: 250, unit: 'cm', example: '172' }),
+  weightKg: optionalMeasure({ min: 20, max: 300, unit: 'kg', example: '68.5' }),
   goal: optionalText(120),
   healthNotes: optionalText(1000),
 })
@@ -124,40 +136,6 @@ export const paymentForm = z.object({
 })
 export type PaymentFormValues = z.output<typeof paymentForm>
 
-export const expenseForm = z.object({
-  date: isoDate,
-  category: z.enum(['rent', 'salary', 'equipment', 'maintenance', 'utilities', 'marketing', 'supplies', 'other']),
-  amount: rupeesInput({ label: 'amount' }),
-  method: z.enum(['cash', 'upi', 'bank', 'card']),
-  vendor: optionalText(80),
-  note: optionalText(300),
-})
-export type ExpenseFormValues = z.output<typeof expenseForm>
-
-export const trainerForm = z.object({
-  name: trimmed(80).min(2, 'Name must be at least 2 characters'),
-  phone: phoneSchema,
-  email: optionalEmail,
-  specialty: trimmed(80).min(1, 'Enter a specialty (e.g. Strength, Yoga)'),
-  notes: optionalText(500),
-})
-export type TrainerFormValues = z.output<typeof trainerForm>
-
-export const scheduleForm = z
-  .object({
-    weekday: z.coerce.number().int().min(0).max(6),
-    startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Enter a start time'),
-    endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Enter an end time'),
-    label: trimmed(60).min(1, 'Enter a label (e.g. Morning floor)'),
-  })
-  .refine((v) => toMinutes(v.endTime) > toMinutes(v.startTime), { message: 'End time must be after start time', path: ['endTime'] })
-export type ScheduleFormValues = z.output<typeof scheduleForm>
-
-export function toMinutes(hhmm: string): number {
-  const [h, m] = hhmm.split(':').map(Number)
-  return h * 60 + m
-}
-
 export const followUpForm = z
   .object({
     type: z.enum(['expiry', 'payment', 'lead', 'other']),
@@ -179,41 +157,6 @@ export const followUpForm = z
   // A lead never carries a member, and a member follow-up never carries lead details.
   .transform((v) => (v.type === 'lead' ? { ...v, memberId: undefined } : v.type === 'other' ? v : { ...v, leadName: undefined, leadPhone: undefined, leadEmail: undefined }))
 export type FollowUpFormValues = z.output<typeof followUpForm>
-
-export const sessionForm = z.object({
-  trainerId: z.string().min(1, 'Choose a trainer'),
-  memberId: z.string().min(1, 'Choose a member'),
-  startAt: z.string().regex(/^\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):[0-5]\d$/, 'Enter the session date and time'),
-  durationMinutes: z.coerce.number().int('Use whole minutes').min(5, 'At least 5 minutes').max(480, 'At most 8 hours'),
-  note: optionalText(300),
-})
-export type SessionFormValues = z.output<typeof sessionForm>
-
-export const equipmentForm = z.object({
-  name: trimmed(80).min(2, 'Name must be at least 2 characters'),
-  category: trimmed(40).min(1, 'Enter a category (e.g. Cardio, Strength)'),
-  status: z.enum(['ok', 'needs_service', 'out_of_order']),
-  location: optionalText(60),
-  serial: optionalText(60),
-  purchasedOn: z
-    .string()
-    .trim()
-    .optional()
-    .transform((v) => (v === '' ? undefined : v))
-    .refine((v) => v === undefined || isISODate(v), 'Enter a valid date'),
-  notes: optionalText(500),
-})
-export type EquipmentFormValues = z.output<typeof equipmentForm>
-
-export const incidentForm = z.object({
-  equipmentId: z.string().min(1, 'Choose the equipment'),
-  title: trimmed(120).min(3, 'Describe the problem in a few words'),
-  severity: z.enum(['low', 'medium', 'high']),
-  reportedBy: optionalText(80),
-  note: optionalText(1000),
-  markEquipment: z.enum(['keep', 'needs_service', 'out_of_order']),
-})
-export type IncidentFormValues = z.output<typeof incidentForm>
 
 export const workoutExerciseSchema = z.object({
   name: trimmed(80).min(1, 'Exercise name is required'),

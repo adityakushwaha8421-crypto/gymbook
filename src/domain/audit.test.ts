@@ -10,16 +10,15 @@ import {
   isISODate,
   eachDay,
   formatMonthKey,
-  formatMinutes,
   dateRangeInstants,
 } from './dates'
 import { parseRupees, formatINRCompact, paiseToInput, formatINR } from './money'
 import { csvCell, toCsv } from './csv'
 import { invoiceBalance, memberBalance, membershipState, pickCurrentMembership, latestEndDate, daysRemaining } from './membership'
 import { financeSummary, financeSeries, dashboardMetrics, periodPreset, memberRows } from './metrics'
-import { phoneSchema, optionalEmail, settingsForm, followUpForm, scheduleForm, rupeesInput, toMinutes, normalizePhone, planForm } from './validation'
+import { phoneSchema, optionalEmail, settingsForm, followUpForm, memberForm, rupeesInput, normalizePhone, planForm } from './validation'
 import type { Snapshot } from '@/data/snapshot'
-import type { Invoice, Payment, Adjustment, Membership, Member, Attendance, Expense } from './types'
+import type { Invoice, Payment, Adjustment, Membership, Member, Attendance } from './types'
 
 // ---------------------------------------------------------------------------
 // helpers
@@ -68,7 +67,6 @@ const pay = (over: Partial<Payment>): Payment => ({
 const adj = (over: Partial<Adjustment>): Adjustment => ({ ...base, id: 'a', invoiceId: 'i', memberId: 'm', amountPaise: -50000, reason: 'x', ...over })
 const member = (over: Partial<Member>): Member => ({ ...base, id: 'm', name: 'M', phone: '9876543210', joiningDate: '2026-01-01', status: 'active', ...over })
 const att = (over: Partial<Attendance>): Attendance => ({ ...base, id: 'att', memberId: 'm', checkInAt: '2026-10-28T04:00:00.000Z', checkOutAt: null, source: 'manual', ...over })
-const exp = (over: Partial<Expense>): Expense => ({ ...base, id: 'e', date: '2026-10-15', category: 'rent', amountPaise: 1000, method: 'cash', ...over })
 const snap = (over: Partial<Snapshot>): Snapshot => ({
   members: [],
   plans: [],
@@ -77,10 +75,8 @@ const snap = (over: Partial<Snapshot>): Snapshot => ({
   adjustments: [],
   payments: [],
   attendance: [],
-  trainers: [],
-  schedules: [],
-  expenses: [],
   followups: [],
+  workouts: [],
   ...over,
 })
 
@@ -249,7 +245,7 @@ describe('dates: instantToDateInTz / todayInTz around midnight', () => {
   })
 })
 
-describe('dates: isISODate / eachDay / formatMonthKey / formatMinutes', () => {
+describe('dates: isISODate / eachDay / formatMonthKey', () => {
   it('isISODate rejects impossible and unpadded dates', () => {
     expect(isISODate('2026-02-30')).toBe(false)
     expect(isISODate('2026-13-01')).toBe(false)
@@ -270,14 +266,6 @@ describe('dates: isISODate / eachDay / formatMonthKey / formatMinutes', () => {
   it('formatMonthKey renders a month label', () => {
     expect(formatMonthKey('2026-01')).toBe('Jan 2026')
     expect(formatMonthKey('2026-12')).toBe('Dec 2026')
-  })
-  it('formatMinutes handles midnight, noon and end-of-day', () => {
-    expect(formatMinutes(0)).toBe('12:00 am')
-    expect(formatMinutes(720)).toBe('12:00 pm')
-    expect(formatMinutes(1439)).toBe('11:59 pm')
-    // BUG: dates.ts:197 — formatMinutes(1440) (24:00, which the backup schema and scheduleForm allow) renders "12:00 pm".
-    // Fix: `const h = Math.floor(mins / 60) % 24` before computing the suffix.
-    expect(formatMinutes(1440)).toBe('12:00 am')
   })
 })
 
@@ -388,15 +376,12 @@ describe('metrics: financeSummary period inclusivity', () => {
         pay({ id: 'p5', receivedAt: '2026-10-15T10:00:00.000Z', amountPaise: 10000, status: 'void' }),
       ],
       invoices: [inv({ id: 'i1', issueDate: '2026-10-01', totalPaise: 1 }), inv({ id: 'i2', issueDate: '2026-10-31', totalPaise: 10 }), inv({ id: 'i3', issueDate: '2026-11-01', totalPaise: 100 }), inv({ id: 'i4', issueDate: '2026-10-15', totalPaise: 1000, status: 'void' })],
-      expenses: [exp({ id: 'e1', date: '2026-10-01', amountPaise: 1 }), exp({ id: 'e2', date: '2026-10-31', amountPaise: 10 }), exp({ id: 'e3', date: '2026-09-30', amountPaise: 100 })],
     })
     const f = financeSummary(s, period, TZ)
     expect(f.receivedPaise).toBe(101)
     expect(f.paymentsCount).toBe(2)
     expect(f.invoicedPaise).toBe(11)
     expect(f.invoicesCount).toBe(2)
-    expect(f.expensesPaise).toBe(11)
-    expect(f.netCashPaise).toBe(90)
     expect(f.receivedByMethod).toEqual({ cash: 101 })
   })
 })
@@ -426,9 +411,9 @@ describe('metrics: financeSeries', () => {
     ])
   })
   it('month series only counts records within the exact period even inside a partially-covered month', () => {
-    const s = snap({ expenses: [exp({ id: 'e1', date: '2026-11-10', amountPaise: 1 }), exp({ id: 'e2', date: '2026-11-20', amountPaise: 10 })] })
+    const s = snap({ payments: [pay({ id: 'p1', receivedAt: '2026-11-10T06:00:00.000Z', amountPaise: 1 }), pay({ id: 'p2', receivedAt: '2026-11-20T06:00:00.000Z', amountPaise: 10 })] })
     const r = financeSeries(s, { start: '2026-11-15', end: '2027-02-10' }, TZ)
-    expect(r.points[0].expenses).toBe(10)
+    expect(r.points[0].received).toBe(10)
   })
 })
 
@@ -575,23 +560,41 @@ describe('validation: followUpForm', () => {
   })
 })
 
-describe('validation: scheduleForm', () => {
-  const base = { weekday: '1', startTime: '09:00', endTime: '10:00', label: 'Morning' }
-  it('rejects end == start and end < start', () => {
-    expect(scheduleForm.safeParse(base).success).toBe(true)
-    expect(scheduleForm.safeParse({ ...base, endTime: '09:00' }).success).toBe(false)
-    expect(scheduleForm.safeParse({ ...base, endTime: '08:59' }).success).toBe(false)
-    expect(scheduleForm.safeParse({ ...base, weekday: '7' }).success).toBe(false)
+describe('validation: memberForm height and weight', () => {
+  const base = { name: 'Asha Rao', phone: '98200 00001', joiningDate: '2026-10-01', notes: '', dateOfBirth: '', gender: '', heightCm: '', weightKg: '', goal: '', healthNotes: '' }
+  const parse = (over: Record<string, string>) => memberForm.safeParse({ ...base, ...over })
+  it('blank measurements are optional and stored as undefined', () => {
+    const r = memberForm.parse(base)
+    expect(r.heightCm).toBeUndefined()
+    expect(r.weightKg).toBeUndefined()
   })
-  it('rejects clock values that are not real times of day', () => {
-    // BUG (minor, validation.ts:126-127): the regex /^\d{2}:\d{2}$/ accepts "25:00" and "09:60".
-    // Fix: use /^([01]\d|2[0-3]):[0-5]\d$/ (or validate toMinutes() < 1440 and minutes < 60).
-    expect(scheduleForm.safeParse({ ...base, endTime: '25:00' }).success).toBe(false)
-    expect(scheduleForm.safeParse({ ...base, endTime: '09:60' }).success).toBe(false)
+  it('accepts whole numbers and one decimal, stored as numbers', () => {
+    const r = memberForm.parse({ ...base, heightCm: ' 172 ', weightKg: '68.5' })
+    expect(r.heightCm).toBe(172)
+    expect(r.weightKg).toBe(68.5)
   })
-  it('toMinutes', () => {
-    expect(toMinutes('00:00')).toBe(0)
-    expect(toMinutes('23:59')).toBe(1439)
+  it('accepts the range ends and rejects values just outside', () => {
+    expect(parse({ heightCm: '50' }).success).toBe(true)
+    expect(parse({ heightCm: '250' }).success).toBe(true)
+    expect(parse({ heightCm: '49.9' }).success).toBe(false)
+    expect(parse({ heightCm: '250.1' }).success).toBe(false)
+    expect(parse({ weightKg: '20' }).success).toBe(true)
+    expect(parse({ weightKg: '300' }).success).toBe(true)
+    expect(parse({ weightKg: '19.9' }).success).toBe(false)
+    expect(parse({ weightKg: '301' }).success).toBe(false)
+  })
+  it('rejects text, units, negatives, feet-and-inches and two decimals with a clear message', () => {
+    for (const bad of ['abc', '172cm', '-170', "5'8", '68.55', '1e2', '1,72']) {
+      expect(parse({ heightCm: bad }).success, bad).toBe(false)
+      expect(parse({ weightKg: bad }).success, bad).toBe(false)
+    }
+    const r = parse({ heightCm: "5'8" })
+    expect(r.success ? '' : r.error.issues[0].message).toBe('Enter a number in cm, like 172')
+  })
+  it('no longer carries email, trainer or emergency contact', () => {
+    const r = memberForm.parse({ ...base, email: 'a@example.com', trainerId: 'tr_1', emergencyName: 'X', emergencyPhone: '98200 00002' }) as Record<string, unknown>
+    expect(Object.keys(r).sort()).toEqual(['dateOfBirth', 'gender', 'goal', 'healthNotes', 'heightCm', 'joiningDate', 'name', 'notes', 'phone', 'photoDataUrl', 'weightKg'].filter((k) => k in r).sort())
+    for (const k of ['email', 'trainerId', 'emergencyName', 'emergencyPhone']) expect(k in r).toBe(false)
   })
 })
 

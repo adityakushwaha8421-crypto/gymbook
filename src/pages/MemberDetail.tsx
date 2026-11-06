@@ -1,12 +1,10 @@
 import { useMemo, useState } from 'react'
 import { appUrl } from '@/lib/appUrl'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { Pencil, Archive, ArchiveRestore, Receipt, CreditCard, ClipboardCheck, LogOut, FileText, Ban, CalendarPlus, Printer, Check, X, UserX } from 'lucide-react'
-import { SessionDialog } from './Sessions'
+import { Pencil, Archive, ArchiveRestore, Receipt, CreditCard, ClipboardCheck, LogOut, FileText, Ban, Printer } from 'lucide-react'
 import { assignWorkout } from '@/data/services/workouts'
-import { setSessionStatus } from '@/data/services/sessions'
-import { labelFor as labelOf, SESSION_STATUSES, GENDERS, type SessionStatus } from '@/domain/types'
-import { ageOn, formatTime, instantToDateInTz } from '@/domain/dates'
+import { labelFor as labelOf, GENDERS } from '@/domain/types'
+import { ageOn } from '@/domain/dates'
 import { Select } from '@/components/ui/Field'
 import { usePage, useApp } from '@/app/AppContext'
 import { useLiveQuery } from '@/hooks/useLiveQuery'
@@ -33,17 +31,18 @@ import { useCheckIn } from '@/components/domain/CheckInDialog'
 import { useToast } from '@/components/ui/Toast'
 import { errorMessage } from '@/data/errors'
 
-type Tab = 'overview' | 'memberships' | 'attendance' | 'payments' | 'sessions'
+const TABS = ['overview', 'memberships', 'attendance', 'payments'] as const
+type Tab = (typeof TABS)[number]
 
 export function MemberDetailPage() {
   const { id = '' } = useParams()
   const { today, timezone } = useApp()
   const toast = useToast()
   const [params, setParams] = useSearchParams()
-  const tab = (params.get('tab') as Tab) || 'overview'
+  const tab: Tab = TABS.find((t) => t === params.get('tab')) ?? 'overview'
   const snap = useLiveQuery(loadSnapshot, [...SNAPSHOT_STORES])
   const activity = useLiveQuery(() => listActivityForMember(id), ['activity'], [id])
-  const [dialog, setDialog] = useState<'membership' | 'payment' | 'archive' | 'session' | null>(null)
+  const [dialog, setDialog] = useState<'membership' | 'payment' | 'archive' | null>(null)
   const [voidTarget, setVoidTarget] = useState<{ kind: 'payment' | 'invoice'; id: string; rev: number; label: string } | null>(null)
   const [payInvoiceId, setPayInvoiceId] = useState<string | undefined>()
 
@@ -59,12 +58,9 @@ export function MemberDetailPage() {
     const attendance = snap.data.attendance.filter((a) => a.memberId === member.id).sort((a, b) => (a.checkInAt < b.checkInAt ? 1 : -1))
     const current = pickCurrentMembership(memberships, today)
     const balance = memberBalance(invoices, payments, adjustments)
-    const trainer = member.trainerId ? snap.data.trainers.find((t) => t.id === member.trainerId) : undefined
     const openVisit = attendance.find((a) => a.checkOutAt === null)
-    const sessions = snap.data.sessions.filter((s) => s.memberId === member.id).sort((a, b) => b.startAt.localeCompare(a.startAt))
     const workout = member.workoutPlanId ? snap.data.workouts.find((w) => w.id === member.workoutPlanId) : undefined
-    const trainerName = new Map(snap.data.trainers.map((t) => [t.id, t.name]))
-    return { memberships, invoices, payments, adjustments, attendance, current, state: current ? membershipState(current, today) : undefined, balance, trainer, openVisit, sessions, workout, trainerName }
+    return { memberships, invoices, payments, adjustments, attendance, current, state: current ? membershipState(current, today) : undefined, balance, openVisit, workout }
   }, [snap.data, member, today])
 
   const { checkIn: doCheckIn, dialog: checkInDialog, busy: checkInBusy } = useCheckIn()
@@ -102,11 +98,8 @@ export function MemberDetailPage() {
                 {archived ? <Badge tone="muted">Archived</Badge> : <MembershipStateBadge state={data.state} />}
                 {data.openVisit ? <Badge tone="success" dot>In the gym now</Badge> : null}
               </div>
-              <ContactLinks phone={member.phone} email={member.email} className="mt-1 text-sm" />
-              <p className="mt-1 text-sm text-muted">
-                Joined {formatDate(member.joiningDate)}
-                {data.trainer ? <> · Trainer <Link to={`/trainers/${data.trainer.id}`} className="hover:underline">{data.trainer.name}</Link></> : null}
-              </p>
+              <ContactLinks phone={member.phone} className="mt-1 text-sm" />
+              <p className="mt-1 text-sm text-muted">Joined {formatDate(member.joiningDate)}</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
@@ -153,7 +146,6 @@ export function MemberDetailPage() {
         { value: 'memberships', label: 'Memberships', count: data.memberships.length },
         { value: 'attendance', label: 'Attendance', count: data.attendance.length },
         { value: 'payments', label: 'Payments & invoices', count: data.invoices.length },
-        { value: 'sessions', label: 'PT sessions', count: data.sessions.length },
       ]} />
 
       {tab === 'overview' ? (
@@ -163,21 +155,20 @@ export function MemberDetailPage() {
             <CardBody>
               <KeyValue items={[
                 { label: 'Phone', value: <ContactLinks phone={member.phone} /> },
-                { label: 'Email', value: member.email ? <ContactLinks email={member.email} /> : '—' },
                 { label: 'Joining date', value: formatDate(member.joiningDate) },
-                { label: 'Trainer', value: data.trainer ? <Link to={`/trainers/${data.trainer.id}`} className="hover:underline">{data.trainer.name}</Link> : '—' },
                 { label: 'Notes', value: member.notes ? <span className="whitespace-pre-wrap">{member.notes}</span> : '—' },
                 { label: 'Record', value: `Updated ${formatDateTime(member.updatedAt, timezone)}` },
               ]} />
             </CardBody>
-            <CardHeader title="Profile" description="Emergency and health details are for staff only" />
+            <CardHeader title="Profile" description="Health notes are for staff only" />
             <CardBody>
               <KeyValue items={[
                 { label: 'Member code', value: member.memberCode ? <span className="font-mono">{member.memberCode}</span> : '—' },
                 { label: 'Date of birth', value: member.dateOfBirth ? `${formatDate(member.dateOfBirth)} (${ageOn(member.dateOfBirth, today)} years)` : '—' },
                 { label: 'Gender', value: member.gender ? labelOf(GENDERS, member.gender) : '—' },
+                { label: 'Height', value: member.heightCm !== undefined ? <span className="tabular">{member.heightCm} cm</span> : '—' },
+                { label: 'Weight', value: member.weightKg !== undefined ? <span className="tabular">{member.weightKg} kg</span> : '—' },
                 { label: 'Fitness goal', value: member.goal || '—' },
-                { label: 'Emergency contact', value: member.emergencyName || member.emergencyPhone ? <span>{member.emergencyName}{member.emergencyName && member.emergencyPhone ? ' · ' : ''}{member.emergencyPhone ? <a href={`tel:${member.emergencyPhone.replace(/[^\d+]/g, '')}`} className="tabular hover:underline">{member.emergencyPhone}</a> : null}</span> : '—' },
                 { label: 'Health notes', value: member.healthNotes ? <span className="whitespace-pre-wrap text-warn">{member.healthNotes}</span> : '—' },
               ]} />
             </CardBody>
@@ -334,36 +325,6 @@ export function MemberDetailPage() {
         </div>
       ) : null}
 
-      {tab === 'sessions' ? (
-        <Card>
-          <CardHeader title="PT sessions" description="Personal-training sessions with a trainer" action={!archived ? <Button size="sm" variant="secondary" icon={<CalendarPlus className="h-4 w-4" aria-hidden />} onClick={() => setDialog('session')}>Book session</Button> : undefined} />
-          {data.sessions.length === 0 ? <EmptyState compact title="No sessions yet" description="Book a session with a trainer to track it here" /> : (
-            <ul className="divide-y divide-line">
-              {data.sessions.map((s) => {
-                const tone = ({ scheduled: 'info', completed: 'success', cancelled: 'muted', no_show: 'danger' } as const)[s.status]
-                const set = async (status: SessionStatus) => { try { await setSessionStatus(s.id, s.rev, status); toast.success('Session updated') } catch (err) { toast.error('Could not update session', errorMessage(err)) } }
-                return (
-                  <li key={s.id} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-                    <div className="min-w-0">
-                      <p className="flex flex-wrap items-center gap-2 text-sm font-medium">{formatDate(instantToDateInTz(s.startAt, timezone), 'long')} · {formatTime(s.startAt, timezone)} <span className="font-normal text-muted">· {s.durationMinutes} min with {data.trainerName.get(s.trainerId) ?? 'trainer'}</span><Badge tone={tone} dot>{labelOf(SESSION_STATUSES, s.status)}</Badge></p>
-                      {s.note ? <p className="text-xs text-muted">{s.note}</p> : null}
-                    </div>
-                    {s.status === 'scheduled' ? (
-                      <div className="flex flex-wrap gap-1.5">
-                        <Button size="sm" variant="secondary" icon={<Check className="h-4 w-4" aria-hidden />} onClick={() => set('completed')}>Done</Button>
-                        <Button size="sm" variant="ghost" icon={<UserX className="h-4 w-4" aria-hidden />} onClick={() => set('no_show')}>No-show</Button>
-                        <Button size="sm" variant="ghost" icon={<X className="h-4 w-4" aria-hidden />} onClick={() => set('cancelled')}>Cancel</Button>
-                      </div>
-                    ) : null}
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-        </Card>
-      ) : null}
-
-      {dialog === 'session' ? <SessionDialog snap={snap.data} presetMemberId={member.id} presetTrainerId={member.trainerId} onClose={() => setDialog(null)} /> : null}
       {dialog === 'membership' ? <MembershipDialog open onClose={() => setDialog(null)} member={member} plans={snap.data.plans} memberships={data.memberships} /> : null}
       {dialog === 'payment' ? <PaymentDialog open onClose={() => setDialog(null)} member={member} invoices={data.invoices} payments={data.payments} adjustments={data.adjustments} preferredInvoiceId={payInvoiceId} /> : null}
       <ConfirmDialog

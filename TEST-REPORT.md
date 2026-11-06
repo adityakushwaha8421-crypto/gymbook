@@ -213,3 +213,19 @@ What changed: graphite ramp and solid surfaces, crimson kept as the one accent, 
 | Playwright main + features + shell exploratory | 53 passed |
 | Production build served under `/gymbook/` | no Developer section; the failure flag is ignored and the save succeeds; Print opens `/gymbook/workouts/…/print`; Reset lands on `/gymbook/` |
 | Typecheck, lint | clean |
+
+## Member measurements and scope cut (2026-11-06)
+
+Asked for: height and weight on the member form; Trainer, Email, Emergency contact and Emergency phone removed from it; and the PT sessions, Trainers, Equipment and Expenses sections removed from the app.
+
+- **Member form:** Height (cm, 50 to 250) and Weight (kg, 20 to 300) are optional, accept at most one decimal and are stored as numbers. Text, units, feet-and-inches and out-of-range values are refused with a message. Both show on the member page and in the Members CSV export. The four removed fields are gone from the form, the member page, search, duplicate detection and the CSV.
+- **Removed sections:** pages, routes, sidebar entries, command-palette entries, `G` shortcuts, the dashboard cards for today's PT sessions and equipment, the expense figures on the dashboard and in Reports (Expenses, Net cash, the expense series and category list, the Expenses CSV), the PT sessions tab on the member page, their services and form schemas, and their sample data. Their old addresses show the not-found page.
+- **Kept on purpose:** the IndexedDB stores, record types and backup schema for those sections, and the old member fields on stored records. Nothing already saved is deleted, older backups still restore, and editing a member made by an earlier version keeps its old email, trainer and emergency contact untouched. Old activity-log rows keep their labels; the activity filter no longer offers the retired kinds. A backup preview lists a retired section only when the file still carries its records.
+- **Tests:** the trainer, schedule, session, equipment and expense tests were removed with the features. The failed-save and double-submit tests that used the expense form now use the plan form. New tests cover height and weight validation, storage, editing and export, the absence of the removed fields and sections, and that records of removed sections survive a backup round trip.
+
+| Check | Result |
+| --- | --- |
+| Vitest | 124 passed |
+| Playwright, every suite | 104 passed (the first full run had 99; five failed: two still expected the old palette size and email search, one looked for the wrong not-found heading, and three hit a dev server that had stopped. All pass after the test updates and a rerun) |
+| Desktop 1280 and phone 375 | member form, member page, dashboard and reports checked in the browser; no horizontal overflow |
+| Typecheck, lint | clean |

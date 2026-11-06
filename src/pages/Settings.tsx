@@ -25,6 +25,9 @@ import { errorMessage } from '@/data/errors'
 
 const TIMEZONES = ['Asia/Kolkata', 'Asia/Dubai', 'Asia/Singapore', 'Asia/Kathmandu', 'Asia/Dhaka', 'Asia/Colombo', 'Asia/Karachi', 'Europe/London', 'America/New_York', 'Australia/Sydney', 'UTC']
 
+/** Sections that were removed from the app. A backup may still carry their records; they are listed only when present. */
+const RETIRED_STORES = ['trainers', 'expenses', 'sessions', 'equipment', 'incidents']
+
 export function SettingsPage() {
   usePage('Settings', 'Gym details, invoice settings, backup and data management')
   const { settings, refreshSettings } = useApp()
@@ -217,7 +220,7 @@ function BackupSection() {
               <>
                 <p>Backup of <strong>{preview.gymName ?? 'unnamed gym'}</strong> exported {preview.exportedAt ? new Date(preview.exportedAt).toLocaleString() : 'unknown time'}.</p>
                 <ul className="grid grid-cols-2 gap-x-4 gap-y-1 rounded-xl bg-sunken/70 px-3.5 py-3">
-                  {Object.entries(preview.counts).map(([k, v]) => (
+                  {Object.entries(preview.counts).filter(([k, v]) => v > 0 || !RETIRED_STORES.includes(k)).map(([k, v]) => (
                     <li key={k} className="flex justify-between"><span className="capitalize text-muted">{k}</span><span className="tabular font-medium">{v}</span></li>
                   ))}
                 </ul>
@@ -263,7 +266,7 @@ function DataSection({ onChanged }: { onChanged: () => Promise<void> }) {
         <Button variant="danger" icon={<RotateCcw className="h-4 w-4" aria-hidden />} onClick={() => setConfirm('reset')}>Reset everything…</Button>
       </CardBody>
       </Card>
-      <ConfirmDialog open={confirm === 'removeSample'} onClose={() => setConfirm(null)} title="Remove all sample records?" description="Deletes every record marked “Sample”: members, plans, memberships, invoices, payments, visits, trainers, expenses and follow-ups. Records you created yourself are kept." confirmLabel="Remove sample records" danger
+      <ConfirmDialog open={confirm === 'removeSample'} onClose={() => setConfirm(null)} title="Remove all sample records?" description="Deletes every record marked “Sample”: members, plans, memberships, invoices, payments, visits, workout plans and follow-ups. Records you created yourself are kept." confirmLabel="Remove sample records" danger
         onConfirm={async () => { const n = await removeSampleRecords(); await onChanged(); toast.success(`Removed ${n} sample records`) }} />
       <ConfirmDialog open={confirm === 'loadSample'} onClose={() => setConfirm(null)} title="Load sample data?" description="Adds a labelled set of fictional members, plans, payments and visits alongside your existing records. You can remove them again later." confirmLabel="Load sample data"
         onConfirm={async () => { await seedSampleData(settings.timezone); await onChanged(); toast.success('Sample data loaded') }} />

@@ -20,14 +20,13 @@ export function filterMembers<T extends { member: Member }>(rows: T[], term: str
   return rows.filter(({ member }) => {
     if (member.name.toLowerCase().includes(t)) return true
     if (member.memberCode && member.memberCode.toLowerCase().replace('-', '').includes(t.replace('-', ''))) return true
-    if (member.email?.toLowerCase().includes(t)) return true
     if (digits.length >= 3 && normalizePhone(member.phone).includes(digits)) return true
     return false
   })
 }
 
-/** Accessible combobox for choosing a member by name, phone or email. */
-export function MemberPicker({ rows, value, onChange, placeholder = 'Search by name, phone or email', autoFocus, id: externalId, invalid, describedBy }: { rows: PickerMember[]; value: Member | null; onChange: (m: Member | null) => void; placeholder?: string; autoFocus?: boolean; id?: string; invalid?: boolean; describedBy?: string }) {
+/** Accessible combobox for choosing a member by name, phone or member code. */
+export function MemberPicker({ rows, value, onChange, placeholder = 'Search by name or phone', autoFocus, id: externalId, invalid, describedBy }: { rows: PickerMember[]; value: Member | null; onChange: (m: Member | null) => void; placeholder?: string; autoFocus?: boolean; id?: string; invalid?: boolean; describedBy?: string }) {
   const internalId = useId()
   const id = externalId ?? internalId
   const listId = `${id}-list`

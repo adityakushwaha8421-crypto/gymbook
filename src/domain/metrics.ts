@@ -1,6 +1,6 @@
 import type { Snapshot } from '@/data/snapshot'
 import { groupBy } from '@/data/snapshot'
-import type { ISODate, Paise, Member, Membership, Session } from './types'
+import type { ISODate, Paise, Member, Membership } from './types'
 import { isMembershipCurrent, membershipState, memberBalance, pickCurrentMembership } from './membership'
 import { compareDates, diffDays, instantToDateInTz, eachDay, monthKey, addDays, daysInMonth } from './dates'
 
@@ -32,32 +32,6 @@ export function memberRows(snap: Snapshot, today: ISODate): MemberRow[] {
     const lastVisitAt = visits.reduce<string | undefined>((max, v) => (!max || v.checkInAt > max ? v.checkInAt : max), undefined)
     return { member, current, state: current ? membershipState(current, today) : undefined, balancePaise: bal.balancePaise, lastVisitAt }
   })
-}
-
-export interface TodayOps {
-  sessionsToday: { session: Session; memberName: string; trainerName: string }[]
-  openIncidents: number
-  highIncidents: number
-  outOfOrder: number
-  needsService: number
-}
-
-export function todayOps(snap: Snapshot, today: ISODate, timezone: string): TodayOps {
-  const memberName = new Map(snap.members.map((m) => [m.id, m.name]))
-  const trainerName = new Map(snap.trainers.map((t) => [t.id, t.name]))
-  const sessionsToday = snap.sessions
-    .filter((s) => instantToDateInTz(s.startAt, timezone) === today)
-    .sort((a, b) => a.startAt.localeCompare(b.startAt))
-    .map((session) => ({ session, memberName: memberName.get(session.memberId) ?? 'Unknown', trainerName: trainerName.get(session.trainerId) ?? 'Unknown' }))
-  const open = snap.incidents.filter((i) => i.status !== 'resolved')
-  const live = snap.equipment.filter((e) => !e.archived)
-  return {
-    sessionsToday,
-    openIncidents: open.length,
-    highIncidents: open.filter((i) => i.severity === 'high').length,
-    outOfOrder: live.filter((e) => e.status === 'out_of_order').length,
-    needsService: live.filter((e) => e.status === 'needs_service').length,
-  }
 }
 
 /** Month-over-month comparison: this calendar month so far vs. the same number of days last month. */
@@ -121,13 +95,9 @@ export interface FinanceSummary {
   receivedPaise: Paise
   invoicedPaise: Paise
   adjustmentsPaise: Paise
-  expensesPaise: Paise
-  netCashPaise: Paise
   receivedByMethod: Record<string, Paise>
-  expensesByCategory: Record<string, Paise>
   paymentsCount: number
   invoicesCount: number
-  expensesCount: number
 }
 
 function inPeriod(date: ISODate, p: Period): boolean {
@@ -143,24 +113,15 @@ export function financeSummary(snap: Snapshot, period: Period, timezone: string)
   const payments = snap.payments.filter((p) => p.status === 'recorded' && inPeriod(instantToDateInTz(p.receivedAt, timezone), period))
   const invoices = snap.invoices.filter((i) => i.status === 'issued' && inPeriod(i.issueDate, period))
   const adjustments = snap.adjustments.filter((a) => inPeriod(instantToDateInTz(a.createdAt, timezone), period))
-  const expenses = snap.expenses.filter((e) => inPeriod(e.date, period))
   const receivedByMethod: Record<string, Paise> = {}
   for (const p of payments) receivedByMethod[p.method] = (receivedByMethod[p.method] ?? 0) + p.amountPaise
-  const expensesByCategory: Record<string, Paise> = {}
-  for (const e of expenses) expensesByCategory[e.category] = (expensesByCategory[e.category] ?? 0) + e.amountPaise
-  const receivedPaise = payments.reduce((s, p) => s + p.amountPaise, 0)
-  const expensesPaise = expenses.reduce((s, e) => s + e.amountPaise, 0)
   return {
-    receivedPaise,
+    receivedPaise: payments.reduce((s, p) => s + p.amountPaise, 0),
     invoicedPaise: invoices.reduce((s, i) => s + i.totalPaise, 0),
     adjustmentsPaise: adjustments.reduce((s, a) => s + a.amountPaise, 0),
-    expensesPaise,
-    netCashPaise: receivedPaise - expensesPaise,
     receivedByMethod,
-    expensesByCategory,
     paymentsCount: payments.length,
     invoicesCount: invoices.length,
-    expensesCount: expenses.length,
   }
 }
 
@@ -168,7 +129,6 @@ export interface SeriesPoint {
   key: string
   label: string
   received: Paise
-  expenses: Paise
   attendance: number
   renewals: number
   newMemberships: number
@@ -191,14 +151,13 @@ export function financeSeries(snap: Snapshot, period: Period, timezone: string):
       cur = `${m === 12 ? y + 1 : y}-${String(m === 12 ? 1 : m + 1).padStart(2, '0')}-01`
     }
   }
-  for (const k of keys) map.set(k, { key: k, label: k, received: 0, expenses: 0, attendance: 0, renewals: 0, newMemberships: 0 })
+  for (const k of keys) map.set(k, { key: k, label: k, received: 0, attendance: 0, renewals: 0, newMemberships: 0 })
   const add = (date: ISODate, fn: (p: SeriesPoint) => void) => {
     if (!inPeriod(date, period)) return
     const p = map.get(bucket(date))
     if (p) fn(p)
   }
   for (const p of snap.payments) if (p.status === 'recorded') add(instantToDateInTz(p.receivedAt, timezone), (pt) => (pt.received += p.amountPaise))
-  for (const e of snap.expenses) add(e.date, (pt) => (pt.expenses += e.amountPaise))
   for (const a of snap.attendance) add(instantToDateInTz(a.checkInAt, timezone), (pt) => (pt.attendance += 1))
   for (const m of snap.memberships) {
     const soldOn = instantToDateInTz(m.createdAt, timezone)

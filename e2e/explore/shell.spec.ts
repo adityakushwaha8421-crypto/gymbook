@@ -26,7 +26,7 @@ const log = (type: string, description: string) => {
   console.log(`[${type}] ${description}`)
 }
 
-const ROUTES = ['/', '/members', '/members/new', '/plans', '/attendance', '/payments', '/payments?tab=invoices', '/trainers', '/expenses', '/follow-ups', '/reports', '/settings']
+const ROUTES = ['/', '/members', '/members/new', '/plans', '/attendance', '/payments', '/payments?tab=invoices', '/follow-ups', '/workouts', '/activity', '/reports', '/settings']
 const STORES = ['members', 'plans', 'memberships', 'invoices', 'adjustments', 'payments', 'attendance', 'trainers', 'schedules', 'expenses', 'followups', 'sessions', 'equipment', 'incidents', 'workouts', 'settings', 'activity', 'counters'] as const
 
 type Settings = { rev: number; gymName: string; timezone: string; invoicePrefix: string; logoDataUrl?: string; dataMode: string; address: string }
@@ -115,18 +115,6 @@ test.describe('1. onboarding', () => {
     await expect(page.getByRole('dialog').getByRole('heading', { name: /New plan/ })).toBeVisible()
     await page.keyboard.press('Escape')
 
-    await page.goto('/trainers')
-    await expect(page.getByRole('heading', { name: 'No trainers yet' })).toBeVisible()
-    await page.getByRole('main').getByRole('button', { name: 'Add trainer' }).last().click()
-    await expect(page.getByRole('dialog')).toBeVisible()
-    await page.keyboard.press('Escape')
-
-    await page.goto('/expenses')
-    await expect(page.getByRole('heading', { name: 'No expenses in this period' })).toBeVisible()
-    await page.getByRole('main').getByRole('button', { name: 'Add expense' }).last().click()
-    await expect(page.getByRole('dialog')).toBeVisible()
-    await page.keyboard.press('Escape')
-
     await page.goto('/follow-ups')
     await expect(page.getByRole('heading', { name: 'Nothing to follow up' })).toBeVisible()
     await page.goto('/payments')
@@ -142,7 +130,7 @@ test.describe('1. onboarding', () => {
     await expect(page.getByRole('heading', { name: 'Nothing expiring this week' })).toBeVisible()
 
     // Every button in the main area of each empty page should do something (no dead buttons): check that none is disabled without reason.
-    for (const route of ['/members', '/plans', '/trainers', '/expenses', '/follow-ups']) {
+    for (const route of ['/members', '/plans', '/follow-ups']) {
       await page.goto(route)
       const disabled = await page.getByRole('main').locator('button[disabled]').evaluateAll((els) => els.map((e) => (e as HTMLElement).innerText.trim()))
       expect(disabled, `${route} has disabled buttons`).toEqual([])
@@ -359,8 +347,12 @@ test.describe('3. backup', () => {
     const dialog = await importFile(page, 'backup.json', JSON.stringify(json))
     await expect(dialog.getByRole('heading', { name: 'Replace all data with this backup?' })).toBeVisible()
     await expect(dialog).toContainText('Backup of Test Gym')
-    for (const k of ['members', 'plans', 'memberships', 'invoices', 'payments', 'attendance', 'trainers', 'expenses', 'followups']) {
+    for (const k of ['members', 'plans', 'memberships', 'invoices', 'payments', 'attendance', 'followups', 'workouts']) {
       await expect(dialog.locator('li').filter({ has: page.locator('span', { hasText: new RegExp(`^${k}$`) }) })).toContainText(String(before[k]))
+    }
+    // Sections that were removed are only listed when the backup still carries their records.
+    for (const k of ['trainers', 'expenses', 'sessions', 'equipment', 'incidents']) {
+      await expect(dialog.locator('li').filter({ has: page.locator('span', { hasText: new RegExp(`^${k}$`) }) })).toHaveCount(0)
     }
     await expect(dialog.getByRole('button', { name: 'Replace my data' })).toBeVisible()
     await expect(dialog.getByRole('button', { name: 'Replace my data' })).toBeFocused()
@@ -472,10 +464,9 @@ test.describe('4. sample data', () => {
     const c1 = await counts(page)
     expect(c1.members).toBe(13)
     expect(c1.plans).toBe(4)
-    expect(c1.trainers).toBe(2)
     expect(c1.invoices).toBe(14)
     expect(c1.memberships).toBe(14)
-    expect(c1.schedules).toBe(9)
+    for (const s of ['trainers', 'schedules', 'expenses', 'sessions', 'equipment', 'incidents']) expect(c1[s], s).toBe(0)
     expect(c1.followups).toBe(4)
     expect((await settingsRow(page)).dataMode).toBe('sample')
     expect((await settingsRow(page)).gymName).toBe('Test Gym') // custom name is kept
@@ -705,7 +696,7 @@ test.describe('6. shell', () => {
     await expect(palette).toBeVisible()
     const box = palette.getByRole('combobox')
     await expect(box).toBeFocused()
-    await expect(palette.getByRole('option')).toHaveCount(20)
+    await expect(palette.getByRole('option')).toHaveCount(14) // 4 actions + 10 pages
     await page.keyboard.press('Escape')
     await expect(palette).toBeHidden()
     await page.waitForTimeout(400)
@@ -729,8 +720,9 @@ test.describe('6. shell', () => {
     await expect(box).toHaveAttribute('aria-activedescendant', 'cmd-0')
     await box.fill('98100-000-14')
     await expect(palette.getByRole('option', { name: /Sample Ananya Iyer/ })).toBeVisible()
+    // members no longer carry an email address, so it is not searched
     await box.fill('kabir.sample@')
-    await expect(kabir).toBeVisible()
+    await expect(palette.getByText(/No members or commands match/)).toBeVisible()
     await box.fill('zzzz')
     await expect(palette.getByText(/No members or commands match/)).toBeVisible()
 
@@ -744,8 +736,8 @@ test.describe('6. shell', () => {
     await page.keyboard.press('ArrowUp')
     await page.keyboard.press('ArrowUp')
     await expect(box).toHaveAttribute('aria-activedescendant', 'cmd-0')
-    for (let i = 0; i < 20; i++) await page.keyboard.press('ArrowDown')
-    await expect(box).toHaveAttribute('aria-activedescendant', 'cmd-19')
+    for (let i = 0; i < 14; i++) await page.keyboard.press('ArrowDown')
+    await expect(box).toHaveAttribute('aria-activedescendant', 'cmd-13')
     await page.keyboard.press('Enter')
     await expect(page).toHaveURL(/\/settings$/)
     await expect(palette).toBeHidden()
@@ -758,20 +750,20 @@ test.describe('6. shell', () => {
 
     // Click on an option
     await page.keyboard.press('ControlOrMeta+k')
-    await palette.getByRole('option', { name: /Expenses/ }).click()
-    await expect(page).toHaveURL(/\/expenses$/)
+    await palette.getByRole('option', { name: /Reports/ }).click()
+    await expect(page).toHaveURL(/\/reports$/)
 
     // Typing letters in the palette must not trigger G shortcuts or N
     await page.keyboard.press('ControlOrMeta+k')
     await box.pressSequentially('gn')
-    await expect(page).toHaveURL(/\/expenses$/)
+    await expect(page).toHaveURL(/\/reports$/)
     await expect(box).toHaveValue('gn')
     await page.keyboard.press('Escape')
   })
 
   test('keyboard shortcuts: G+letter for every page, N, ?, and not inside inputs or dialogs', async ({ page }) => {
     await onboard(page, 'sample')
-    const pages: [string, RegExp][] = [['m', /\/members$/], ['p', /\/plans$/], ['a', /\/attendance$/], ['y', /\/payments$/], ['t', /\/trainers$/], ['e', /\/expenses$/], ['f', /\/follow-ups$/], ['r', /\/reports$/], ['s', /\/settings$/], ['d', /\/$/]]
+    const pages: [string, RegExp][] = [['m', /\/members$/], ['p', /\/plans$/], ['a', /\/attendance$/], ['y', /\/payments$/], ['w', /\/workouts$/], ['l', /\/activity$/], ['f', /\/follow-ups$/], ['r', /\/reports$/], ['s', /\/settings$/], ['d', /\/$/]]
     for (const [key, url] of pages) {
       await page.waitForLoadState('networkidle')
       await page.waitForTimeout(150)
@@ -925,8 +917,7 @@ test.describe('7. accessibility', () => {
     await onboard(page, 'sample')
     const kabir = (await readStore<{ id: string; name: string }>(page, 'members')).find((m) => m.name.includes('Kabir'))!
     const inv = (await readStore<{ id: string }>(page, 'invoices'))[0]
-    const trainer = (await readStore<{ id: string }>(page, 'trainers'))[0]
-    const routes = [...ROUTES, `/members/${kabir.id}`, `/members/${kabir.id}?tab=payments`, `/members/${kabir.id}/edit`, `/trainers/${trainer.id}`, `/invoices/${inv.id}`, '/nope']
+    const routes = [...ROUTES, `/members/${kabir.id}`, `/members/${kabir.id}?tab=payments`, `/members/${kabir.id}/edit`, `/invoices/${inv.id}`, '/nope']
     const findings: string[] = []
     for (const route of routes) {
       await page.goto(route)
@@ -1075,8 +1066,7 @@ test.describe('8. responsive', () => {
       await onboard(page, 'sample')
       const kabir = (await readStore<{ id: string; name: string }>(page, 'members')).find((m) => m.name.includes('Kabir'))!
       const inv = (await readStore<{ id: string }>(page, 'invoices'))[0]
-      const trainer = (await readStore<{ id: string }>(page, 'trainers'))[0]
-      const routes = [...ROUTES, `/members/${kabir.id}`, `/members/${kabir.id}?tab=payments`, `/members/${kabir.id}/edit`, `/trainers/${trainer.id}`, `/invoices/${inv.id}`]
+      const routes = [...ROUTES, `/members/${kabir.id}`, `/members/${kabir.id}?tab=payments`, `/members/${kabir.id}/edit`, `/invoices/${inv.id}`]
       const findings: string[] = []
       for (const route of routes) {
         await page.goto(route)

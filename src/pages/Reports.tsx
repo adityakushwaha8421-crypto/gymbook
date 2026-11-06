@@ -8,7 +8,7 @@ import { financeSummary, financeSeries, periodPreset, memberRows, outstandingSum
 import { invoiceBalance } from '@/domain/membership'
 import { formatINR } from '@/domain/money'
 import { formatMonthKey, instantToDateInTz, formatDate, formatIsoLocal } from '@/domain/dates'
-import { labelFor, PAYMENT_METHODS, EXPENSE_CATEGORIES, type PaymentMethod, type ExpenseCategory } from '@/domain/types'
+import { labelFor, PAYMENT_METHODS, type PaymentMethod } from '@/domain/types'
 import { toCsv, downloadText } from '@/domain/csv'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -20,7 +20,7 @@ import { PeriodPicker, type PresetName } from '@/components/domain/PeriodPicker'
 import { useToast } from '@/components/ui/Toast'
 
 export function ReportsPage() {
-  usePage('Reports', 'Revenue, outstanding balances, expenses, attendance and renewals over a period, with CSV export')
+  usePage('Reports', 'Revenue, outstanding balances, attendance and renewals over a period, with CSV export')
   const { today, timezone, settings } = useApp()
   const toast = useToast()
   const snap = useLiveQuery(loadSnapshot, [...SNAPSHOT_STORES])
@@ -52,7 +52,7 @@ export function ReportsPage() {
   const inPeriod = (d: string) => d >= period.start && d <= period.end
 
   const localStamp = (iso: string) => formatIsoLocal(iso, timezone)
-  const exportCsv = (what: 'payments' | 'invoices' | 'expenses' | 'attendance' | 'members') => {
+  const exportCsv = (what: 'payments' | 'invoices' | 'attendance' | 'members') => {
     try {
       let csv = ''
       if (what === 'payments') {
@@ -69,9 +69,6 @@ export function ReportsPage() {
           const b = invoiceBalance(i, snap.data!.payments, snap.data!.adjustments)
           return [i.number, i.issueDate, m?.name ?? '', m?.phone ?? '', (i.subtotalPaise / 100).toFixed(2), (i.discountPaise / 100).toFixed(2), (b.adjustmentsPaise / 100).toFixed(2), (b.duePaise / 100).toFixed(2), (b.paidPaise / 100).toFixed(2), (b.balancePaise / 100).toFixed(2), b.status]
         }))
-      } else if (what === 'expenses') {
-        const rows = snap.data!.expenses.filter((e) => inPeriod(e.date)).sort((a, b) => a.date.localeCompare(b.date))
-        csv = toCsv(['Date', 'Category', 'Amount (INR)', 'Method', 'Vendor', 'Note'], rows.map((e) => [e.date, labelFor(EXPENSE_CATEGORIES, e.category), (e.amountPaise / 100).toFixed(2), labelFor(PAYMENT_METHODS, e.method), e.vendor ?? '', e.note ?? '']))
       } else if (what === 'attendance') {
         const rows = snap.data!.attendance.filter((a) => inPeriod(instantToDateInTz(a.checkInAt, timezone))).sort((a, b) => a.checkInAt.localeCompare(b.checkInAt))
         csv = toCsv(['Check-in (gym time)', 'Check-out (gym time)', 'Member', 'Phone', 'Override reason', 'Note'], rows.map((a) => {
@@ -80,7 +77,7 @@ export function ReportsPage() {
         }))
       } else {
         const rows = memberRows(snap.data!, today)
-        csv = toCsv(['Name', 'Phone', 'Email', 'Joined', 'Status', 'Current plan', 'Plan start', 'Plan end', 'Membership state', 'Balance (INR)', 'Last visit (gym time)'], rows.map((r) => [r.member.name, r.member.phone, r.member.email ?? '', r.member.joiningDate, r.member.status, r.current?.planName ?? '', r.current?.startDate ?? '', r.current?.endDate ?? '', r.state ?? 'none', (r.balancePaise / 100).toFixed(2), r.lastVisitAt ? localStamp(r.lastVisitAt) : '']))
+        csv = toCsv(['Name', 'Phone', 'Height (cm)', 'Weight (kg)', 'Joined', 'Status', 'Current plan', 'Plan start', 'Plan end', 'Membership state', 'Balance (INR)', 'Last visit (gym time)'], rows.map((r) => [r.member.name, r.member.phone, r.member.heightCm ?? '', r.member.weightKg ?? '', r.member.joiningDate, r.member.status, r.current?.planName ?? '', r.current?.startDate ?? '', r.current?.endDate ?? '', r.state ?? 'none', (r.balancePaise / 100).toFixed(2), r.lastVisitAt ? localStamp(r.lastVisitAt) : '']))
       }
       downloadText(`gymbook-${what}-${what === 'members' ? today : stamp}.csv`, csv)
       toast.success('CSV exported', 'Values that look like formulas are escaped so they open as text.')
@@ -90,7 +87,6 @@ export function ReportsPage() {
   }
 
   const byMethod = Object.entries(finance.receivedByMethod).sort((a, b) => b[1] - a[1])
-  const byCategory = Object.entries(finance.expensesByCategory).sort((a, b) => b[1] - a[1])
 
   return (
     <div className="flex flex-col gap-5">
@@ -106,27 +102,24 @@ export function ReportsPage() {
         <p className="text-sm text-muted">{formatDate(period.start)} – {formatDate(period.end)} · {settings.timezone}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         <Stat label="Revenue received" value={formatINR(finance.receivedPaise)} hint={`${finance.paymentsCount} payment${finance.paymentsCount === 1 ? '' : 's'}`} tone="success" />
         <Stat label="Invoiced" value={formatINR(finance.invoicedPaise)} hint={`${finance.invoicesCount} invoice${finance.invoicesCount === 1 ? '' : 's'} issued`} />
         <Stat label="Outstanding (all time)" value={formatINR(outstanding.totalPaise)} hint={`${outstanding.members} member${outstanding.members === 1 ? '' : 's'} owe money`} tone={outstanding.totalPaise > 0 ? 'danger' : undefined} />
-        <Stat label="Expenses" value={formatINR(finance.expensesPaise)} hint={`${finance.expensesCount} record${finance.expensesCount === 1 ? '' : 's'}`} />
-        <Stat label="Net cash flow" value={formatINR(finance.netCashPaise)} hint="received − expenses" tone={finance.netCashPaise < 0 ? 'danger' : 'success'} />
       </div>
 
       <Card>
         <CardBody className="flex flex-col gap-1.5 text-sm text-muted">
-          <p className="flex items-start gap-1.5"><Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /><span><strong className="text-ink">Revenue received</strong> counts recorded, non-void payments by the date they were received. <strong className="text-ink">Invoiced</strong> counts issued, non-void invoices by issue date; it is not income until paid. <strong className="text-ink">Outstanding</strong> is what active members still owe across all time: their invoices and adjustments minus every payment, including unlinked credits. <strong className="text-ink">Expenses</strong> are gym costs by expense date. <strong className="text-ink">Net cash flow</strong> is revenue received minus expenses for the period.</span></p>
+          <p className="flex items-start gap-1.5"><Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /><span><strong className="text-ink">Revenue received</strong> counts recorded, non-void payments by the date they were received. <strong className="text-ink">Invoiced</strong> counts issued, non-void invoices by issue date; it is not income until paid. <strong className="text-ink">Outstanding</strong> is what active members still owe across all time: their invoices and adjustments minus every payment, including unlinked credits.</span></p>
         </CardBody>
       </Card>
 
       <div className="grid gap-5 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader title="Cash in vs expenses" />
+          <CardHeader title="Cash received" />
           <CardBody>
             <BarChart height={280} labels={labels} series={[
               { key: 'received', label: 'Cash received', color: 'rgb(var(--c-success))', values: series.points.map((p) => p.received), format: formatINR },
-              { key: 'expenses', label: 'Expenses', color: 'rgb(var(--c-ink) / 0.2)', values: series.points.map((p) => p.expenses), format: formatINR },
             ]} />
           </CardBody>
         </Card>
@@ -154,27 +147,16 @@ export function ReportsPage() {
           )}
         </Card>
         <Card>
-          <CardHeader title="Expenses by category" />
-          {byCategory.length === 0 ? <p className="px-5 pb-5 text-sm text-muted">No expenses in this period.</p> : (
-            <ul className="divide-y divide-line">
-              {byCategory.map(([k, v]) => (
-                <li key={k} className="flex items-center justify-between px-4 py-2.5 text-sm sm:px-5"><span>{labelFor(EXPENSE_CATEGORIES, k as ExpenseCategory)}</span><span className="tabular font-medium">{formatINR(v)}</span></li>
-              ))}
-            </ul>
-          )}
+          <CardHeader title="Export CSV" description="Filtered to the selected period (members export is the full current list). Opens in Excel, Numbers or Google Sheets." />
+          <CardBody className="flex flex-wrap gap-2">
+            {(['payments', 'invoices', 'attendance', 'members'] as const).map((w) => (
+              <Button key={w} variant="secondary" size="sm" icon={<Download className="h-4 w-4" aria-hidden />} onClick={() => exportCsv(w)}>
+                {w[0].toUpperCase() + w.slice(1)}
+              </Button>
+            ))}
+          </CardBody>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader title="Export CSV" description="Filtered to the selected period (members export is the full current list). Opens in Excel, Numbers or Google Sheets." />
-        <CardBody className="flex flex-wrap gap-2">
-          {(['payments', 'invoices', 'expenses', 'attendance', 'members'] as const).map((w) => (
-            <Button key={w} variant="secondary" size="sm" icon={<Download className="h-4 w-4" aria-hidden />} onClick={() => exportCsv(w)}>
-              {w[0].toUpperCase() + w.slice(1)}
-            </Button>
-          ))}
-        </CardBody>
-      </Card>
     </div>
   )
 }

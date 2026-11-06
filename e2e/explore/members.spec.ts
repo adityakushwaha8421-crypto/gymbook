@@ -14,6 +14,8 @@ type MemberRec = {
   status: string
   notes?: string
   photoDataUrl?: string
+  heightCm?: number
+  weightKg?: number
   trainerId?: string
   archivedAt?: string
   createdAt: string
@@ -116,10 +118,11 @@ async function seedMembers(page: Page, members: Partial<MemberRec>[] & { name: s
   )
 }
 
-async function fillAdd(page: Page, v: { name?: string; phone?: string; email?: string; joiningDate?: string; notes?: string }) {
+async function fillAdd(page: Page, v: { name?: string; phone?: string; height?: string; weight?: string; joiningDate?: string; notes?: string }) {
   if (v.name !== undefined) await page.getByLabel('Full name').fill(v.name)
   if (v.phone !== undefined) await page.getByLabel(/^Phone/).fill(v.phone)
-  if (v.email !== undefined) await page.getByLabel('Email').fill(v.email)
+  if (v.height !== undefined) await page.getByLabel('Height (cm)').fill(v.height)
+  if (v.weight !== undefined) await page.getByLabel('Weight (kg)').fill(v.weight)
   if (v.joiningDate !== undefined) await page.getByLabel(/^Joining date/).fill(v.joiningDate)
   if (v.notes !== undefined) await page.getByLabel('Notes', { exact: true }).fill(v.notes)
 }
@@ -238,24 +241,45 @@ test.describe('1. add-form validation', () => {
     expect((await readStore<MemberRec>(page, 'members'))[0].phone).toBe('(0120) 4567890')
   })
 
-  it('invalid emails refused, blank email stored as undefined', async ({ page }) => {
+  it('height and weight: bad values refused, blank stored as undefined, good values stored as numbers', async ({ page }) => {
     await onboard(page, 'empty')
-    for (const email of ['notanemail', 'a@b', 'a@@b.com', 'has space@x.com']) {
+    const bad: [string, string, RegExp][] = [
+      ['abc', '', /Enter a number in cm, like 172/],
+      ["5'8", '', /Enter a number in cm, like 172/],
+      ['172cm', '', /Enter a number in cm, like 172/],
+      ['-172', '', /Enter a number in cm, like 172/],
+      ['49', '', /Enter between 50 and 250 cm/],
+      ['251', '', /Enter between 50 and 250 cm/],
+      ['', '68.55', /Enter a number in kg, like 68\.5/],
+      ['', '19', /Enter between 20 and 300 kg/],
+      ['', '301', /Enter between 20 and 300 kg/],
+    ]
+    for (const [height, weight, message] of bad) {
       await page.goto('/members/new')
-      await fillAdd(page, { name: 'Email Case', phone: '98200 00001', email })
+      await fillAdd(page, { name: 'Measure Case', phone: '98200 00001', height, weight })
       await submitAdd(page)
       const alerts = await page.getByRole('alert').allTextContents()
-      expect(alerts.join(' | '), `email "${email}" should be refused`).toMatch(/valid email/)
+      expect(alerts.join(' | '), `height "${height}" weight "${weight}" should be refused`).toMatch(message)
       await expect(page).toHaveURL(/\/members\/new$/)
     }
     expect(await readStore(page, 'members')).toHaveLength(0)
     await page.goto('/members/new')
-    await fillAdd(page, { name: 'Blank Email', phone: '98200 00002', email: '   ' })
+    await fillAdd(page, { name: 'Blank Measures', phone: '98200 00002', height: '   ', weight: '' })
     await submitAdd(page)
     await expect(page).toHaveURL(/\/members\/mem_/)
-    const [m] = await readStore<MemberRec>(page, 'members')
-    expect(m.email).toBeUndefined()
-    expect('email' in m ? m.email : undefined).toBeUndefined()
+    await page.goto('/members/new')
+    await fillAdd(page, { name: 'Edge Measures', phone: '98200 00003', height: ' 250 ', weight: '20.0' })
+    await submitAdd(page)
+    await expect(page).toHaveURL(/\/members\/mem_/)
+    await expect(page.getByRole('main')).toContainText('250 cm')
+    await expect(page.getByRole('main')).toContainText('20 kg')
+    const stored = await readStore<MemberRec>(page, 'members')
+    const blank = stored.find((m) => m.name === 'Blank Measures')!
+    expect(blank.heightCm).toBeUndefined()
+    expect(blank.weightKg).toBeUndefined()
+    const edge = stored.find((m) => m.name === 'Edge Measures')!
+    expect(edge.heightCm).toBe(250)
+    expect(edge.weightKg).toBe(20)
   })
 
   it('FIXED: joining date far in the future / far past is accepted', async ({ page }) => {
@@ -294,14 +318,14 @@ test.describe('1. add-form validation', () => {
 // 2. Duplicate detection
 // =====================================================================
 test.describe('2. duplicate detection', () => {
-  it('phone with spaces / +91 prefix, email in different case, same name all warn but allow save', async ({ page }) => {
+  it('phone with spaces / +91 prefix and same name warn but allow save', async ({ page }) => {
     await onboard(page, 'empty')
     await page.goto('/members/new')
-    await fillAdd(page, { name: 'Original Person', phone: '9820000011', email: 'Orig@Example.com' })
+    await fillAdd(page, { name: 'Original Person', phone: '9820000011' })
     await submitAdd(page)
     await expect(page).toHaveURL(/\/members\/mem_/)
 
-    const probe = async (label: string, v: { name: string; phone: string; email?: string }) => {
+    const probe = async (label: string, v: { name: string; phone: string }) => {
       await page.goto('/members/new')
       await fillAdd(page, v)
       const banner = page.getByText('Possible duplicate')
@@ -312,14 +336,13 @@ test.describe('2. duplicate detection', () => {
     }
     await probe('spaced phone', { name: 'Dup One', phone: '98200 00011' })
     await probe('+91 phone', { name: 'Dup Two', phone: '+91 98200 00011' })
-    await probe('email case', { name: 'Dup Three', phone: '98200 00099', email: 'orig@example.com' })
     await probe('same name', { name: 'original person', phone: '98200 00098' })
 
     const stored = await readStore<MemberRec>(page, 'members')
-    expect(stored).toHaveLength(5)
+    expect(stored).toHaveLength(4)
     // a totally different person must not warn
     await page.goto('/members/new')
-    await fillAdd(page, { name: 'Unrelated', phone: '91111 11111', email: 'other@example.com' })
+    await fillAdd(page, { name: 'Unrelated', phone: '91111 11111' })
     await expect(page.getByText('Possible duplicate')).toHaveCount(0)
   })
 })
@@ -378,16 +401,6 @@ test.describe('3. photo upload', () => {
 test.describe('4. edit flow', () => {
   it('change every field, save; stored values, updatedAt and rev move', async ({ page }) => {
     await onboard(page, 'empty')
-    await page.goto('/trainers')
-    await page.getByRole('button', { name: 'Add trainer' }).first().click()
-    const td = page.getByRole('dialog')
-    await td.getByLabel('Full name').fill('Coach Vikram')
-    await td.getByLabel(/^Phone/).fill('98111 11111')
-    await td.getByLabel(/^Specialty/).fill('Strength')
-    await td.getByRole('button', { name: 'Add trainer' }).click()
-    await expect(td).toBeHidden()
-    const trainer = (await readStore<{ id: string }>(page, 'trainers'))[0]
-
     const url = await addMember(page, 'Before Edit', '98200 00001')
     const [before] = await readStore<MemberRec>(page, 'members')
     expect(before.rev).toBe(1)
@@ -396,20 +409,20 @@ test.describe('4. edit flow', () => {
     await expect(page).toHaveTitle(/Edit Before Edit/)
     await page.getByLabel('Full name').fill('After Edit')
     await page.getByLabel(/^Phone/).fill('+91 98200 00002')
-    await page.getByLabel('Email').fill('after@example.com')
+    await page.getByLabel('Height (cm)').fill('181.5')
+    await page.getByLabel('Weight (kg)').fill('90')
     await page.getByLabel(/^Joining date/).fill('2026-02-15')
-    await page.getByLabel('Trainer').selectOption(trainer.id)
     await page.getByLabel('Notes', { exact: true }).fill('  Prefers mornings  ')
     await page.getByRole('button', { name: 'Save changes' }).click()
     await expect(page).toHaveURL(url)
     await expect(page.getByRole('status').filter({ hasText: 'Member updated' })).toBeVisible()
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('After Edit')
-    await expect(page.getByRole('link', { name: 'Coach Vikram' }).first()).toBeVisible()
     await expect(page.getByText('Prefers mornings')).toBeVisible()
-    await expect(page.getByRole('link', { name: 'after@example.com' }).first()).toBeVisible()
+    await expect(page.getByRole('main')).toContainText('181.5 cm')
+    await expect(page.getByRole('main')).toContainText('90 kg')
 
     const [after] = await readStore<MemberRec>(page, 'members')
-    expect(after).toMatchObject({ id: before.id, name: 'After Edit', phone: '+91 98200 00002', email: 'after@example.com', joiningDate: '2026-02-15', trainerId: trainer.id, notes: 'Prefers mornings', status: 'active' })
+    expect(after).toMatchObject({ id: before.id, name: 'After Edit', phone: '+91 98200 00002', heightCm: 181.5, weightKg: 90, joiningDate: '2026-02-15', notes: 'Prefers mornings', status: 'active' })
     expect(after.rev).toBe(2)
     expect(after.createdAt).toBe(before.createdAt)
     expect(after.updatedAt > before.updatedAt).toBe(true)
@@ -549,17 +562,17 @@ test.describe('5. list with 45 members', () => {
 
     // Changing the search resets the page
     await page.goto('/members?page=2')
-    await page.getByLabel('Search name, phone or email').fill('Member')
+    await page.getByLabel('Search name or phone').fill('Member')
     await expect(page).not.toHaveURL(/page=/)
     await expect(pager).toContainText('1–20 of 40')
   })
 
-  it('search by partial phone digits, name and email; empty result state', async ({ page }) => {
+  it('search by partial phone digits and name; empty result state', async ({ page }) => {
     await onboard(page, 'empty')
     const data = seed()
     await seedMembers(page, data)
     await page.goto('/members')
-    const search = page.getByLabel('Search name, phone or email')
+    const search = page.getByLabel('Search name or phone')
     const main = page.getByRole('main')
     const pager = page.getByRole('navigation', { name: 'Pagination' })
 
@@ -577,10 +590,9 @@ test.describe('5. list with 45 members', () => {
     await search.fill(`+91-${p3}`)
     await expect(main.getByRole('link', { name: 'Member 03' })).toBeVisible()
 
-    // email match, case-insensitive
+    // an email kept on a record from an earlier version is not searched any more
     await search.fill('M11@EXAMPLE')
-    await expect(main.getByRole('link', { name: 'Member 11' })).toBeVisible()
-    await expect(pager).toContainText('1–1 of 1')
+    await expect(page.getByText('No members match')).toBeVisible()
 
     // empty result state
     await search.fill('zzzz-nobody')

@@ -2,7 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, CreditCard, ClipboardCheck, Receipt, Dumbbell, Wallet, BellRing, BarChart3, Settings, UserPlus, Search, SunMoon, CornerDownLeft, CalendarClock, Wrench, NotebookPen, Activity, AlertTriangle, type LucideIcon } from 'lucide-react'
+import { LayoutDashboard, Users, CreditCard, ClipboardCheck, Receipt, BellRing, BarChart3, Settings, UserPlus, Search, SunMoon, CornerDownLeft, NotebookPen, Activity, type LucideIcon } from 'lucide-react'
 import { listMembers } from '@/data/services/members'
 import type { Member } from '@/domain/types'
 import { normalizePhone } from '@/domain/validation'
@@ -60,21 +60,15 @@ export function CommandPalette({ open, onClose, onToggleTheme }: { open: boolean
       { id: 'new-member', label: 'Add member', icon: UserPlus, group: 'Actions', run: go('/members/new'), keys: 'N' },
       { id: 'checkin', label: 'Check in a member', icon: ClipboardCheck, group: 'Actions', run: go('/attendance?action=checkin') },
       { id: 'payment', label: 'Record a payment', icon: Receipt, group: 'Actions', run: go('/payments?action=record') },
-      { id: 'book', label: 'Book a PT session', icon: CalendarClock, group: 'Actions', run: go('/sessions') },
-      { id: 'incident', label: 'Report an equipment incident', icon: AlertTriangle, group: 'Actions', run: go('/equipment') },
       { id: 'theme', label: 'Toggle light / dark theme', icon: SunMoon, group: 'Actions', run: () => { onClose(); onToggleTheme() } },
       { id: 'g-d', label: 'Dashboard', icon: LayoutDashboard, group: 'Go to', run: go('/'), keys: 'G D' },
       { id: 'g-m', label: 'Members', icon: Users, group: 'Go to', run: go('/members'), keys: 'G M' },
       { id: 'g-p', label: 'Plans', icon: CreditCard, group: 'Go to', run: go('/plans'), keys: 'G P' },
       { id: 'g-a', label: 'Attendance', icon: ClipboardCheck, group: 'Go to', run: go('/attendance'), keys: 'G A' },
       { id: 'g-y', label: 'Payments & invoices', icon: Receipt, group: 'Go to', run: go('/payments'), keys: 'G Y' },
-      { id: 'g-t', label: 'Trainers', icon: Dumbbell, group: 'Go to', run: go('/trainers'), keys: 'G T' },
-      { id: 'g-e', label: 'Expenses', icon: Wallet, group: 'Go to', run: go('/expenses'), keys: 'G E' },
       { id: 'g-f', label: 'Follow-ups', icon: BellRing, group: 'Go to', run: go('/follow-ups'), keys: 'G F' },
       { id: 'g-r', label: 'Reports', icon: BarChart3, group: 'Go to', run: go('/reports'), keys: 'G R' },
-      { id: 'g-c', label: 'PT sessions', icon: CalendarClock, group: 'Go to', run: go('/sessions'), keys: 'G C' },
       { id: 'g-w', label: 'Workout plans', icon: NotebookPen, group: 'Go to', run: go('/workouts'), keys: 'G W' },
-      { id: 'g-q', label: 'Equipment', icon: Wrench, group: 'Go to', run: go('/equipment'), keys: 'G Q' },
       { id: 'g-l', label: 'Activity log', icon: Activity, group: 'Go to', run: go('/activity'), keys: 'G L' },
       { id: 'g-s', label: 'Settings', icon: Settings, group: 'Go to', run: go('/settings'), keys: 'G S' },
     ],
@@ -85,7 +79,7 @@ export function CommandPalette({ open, onClose, onToggleTheme }: { open: boolean
   const q = query.trim().toLowerCase()
   const digits = q.replace(/\D/g, '')
   const matchedMembers = q
-    ? members.filter((m) => m.name.toLowerCase().includes(q) || m.email?.toLowerCase().includes(q) || (digits.length >= 3 && normalizePhone(m.phone).includes(digits))).slice(0, 6)
+    ? members.filter((m) => m.name.toLowerCase().includes(q) || (digits.length >= 3 && normalizePhone(m.phone).includes(digits))).slice(0, 6)
     : []
   const matchedCommands = q ? commands.filter((c) => c.label.toLowerCase().includes(q)) : commands
   type Row = { kind: 'member'; member: Member } | { kind: 'command'; command: Command }
