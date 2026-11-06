@@ -293,3 +293,20 @@ Asked for: after adding a member, an option to send them the invoice or a WhatsA
 **Changed the same day, at the owner's request:** the Welcome / Membership message no longer shows the member ID or the "Balance due" line. It still shows the invoice number, amount and what was paid. The Invoice message keeps its balance line, since an invoice that hides what is owed would mislead. 149 unit tests and the 3 WhatsApp browser tests pass with the new text.
 
 **Emoji arrived as "�" in a real chat (fixed the same day).** The owner sent a message and every emoji showed as a replacement box. Cause: the short `wa.me` link answers with a redirect to `api.whatsapp.com`, and that redirect replaces each emoji in the text with U+FFFD (visible in its `Location` header: `%F0%9F%92%AA` goes in, `%EF%BF%BD` comes out). `whatsappUrl` now links to `https://api.whatsapp.com/send?phone=…&text=…` directly, which passes the text through untouched; every emoji the messages use was sent through that page with a dummy number and came back intact (0 replacement characters). This was missed earlier because only the link's own text was checked, not what WhatsApp does with it. 149 unit tests and the 6 WhatsApp and follow-up browser tests pass; not yet re-confirmed in a real chat.
+
+## WhatsApp messages in Marathi (2026-11-06)
+
+Asked for: a Marathi button in "Send on WhatsApp", for Marathi-speaking members.
+
+- **Switch:** the dialog has "English | मराठी" beside the message tabs. All three messages (welcome / membership, invoice, expiry reminder) exist in both languages, on the member page and on invoices.
+- **Remembered:** the language used last is kept on this device (`localStorage`), so a desk that sends in Marathi does not switch every time. Edits are kept per message and per language.
+- **What is translated:** the gym's own words and the month names ("6 नोव्हेंबर 2026"). Member names, plan names, invoice numbers and invoice line descriptions go as they are stored. Digits stay Latin so dates match the rupee amounts.
+- **Not changed:** the app's own screens stay in English, and the one-tap WhatsApp link in the Upcoming expiries list on Follow-ups still sends the English reminder (the Marathi one is on the member's page under WhatsApp → Expiry reminder).
+
+| Check | Result |
+| --- | --- |
+| Vitest | 154 passed (5 new: exact Marathi text of each message, all twelve months, Devanagari through the link) |
+| Playwright: workflows, features, operations, members | 67 passed, including 1 new Marathi test (language switch on all three messages, per-language edits, choice remembered after reload and on an invoice). Two tests first failed because the new tab group and the text box were both named "Message"; the tab group was renamed. The money and shell suites were not run for this change |
+| Desktop 1100 and phone 375 | Marathi dialog checked on screenshots; Devanagari renders, no horizontal overflow, no console errors |
+| Not checked | the Marathi wording by a native speaker, and a real WhatsApp chat |
+| Typecheck, build | clean |

@@ -116,9 +116,9 @@ export function Banner({ tone = 'info', children, action }: { tone?: 'info' | 'w
   )
 }
 
-export function Tabs<T extends string>({ value, onChange, items, className }: { value: T; onChange: (v: T) => void; items: { value: T; label: ReactNode; count?: number }[]; className?: string }) {
+export function Tabs<T extends string>({ value, onChange, items, className, 'aria-label': ariaLabel }: { value: T; onChange: (v: T) => void; items: { value: T; label: ReactNode; count?: number }[]; className?: string; 'aria-label'?: string }) {
   return (
-    <div role="tablist" className={cn('bg-sunken scrollbar-none flex max-w-full gap-0.5 overflow-x-auto rounded-xl p-1', className)}>
+    <div role="tablist" aria-label={ariaLabel} className={cn('bg-sunken scrollbar-none flex max-w-full gap-0.5 overflow-x-auto rounded-xl p-1', className)}>
       {items.map((it) => (
         <button
           key={it.value}

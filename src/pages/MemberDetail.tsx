@@ -30,7 +30,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useCheckIn } from '@/components/domain/CheckInDialog'
 import { useToast } from '@/components/ui/Toast'
 import { WhatsAppDialog, type WhatsAppOption } from '@/components/domain/WhatsAppDialog'
-import { expiryMessage, invoiceMessage, membershipMessage, type MoneyFacts } from '@/domain/whatsapp'
+import { expiryMessage, invoiceMessage, membershipMessage, type MessageLang, type MoneyFacts } from '@/domain/whatsapp'
 import { errorMessage } from '@/data/errors'
 
 const TABS = ['overview', 'memberships', 'attendance', 'payments'] as const
@@ -98,21 +98,22 @@ export function MemberDetailPage() {
       return { invoiceNumber: inv.number, duePaise: b.duePaise, paidPaise: b.paidPaise, balancePaise: b.balancePaise }
     }
     const current = data.current
+    const both = (write: (lang: MessageLang) => string) => ({ en: write('en'), mr: write('mr') })
     const options: WhatsAppOption[] = [
       {
         key: 'details',
         label: welcome ? 'Welcome' : 'Membership',
-        text: membershipMessage({ ...gym, welcome, plan: current ? { planName: current.planName, startDate: current.startDate, endDate: current.endDate } : undefined, money: moneyFor(current?.invoiceId), today }),
+        text: both((lang) => membershipMessage({ ...gym, welcome, plan: current ? { planName: current.planName, startDate: current.startDate, endDate: current.endDate } : undefined, money: moneyFor(current?.invoiceId), today, lang })),
       },
     ]
     const latest = data.invoices.find((i) => i.status !== 'void')
     if (latest) {
       const b = invoiceBalance(latest, data.payments, data.adjustments)
-      options.push({ key: 'invoice', label: 'Invoice', text: invoiceMessage({ ...gym, issueDate: latest.issueDate, lines: latest.lines, discountPaise: latest.discountPaise, adjustmentsPaise: b.adjustmentsPaise, money: moneyFor(latest.id)! }) })
+      options.push({ key: 'invoice', label: 'Invoice', text: both((lang) => invoiceMessage({ ...gym, issueDate: latest.issueDate, lines: latest.lines, discountPaise: latest.discountPaise, adjustmentsPaise: b.adjustmentsPaise, money: moneyFor(latest.id)!, lang })) })
     }
     // The reminder is about the last day of cover, so a renewal already on file moves it forward.
     const last = data.memberships.filter((m) => !m.cancelledAt && compareDates(m.startDate, today) <= 0).sort((a, b) => compareDates(b.endDate, a.endDate))[0]
-    if (last && data.coverEnd === last.endDate) options.push({ key: 'expiry', label: 'Expiry reminder', text: expiryMessage({ ...gym, planName: last.planName, endDate: last.endDate, today }) })
+    if (last && data.coverEnd === last.endDate) options.push({ key: 'expiry', label: 'Expiry reminder', text: both((lang) => expiryMessage({ ...gym, planName: last.planName, endDate: last.endDate, today, lang })) })
     return options
   }
   const setTab = (t: Tab) => setParams(t === 'overview' ? {} : { tab: t }, { replace: true })

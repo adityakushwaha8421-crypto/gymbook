@@ -19,7 +19,7 @@ import { Field, Input, MoneyInput, Select, FormError } from '@/components/ui/Fie
 import { useToast } from '@/components/ui/Toast'
 import { errorMessage } from '@/data/errors'
 import { WhatsAppDialog } from '@/components/domain/WhatsAppDialog'
-import { invoiceMessage } from '@/domain/whatsapp'
+import { invoiceMessage, type MessageLang } from '@/domain/whatsapp'
 
 export function InvoicePage() {
   const { id = '' } = useParams()
@@ -55,6 +55,7 @@ export function InvoicePage() {
 
   const { bal, payments, adjustments } = data
   const gymLines = settings.address.split('\n').filter(Boolean)
+  const invoiceText = (lang: MessageLang) => invoiceMessage({ gymName: settings.gymName, gymPhone: settings.phone, memberName: member.name, issueDate: invoice.issueDate, lines: invoice.lines, discountPaise: invoice.discountPaise, adjustmentsPaise: bal.adjustmentsPaise, money: { invoiceNumber: invoice.number, duePaise: bal.duePaise, paidPaise: bal.paidPaise, balancePaise: bal.balancePaise }, lang })
 
   return (
     <div className="min-h-dvh bg-canvas print:bg-white">
@@ -187,7 +188,7 @@ export function InvoicePage() {
         <WhatsAppDialog
           name={member.name}
           phone={member.phone}
-          options={[{ key: 'invoice', label: 'Invoice', text: invoiceMessage({ gymName: settings.gymName, gymPhone: settings.phone, memberName: member.name, issueDate: invoice.issueDate, lines: invoice.lines, discountPaise: invoice.discountPaise, adjustmentsPaise: bal.adjustmentsPaise, money: { invoiceNumber: invoice.number, duePaise: bal.duePaise, paidPaise: bal.paidPaise, balancePaise: bal.balancePaise } }) }]}
+          options={[{ key: 'invoice', label: 'Invoice', text: { en: invoiceText('en'), mr: invoiceText('mr') } }]}
           onClose={() => setShareOpen(false)}
         />
       ) : null}
