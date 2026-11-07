@@ -318,7 +318,7 @@ Asked for: Google sign-in, backup and restore to the owner's Google Drive, a cle
 
 **Read this first.** Everything below marked PASS was tested against a **stand-in for Google** written for these tests (`src/test/fakeDrive.ts`, `e2e/google.ts`). No real Google account, sign-in window or Drive was used, because that needs an OAuth client ID that only the site owner can create (`docs/GOOGLE-DRIVE-SETUP.md`). So the app's own logic is tested; Google's side of every step is **NOT TESTED**. Reliable recovery from Google Drive must not be assumed until the "real Google" rows at the end have been run and passed.
 
-**Update, 7 November 2026.** The client ID now exists and the "real Google" rows R1 to R3 were run once on the live site with the gym's own Google account: sign-in, one small upload and a restore in the same browser passed. Still **not** run against real Google: a restore onto an empty browser or another device, a backup over 5 MB, and a second Google account. Until the empty-device restore passes, recovery after a lost device should not be called proven.
+**Update, 7 November 2026.** The client ID now exists and the "real Google" rows R1 to R3 were run once on the live site with the gym's own Google account: sign-in, one small upload and a restore in the same browser passed. Later the same day the gzip-compressed backup was also uploaded to and read back from real Google (see the volume section). Still **not** run against real Google: a restore onto an empty browser or another device, a backup over 5 MB, and a second Google account. Until the empty-device restore passes, recovery after a lost device should not be called proven.
 
 ### Design
 
@@ -466,6 +466,6 @@ Everyday actions on the new build (seconds): search by name or phone 0.01 at eve
 | Volume: gym, busy, large, xlarge on the new build | PASS |
 | Volume: huge | Import refused with the size message; nothing changed (expected) |
 | Typecheck, build | clean. Lint: no new warnings |
-| Compressed backup against **real Google Drive** | **NOT TESTED**. Only the stand-in. The backup made on 7 November with the real account is a plain one, which the new code still reads (tested against the stand-in) |
+| Compressed backup against **real Google Drive** | **PASS, small backup** (7 Nov 2026, after deploying commit 707db06, live build `index-D_Nq1-94.js`, Chrome, premtc404@gmail.com). "Back up now" over the old plain 39 KB backup uploaded a compressed one of 25,820 bytes and the page reported "checked against what Google Drive stored" (size and MD5 from Drive). "Restore…" then downloaded that compressed file from Google, decoded and validated it, and previewed 2 members, 1 plan, 2 memberships, 2 invoices, 2 payments, 2 visits: the same counts as the data on the device. The preview was cancelled; "Replace my data" was not run again (the write-back path was already verified on 7 November with the plain file). The 25 KB versus 39 KB shrink is small because this backup is mostly two photos. **Still NOT TESTED with real Google:** a compressed backup over 5 MB (upload-session path), and a restore onto an empty browser or second device |
 | Real phone | **NOT TESTED**. "Slow phone" numbers come from a slowed desktop processor |
 | Safari and Firefox | **NOT TESTED** |
