@@ -14,9 +14,21 @@ export interface Snapshot {
 }
 
 export const SNAPSHOT_STORES = ['members', 'plans', 'memberships', 'invoices', 'adjustments', 'payments', 'attendance', 'followups', 'workouts'] as const
+/** The stores a page depends on when it does not read visits. */
+export const SNAPSHOT_STORES_WITHOUT_VISITS = SNAPSHOT_STORES.filter((s) => s !== 'attendance')
+
+export interface SnapshotOptions {
+  /**
+   * Which visits to read. Visits are by far the largest store (one row per check-in, for ever), and
+   * reading all of them took seconds on a large gym, so a page that does not show visits leaves
+   * them out, and a member's own page reads only that member's.
+   */
+  attendance?: 'all' | 'none' | { memberId: string }
+}
 
 /** Load every store the app's views are derived from, in one read transaction. */
-export async function loadSnapshot(): Promise<Snapshot> {
+export async function loadSnapshot(options: SnapshotOptions = {}): Promise<Snapshot> {
+  const visits = options.attendance ?? 'all'
   return readTx([...SNAPSHOT_STORES], async (tx) => ({
     members: await tx.objectStore('members').getAll(),
     plans: await tx.objectStore('plans').getAll(),
@@ -24,10 +36,15 @@ export async function loadSnapshot(): Promise<Snapshot> {
     invoices: await tx.objectStore('invoices').getAll(),
     adjustments: await tx.objectStore('adjustments').getAll(),
     payments: await tx.objectStore('payments').getAll(),
-    attendance: await tx.objectStore('attendance').getAll(),
+    attendance: visits === 'none' ? [] : visits === 'all' ? await tx.objectStore('attendance').getAll() : await tx.objectStore('attendance').index('memberId').getAll(visits.memberId),
     followups: await tx.objectStore('followups').getAll(),
     workouts: await tx.objectStore('workouts').getAll(),
   }))
+}
+
+/** For pages that never show visits or "last visit": everything except the attendance store. */
+export function loadSnapshotWithoutVisits(): Promise<Snapshot> {
+  return loadSnapshot({ attendance: 'none' })
 }
 
 export function groupBy<T>(list: T[], key: (x: T) => string | undefined): Map<string, T[]> {

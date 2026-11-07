@@ -15,6 +15,11 @@ export interface DriveLink {
   lastBackupAt?: string
   /** Fingerprint of the data in that backup; unchanged data is not uploaded again. */
   lastBackupHash?: string
+  /**
+   * The data revision counter (see `dataRevision`) when that backup's copy of the data was read.
+   * If the counter still shows this number, nothing has changed and the database need not be read to find out.
+   */
+  lastBackupRev?: number
   lastBackupSize?: number
   lastBackupMembers?: number
   /** Last time this device compared its data with Drive, whether or not anything was uploaded. */

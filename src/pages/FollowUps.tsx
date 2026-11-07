@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Plus, Phone, Mail, MessageCircle, Check, RotateCcw, CalendarClock, Pencil, Trash2, BellRing } from 'lucide-react'
 import { usePage, useApp } from '@/app/AppContext'
 import { useLiveQuery } from '@/hooks/useLiveQuery'
-import { loadSnapshot, SNAPSHOT_STORES } from '@/data/snapshot'
+import { loadSnapshotWithoutVisits, SNAPSHOT_STORES_WITHOUT_VISITS } from '@/data/snapshot'
 import { createFollowUp, updateFollowUp, setFollowUpStatus, rescheduleFollowUp, deleteFollowUp } from '@/data/services/followups'
 import { followUpForm, type FollowUpFormValues } from '@/domain/validation'
 import { useForm } from '@/lib/forms'
@@ -38,7 +38,7 @@ export function FollowUpsPage() {
   usePage('Follow-ups', 'Expiry reminders, outstanding payments and leads to contact')
   const { today, settings, timezone } = useApp()
   const toast = useToast()
-  const snap = useLiveQuery(loadSnapshot, [...SNAPSHOT_STORES])
+  const snap = useLiveQuery(loadSnapshotWithoutVisits, [...SNAPSHOT_STORES_WITHOUT_VISITS])
   const [tab, setTab] = useState<'open' | 'done'>('open')
   const [typeFilter, setTypeFilter] = useState<'all' | FollowUpType>('all')
   const [editing, setEditing] = useState<FollowUp | { prefill: Partial<FollowUpFormValues> } | null>(null)

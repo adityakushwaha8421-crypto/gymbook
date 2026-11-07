@@ -28,6 +28,8 @@ import { forgetDriveLink } from '@/data/drive/driveController'
 const TIMEZONES = ['Asia/Kolkata', 'Asia/Dubai', 'Asia/Singapore', 'Asia/Kathmandu', 'Asia/Dhaka', 'Asia/Colombo', 'Asia/Karachi', 'Europe/London', 'America/New_York', 'Australia/Sydney', 'UTC']
 
 /** Sections that were removed from the app. A backup may still carry their records; they are listed only when present. */
+/** Just under the longest string a browser can hold, which is what limits reading a backup file. */
+const MAX_BACKUP_FILE_BYTES = 500 * 1_048_576
 const RETIRED_STORES = ['trainers', 'expenses', 'sessions', 'equipment', 'incidents']
 
 export function SettingsPage() {
@@ -176,6 +178,13 @@ function BackupSection() {
 
   const onFile = async (file: File | undefined) => {
     if (!file) return
+    // A browser holds a file's text as one string, and a string has a hard size limit (about 500 MB).
+    // Beyond it the read comes back empty, which used to be reported as "not valid JSON".
+    if (file.size > MAX_BACKUP_FILE_BYTES) {
+      setPreview({ ok: false, errors: [`This file is ${fmtMB(file.size)}, which is too large for a browser to read in one piece (the limit is about ${fmtMB(MAX_BACKUP_FILE_BYTES)}). The file itself may be fine.`], warnings: [], counts: {} })
+      if (fileRef.current) fileRef.current.value = ''
+      return
+    }
     try {
       const text = await file.text()
       setPreview(validateBackup(text))

@@ -36,10 +36,51 @@ export function todayInTz(timezone: string, now: Date = new Date()): ISODate {
 
 /** Calendar date of an instant, as seen in the given timezone. */
 export function instantToDateInTz(instant: ISODateTime, timezone: string): ISODate {
+  // Lists and reports call this once per visit and payment, tens of thousands of times a page.
+  // Asking the browser's date formatter each time took seconds, so the timezone's offset is looked
+  // up once per day and reused; days on which the offset changes still go through the formatter.
+  const ms = Date.parse(instant)
+  if (ms >= FAST_PATH_FROM_MS) {
+    const offset = steadyOffsetMs(Math.floor(ms / DAY_MS), timezone)
+    if (offset !== null) return isoOfDay(Math.floor((ms + offset) / DAY_MS))
+  }
   const fmt = getDateFormatter(timezone)
   const parts = fmt.formatToParts(new Date(instant))
   const get = (t: string) => Number(parts.find((p) => p.type === t)?.value)
   return toISODate(get('year'), get('month'), get('day'))
+}
+
+const DAY_MS = 86_400_000
+/** Before this, some timezones used offsets with odd seconds; those rare instants take the exact path. */
+const FAST_PATH_FROM_MS = Date.UTC(2000, 0, 1)
+const steadyOffsets = new Map<string, Map<number, number | null>>()
+const isoByDay = new Map<number, ISODate>()
+
+/** "YYYY-MM-DD" for a day counted from 1970-01-01, remembered so each day is formatted once. */
+function isoOfDay(day: number): ISODate {
+  let iso = isoByDay.get(day)
+  if (iso === undefined) {
+    iso = new Date(day * DAY_MS).toISOString().slice(0, 10)
+    isoByDay.set(day, iso)
+  }
+  return iso
+}
+
+/** The timezone's offset throughout a UTC day, or null when it changes during that day (a clock change). */
+function steadyOffsetMs(utcDay: number, timezone: string): number | null {
+  let perZone = steadyOffsets.get(timezone)
+  if (!perZone) {
+    perZone = new Map()
+    steadyOffsets.set(timezone, perZone)
+  }
+  let offset = perZone.get(utcDay)
+  if (offset === undefined) {
+    const start = tzOffsetMinutes(new Date(utcDay * DAY_MS), timezone)
+    const end = tzOffsetMinutes(new Date((utcDay + 1) * DAY_MS), timezone)
+    offset = start === end ? start * 60_000 : null
+    perZone.set(utcDay, offset)
+  }
+  return offset
 }
 
 const dateFormatters = new Map<string, Intl.DateTimeFormat>()
@@ -126,17 +167,22 @@ export function startOfDayInstant(date: ISODate, timezone: string): ISODateTime 
   return new Date(guess).toISOString()
 }
 
+const offsetFormatters = new Map<string, Intl.DateTimeFormat>()
 function tzOffsetMinutes(at: Date, timezone: string): number {
-  const fmt = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    hourCycle: 'h23',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  })
+  let fmt = offsetFormatters.get(timezone)
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hourCycle: 'h23',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    })
+    offsetFormatters.set(timezone, fmt)
+  }
   const parts = fmt.formatToParts(at)
   const get = (t: string) => Number(parts.find((p) => p.type === t)?.value)
   const asUtc = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'))

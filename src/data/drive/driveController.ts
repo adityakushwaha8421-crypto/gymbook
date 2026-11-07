@@ -1,8 +1,8 @@
-import { subscribe as subscribeToData } from '../events'
+import { subscribe as subscribeToData, dataRevision } from '../events'
 import { downloadText } from '@/domain/csv'
 import { GOOGLE_CLIENT_ID, requestGoogleToken, revokeGoogleAccess, SignInError, type GoogleToken } from '@/lib/google'
 import { createDriveClient, DriveError, type DriveAccount, type DriveClient, type DriveFile } from './driveApi'
-import { assessSignIn, BackupBlocked, findRemoteBackup, isBackupOverdue, loadRemoteBackup, restoreFromDrive, runBackup, takeSnapshot, type BlockReason, type RemotePreview, type SignInSituation } from './driveBackup'
+import { assessSignIn, BackupBlocked, changedSinceBackup, findRemoteBackup, isBackupOverdue, loadRemoteBackup, restoreFromDrive, runBackup, takeSnapshot, type BlockReason, type RemotePreview, type SignInSituation } from './driveBackup'
 import { clearLink, loadLink, saveLink, subscribeLink, type DriveLink } from './driveState'
 
 /**
@@ -79,15 +79,25 @@ function handleFailure(err: unknown, title: string): void {
   set({ busy: null, notice: notice('danger', title, explain(err)) })
 }
 
+/**
+ * Work out, when the app opens, whether there is anything to back up. The revision counter answers
+ * without touching the database; reading and fingerprinting everything froze the app for seconds
+ * on a large gym, on every start.
+ */
 async function refreshChanged(): Promise<void> {
   const link = loadLink()
-  if (!link?.lastBackupHash) {
-    set({ changed: Boolean(link) })
+  const known = changedSinceBackup(link)
+  if (known !== undefined || !link) {
+    set({ changed: known ?? false })
     return
   }
+  // A link saved before the counter existed: compare the data once and remember the answer.
   try {
+    const revision = dataRevision()
     const snapshot = await takeSnapshot()
-    set({ changed: snapshot.hash !== link.lastBackupHash })
+    const same = snapshot.hash === link.lastBackupHash
+    if (same) saveLink({ ...link, lastBackupRev: revision })
+    set({ changed: !same })
   } catch {
     // The database could not be read; other parts of the app report that.
   }
@@ -155,7 +165,8 @@ export async function backupNow(options: { replace?: boolean; automatic?: boolea
     const size = result.file.size < 1_048_576 ? `${Math.max(1, Math.round(result.file.size / 1024))} KB` : `${(result.file.size / 1_048_576).toFixed(1)} MB`
     set({
       busy: null,
-      changed: false,
+      // Something saved while the backup was running is not in it.
+      changed: changedSinceBackup(loadLink()) ?? false,
       situation: { kind: 'ready', remote: result.file },
       notice: result.status === 'uploaded' ? notice('success', 'Backup saved to Google Drive', `${size}, checked against what Google Drive stored.`) : options.automatic ? state.notice : notice('info', 'Already up to date', 'Nothing has changed since the last backup, so nothing was uploaded.'),
     })

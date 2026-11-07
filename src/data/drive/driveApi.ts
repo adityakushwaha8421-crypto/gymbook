@@ -51,9 +51,10 @@ export interface DriveClient {
   /** Every file with this name in the app folder, newest first. More than one means two devices raced; nothing is deleted. */
   list(name: string): Promise<DriveFile[]>
   get(id: string): Promise<DriveFile | null>
-  download(id: string): Promise<string>
+  /** The stored bytes exactly as they are; the caller decides how to read them. */
+  download(id: string): Promise<Uint8Array>
   /** Create the file, or replace the content of `existingId`. The previous content stays until the upload completes. */
-  upload(input: { name: string; bytes: Uint8Array; appProperties: Record<string, string>; existingId?: string }): Promise<DriveFile>
+  upload(input: { name: string; bytes: Uint8Array; appProperties: Record<string, string>; existingId?: string; contentType?: string }): Promise<DriveFile>
 }
 
 const API = 'https://www.googleapis.com/drive/v3'
@@ -127,13 +128,13 @@ export function createDriveClient(token: string, options: DriveClientOptions = {
     return raw.trashed ? null : toFile(raw)
   }
 
-  const download = async (id: string): Promise<string> => {
+  const download = async (id: string): Promise<Uint8Array> => {
     const res = await request(`${API}/files/${encodeURIComponent(id)}?alt=media`)
-    return res.text()
+    return new Uint8Array(await res.arrayBuffer())
   }
 
-  const upload: DriveClient['upload'] = async ({ name, bytes, appProperties, existingId }) => {
-    const metadata = existingId ? { appProperties } : { name, parents: ['appDataFolder'], mimeType: 'application/json', appProperties }
+  const upload: DriveClient['upload'] = async ({ name, bytes, appProperties, existingId, contentType = 'application/json' }) => {
+    const metadata = existingId ? { appProperties, mimeType: contentType } : { name, parents: ['appDataFolder'], mimeType: contentType, appProperties }
     const target = `${UPLOAD}/files${existingId ? `/${encodeURIComponent(existingId)}` : ''}`
     const method = existingId ? 'PATCH' : 'POST'
     const fields = `fields=${encodeURIComponent(FILE_FIELDS)}`
@@ -142,7 +143,7 @@ export function createDriveClient(token: string, options: DriveClientOptions = {
       if (bytes.length <= SINGLE_REQUEST_LIMIT) {
         // Metadata and content in one request: it either lands whole or not at all.
         const boundary = `gymbook${bytes.length.toString(36)}${Date.now().toString(36)}`
-        const head = new TextEncoder().encode(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n`)
+        const head = new TextEncoder().encode(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: ${contentType}\r\n\r\n`)
         const tail = new TextEncoder().encode(`\r\n--${boundary}--`)
         const body = new Uint8Array(head.length + bytes.length + tail.length)
         body.set(head)
@@ -154,12 +155,12 @@ export function createDriveClient(token: string, options: DriveClientOptions = {
       // Larger than the single-request limit: open a session, then send the content to it.
       const start = await request(`${target}?uploadType=resumable&${fields}`, {
         method,
-        headers: { 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': 'application/json', 'X-Upload-Content-Length': String(bytes.length) },
+        headers: { 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': contentType, 'X-Upload-Content-Length': String(bytes.length) },
         body: JSON.stringify(metadata),
       })
       const session = start.headers.get('Location')
       if (!session) throw new DriveError('unknown', 'Google Drive did not open an upload session for this large backup.')
-      const res = await request(session, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: bytes as unknown as BodyInit })
+      const res = await request(session, { method: 'PUT', headers: { 'Content-Type': contentType }, body: bytes as unknown as BodyInit })
       return toFile(await json<RawFile>(res))
     }
 

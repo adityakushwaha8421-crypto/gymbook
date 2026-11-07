@@ -4,7 +4,7 @@ import { Receipt, FileText } from 'lucide-react'
 import { usePage, useApp } from '@/app/AppContext'
 import { useLiveQuery } from '@/hooks/useLiveQuery'
 import { useIsDesktop } from '@/hooks/useMediaQuery'
-import { loadSnapshot, SNAPSHOT_STORES } from '@/data/snapshot'
+import { groupBy, loadSnapshotWithoutVisits, SNAPSHOT_STORES_WITHOUT_VISITS } from '@/data/snapshot'
 import { memberRows, outstandingSummary, periodPreset, type Period } from '@/domain/metrics'
 import { invoiceBalance } from '@/domain/membership'
 import { formatINR } from '@/domain/money'
@@ -34,7 +34,7 @@ export function PaymentsPage() {
   const [params, setParams] = useSearchParams()
   const tab = (params.get('tab') as Tab) || 'payments'
   const page = Number(params.get('page') ?? '1') || 1
-  const snap = useLiveQuery(loadSnapshot, [...SNAPSHOT_STORES])
+  const snap = useLiveQuery(loadSnapshotWithoutVisits, [...SNAPSHOT_STORES_WITHOUT_VISITS])
   const [picked, setPicked] = useState<Member | null>(null)
   const [dialogMember, setDialogMember] = useState<Member | null>(null)
   const [preset, setPreset] = useState<PresetName>('30d')
@@ -77,8 +77,11 @@ export function PaymentsPage() {
 
   const invoices = useMemo(() => {
     if (!snap.data) return []
+    // Group once. Searching every payment for every invoice froze this page for seconds on a large gym.
+    const paymentsByInvoice = groupBy(snap.data.payments, (p) => p.invoiceId)
+    const adjustmentsByInvoice = groupBy(snap.data.adjustments, (a) => a.invoiceId)
     return snap.data.invoices
-      .map((inv) => ({ inv, bal: invoiceBalance(inv, snap.data!.payments, snap.data!.adjustments) }))
+      .map((inv) => ({ inv, bal: invoiceBalance(inv, paymentsByInvoice.get(inv.id) ?? [], adjustmentsByInvoice.get(inv.id) ?? []) }))
       .filter(({ inv, bal }) => {
         if (invoiceFilter === 'open') return inv.status === 'issued' && bal.balancePaise > 0
         if (invoiceFilter === 'paid') return inv.status === 'issued' && bal.balancePaise <= 0

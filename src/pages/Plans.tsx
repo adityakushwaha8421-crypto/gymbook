@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Plus, Pencil, Archive, ArchiveRestore, CreditCard } from 'lucide-react'
 import { usePage } from '@/app/AppContext'
 import { useLiveQuery } from '@/hooks/useLiveQuery'
-import { loadSnapshot, SNAPSHOT_STORES } from '@/data/snapshot'
+import { loadSnapshotWithoutVisits, SNAPSHOT_STORES_WITHOUT_VISITS } from '@/data/snapshot'
 import { createPlan, updatePlan, setPlanArchived } from '@/data/services/plans'
 import { planForm, type PlanFormValues } from '@/domain/validation'
 import { useForm } from '@/lib/forms'
@@ -23,7 +23,7 @@ import { errorMessage } from '@/data/errors'
 
 export function PlansPage() {
   usePage('Membership plans', 'Create and edit the plans you sell')
-  const snap = useLiveQuery(loadSnapshot, [...SNAPSHOT_STORES])
+  const snap = useLiveQuery(loadSnapshotWithoutVisits, [...SNAPSHOT_STORES_WITHOUT_VISITS])
   const [editing, setEditing] = useState<Plan | 'new' | null>(null)
   const [showArchived, setShowArchived] = useState(false)
   const toast = useToast()

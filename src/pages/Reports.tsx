@@ -3,7 +3,7 @@ import { Download, Info, Printer } from 'lucide-react'
 import { PageActions } from '@/components/ui/PageActions'
 import { usePage, useApp } from '@/app/AppContext'
 import { useLiveQuery } from '@/hooks/useLiveQuery'
-import { loadSnapshot, SNAPSHOT_STORES } from '@/data/snapshot'
+import { groupBy, loadSnapshot, SNAPSHOT_STORES } from '@/data/snapshot'
 import { financeSummary, financeSeries, periodPreset, memberRows, outstandingSummary, type Period } from '@/domain/metrics'
 import { invoiceBalance } from '@/domain/membership'
 import { formatINR } from '@/domain/money'
@@ -56,17 +56,21 @@ export function ReportsPage() {
     try {
       let csv = ''
       if (what === 'payments') {
+        const invoiceById = new Map(snap.data!.invoices.map((i) => [i.id, i]))
         const rows = snap.data!.payments.filter((p) => inPeriod(instantToDateInTz(p.receivedAt, timezone))).sort((a, b) => a.receivedAt.localeCompare(b.receivedAt))
         csv = toCsv(['Received at (gym time)', 'Member', 'Phone', 'Amount (INR)', 'Method', 'Invoice', 'Status', 'Reference', 'Note'], rows.map((p) => {
           const m = memberById.get(p.memberId)
-          const inv = snap.data!.invoices.find((i) => i.id === p.invoiceId)
+          const inv = p.invoiceId ? invoiceById.get(p.invoiceId) : undefined
           return [localStamp(p.receivedAt), m?.name ?? '', m?.phone ?? '', (p.amountPaise / 100).toFixed(2), labelFor(PAYMENT_METHODS, p.method), inv?.number ?? '', p.status, p.reference ?? '', p.note ?? '']
         }))
       } else if (what === 'invoices') {
         const rows = snap.data!.invoices.filter((i) => inPeriod(i.issueDate)).sort((a, b) => a.number.localeCompare(b.number))
+        // Group once, so a year of invoices does not search every payment for every invoice.
+        const paymentsByInvoice = groupBy(snap.data!.payments, (p) => p.invoiceId)
+        const adjustmentsByInvoice = groupBy(snap.data!.adjustments, (x) => x.invoiceId)
         csv = toCsv(['Invoice', 'Issued', 'Member', 'Phone', 'Subtotal (INR)', 'Discount (INR)', 'Adjustments (INR)', 'Total due (INR)', 'Paid (INR)', 'Balance (INR)', 'Status'], rows.map((i) => {
           const m = memberById.get(i.memberId)
-          const b = invoiceBalance(i, snap.data!.payments, snap.data!.adjustments)
+          const b = invoiceBalance(i, paymentsByInvoice.get(i.id) ?? [], adjustmentsByInvoice.get(i.id) ?? [])
           return [i.number, i.issueDate, m?.name ?? '', m?.phone ?? '', (i.subtotalPaise / 100).toFixed(2), (i.discountPaise / 100).toFixed(2), (b.adjustmentsPaise / 100).toFixed(2), (b.duePaise / 100).toFixed(2), (b.paidPaise / 100).toFixed(2), (b.balancePaise / 100).toFixed(2), b.status]
         }))
       } else if (what === 'attendance') {

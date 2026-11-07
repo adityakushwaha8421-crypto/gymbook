@@ -5,6 +5,56 @@ import { csvCell, toCsv } from './csv'
 import { invoiceBalance, membershipState, memberBalance } from './membership'
 import type { Invoice, Payment, Adjustment, Membership } from './types'
 
+describe('instantToDateInTz gives the same answer as the browser date formatter', () => {
+  // The function has a quick path (one offset per day) and an exact path. This checks the quick
+  // path against an independent formatter over years of instants, including every clock change.
+  const reference = (instant: string, timezone: string) => {
+    const parts = new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date(instant))
+    const get = (type: string) => parts.find((p) => p.type === type)!.value
+    return `${get('year')}-${get('month')}-${get('day')}`
+  }
+  const zones = ['Asia/Kolkata', 'Asia/Kathmandu', 'Asia/Dubai', 'Asia/Singapore', 'Asia/Dhaka', 'Asia/Colombo', 'Europe/London', 'America/New_York', 'UTC', 'Australia/Lord_Howe', 'Pacific/Chatham', 'Pacific/Kiritimati', 'America/St_Johns']
+
+  it('every 37 minutes across 2024 to 2027, in every timezone the app offers and some awkward ones', () => {
+    const from = Date.UTC(2024, 0, 1)
+    const to = Date.UTC(2027, 0, 1)
+    for (const zone of zones) {
+      const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit' })
+      let wrong = 0
+      for (let ms = from; ms < to; ms += 37 * 60_000) {
+        const instant = new Date(ms).toISOString()
+        // en-CA formats as YYYY-MM-DD
+        if (instantToDateInTz(instant, zone) !== fmt.format(ms)) wrong++
+      }
+      expect(wrong, zone).toBe(0)
+    }
+  })
+
+  it('the minutes around midnight and around each clock change', () => {
+    const cases: [string, string][] = [
+      ['2026-11-06T18:29:59.999Z', 'Asia/Kolkata'],
+      ['2026-11-06T18:30:00.000Z', 'Asia/Kolkata'],
+      ['2026-03-29T00:59:59.000Z', 'Europe/London'],
+      ['2026-03-29T01:00:00.000Z', 'Europe/London'],
+      ['2026-10-24T23:30:00.000Z', 'Europe/London'],
+      ['2026-10-25T00:30:00.000Z', 'Europe/London'],
+      ['2026-03-08T04:59:00.000Z', 'America/New_York'],
+      ['2026-03-08T07:01:00.000Z', 'America/New_York'],
+      ['2026-11-01T03:59:00.000Z', 'America/New_York'],
+      ['2026-11-01T06:01:00.000Z', 'America/New_York'],
+      ['2026-10-03T15:29:00.000Z', 'Australia/Lord_Howe'],
+      ['2026-10-03T15:31:00.000Z', 'Australia/Lord_Howe'],
+      ['1995-06-15T12:00:00.000Z', 'Asia/Kolkata'],
+      ['1941-10-01T12:00:00.000Z', 'Asia/Kolkata'],
+    ]
+    for (const [instant, zone] of cases) expect(instantToDateInTz(instant, zone), `${instant} ${zone}`).toBe(reference(instant, zone))
+  })
+
+  it('an unreadable instant is still rejected, as before', () => {
+    expect(() => instantToDateInTz('not a date', 'Asia/Kolkata')).toThrow(RangeError)
+  })
+})
+
 describe('dates', () => {
   it('computes inclusive end dates for month plans', () => {
     expect(membershipEndDate('2026-01-15', 1, 'months')).toBe('2026-02-14')

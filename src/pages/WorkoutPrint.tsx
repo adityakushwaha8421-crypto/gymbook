@@ -3,7 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { Printer, ArrowLeft } from 'lucide-react'
 import { useApp } from '@/app/AppContext'
 import { useLiveQuery } from '@/hooks/useLiveQuery'
-import { loadSnapshot, SNAPSHOT_STORES } from '@/data/snapshot'
+import { loadSnapshotWithoutVisits, SNAPSHOT_STORES_WITHOUT_VISITS } from '@/data/snapshot'
 import { Button, LinkButton } from '@/components/ui/Button'
 import { PageLoading } from '@/components/ui/Spinner'
 import { ErrorState } from '@/components/ui/EmptyState'
@@ -15,7 +15,7 @@ export function WorkoutPrintPage() {
   const { id = '' } = useParams()
   const [params] = useSearchParams()
   const { settings, today } = useApp()
-  const snap = useLiveQuery(loadSnapshot, [...SNAPSHOT_STORES])
+  const snap = useLiveQuery(loadSnapshotWithoutVisits, [...SNAPSHOT_STORES_WITHOUT_VISITS])
   const plan = snap.data?.workouts.find((w) => w.id === id)
   const member = snap.data?.members.find((m) => m.id === params.get('member'))
   useEffect(() => {

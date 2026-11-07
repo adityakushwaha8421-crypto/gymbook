@@ -43,7 +43,7 @@ export async function mockGoogle(page: Page, drive: FakeDrive): Promise<void> {
     if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS })
     const res = drive.handle({ method: req.method(), url: req.url(), headers: req.headers(), body: req.postDataBuffer() ?? undefined })
     if (res === 'network-error') return route.abort('internetdisconnected')
-    return route.fulfill({ status: res.status, headers: { ...res.headers, ...CORS }, body: res.body })
+    return route.fulfill({ status: res.status, headers: { ...res.headers, ...CORS }, body: typeof res.body === 'string' ? res.body : Buffer.from(res.body) })
   })
 }
 

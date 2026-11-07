@@ -2,6 +2,7 @@ import { test, expect, type Page, type BrowserContext } from '@playwright/test'
 import { onboard, createPlan, readStore } from '../helpers'
 import { FakeDrive, mockGoogle, setGoogle } from '../google'
 import { formatDateTime } from '../../src/domain/dates'
+import { gunzipSync } from 'node:zlib'
 
 /**
  * Google Drive backup, end to end in the browser, against a stand-in for Google (see e2e/google.ts).
@@ -26,7 +27,12 @@ const newDrive = () => {
 }
 const section = (page: Page) => page.locator('#drive')
 const isUpload = (r: { url: string }) => r.url.includes('/upload/')
-const stored = (drive: FakeDrive, accountId: string) => JSON.parse(new TextDecoder().decode(drive.files(accountId)[0].content)) as { data: Record<string, Rec[]> }
+/** The backup as Drive holds it. It is gzip-compressed; Node's own gzip opens it, independently of the app's code. */
+const stored = (drive: FakeDrive, accountId: string) => {
+  const raw = Buffer.from(drive.files(accountId)[0].content)
+  const text = raw[0] === 0x1f && raw[1] === 0x8b ? gunzipSync(raw).toString('utf8') : raw.toString('utf8')
+  return JSON.parse(text) as { data: Record<string, Rec[]> }
+}
 const byId = (rows: Rec[]) => [...rows].sort((x, y) => (x.id < y.id ? -1 : 1))
 
 async function snapshot(page: Page): Promise<Record<string, Rec[]>> {

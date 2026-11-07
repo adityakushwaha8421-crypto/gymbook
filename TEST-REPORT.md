@@ -318,6 +318,8 @@ Asked for: Google sign-in, backup and restore to the owner's Google Drive, a cle
 
 **Read this first.** Everything below marked PASS was tested against a **stand-in for Google** written for these tests (`src/test/fakeDrive.ts`, `e2e/google.ts`). No real Google account, sign-in window or Drive was used, because that needs an OAuth client ID that only the site owner can create (`docs/GOOGLE-DRIVE-SETUP.md`). So the app's own logic is tested; Google's side of every step is **NOT TESTED**. Reliable recovery from Google Drive must not be assumed until the "real Google" rows at the end have been run and passed.
 
+**Update, 7 November 2026.** The client ID now exists and the "real Google" rows R1 to R3 were run once on the live site with the gym's own Google account: sign-in, one small upload and a restore in the same browser passed. Still **not** run against real Google: a restore onto an empty browser or another device, a backup over 5 MB, and a second Google account. Until the empty-device restore passes, recovery after a lost device should not be called proven.
+
 ### Design
 
 - **Sign-in:** Google Identity Services, pop-up token flow, in the browser. No client secret exists. The access token is held in memory only and expires after about an hour; nothing about the session is written to storage.
@@ -364,11 +366,11 @@ Changed: `src/pages/Settings.tsx` (new section; file backup renamed "Backup file
 | 7b | Backend or scheduled-service alternative | NOT TESTED | Not built; see "Scheduling" |
 | 8 | Another browser: sign in to the same account, restore, compare records and photo | PASS against the stand-in; **NOT TESTED with Google or on a second physical device** | A separate browser profile with no shared storage |
 | 9 | Restore protects existing local data | PASS | The downloaded safety file was opened and holds the device's previous member; explicit confirmation required |
-| R1 | Real Google sign-in window opens and returns a token for this site | **NOT TESTED** | Needs the client ID and the owner's sign-in |
-| R2 | Real Drive accepts the upload, including a backup over 5 MB through an upload session | **NOT TESTED** | The session path relies on the browser being allowed to read Google's `Location` header |
-| R3 | Real Drive download and end-to-end restore | **NOT TESTED** | |
+| R1 | Real Google sign-in window opens and returns a token for this site | **PASS** (7 Nov 2026, live site, Chrome on macOS) | The owner chose the gym's Google account in Google's own window; the page then showed that account's address. One earlier attempt ended with the window closed and the page correctly stayed "Not signed in" |
+| R2 | Real Drive accepts the upload | **PASS for a small backup** (2 members, 39 KB, single request); **NOT TESTED over 5 MB** | The page reported "checked against what Google Drive stored" (size and MD5 from Drive against the local bytes). A second "Back up now" uploaded nothing and said "Already up to date". The upload-session path for large backups is still untried against Google |
+| R3 | Real Drive download and end-to-end restore | **PASS in the same browser** (7 Nov 2026); **NOT TESTED on an empty browser or a second device** | "Restore…" fetched the file from Drive, validated it and showed 2 members, 1 plan, 2 memberships, 2 invoices, 2 payments, 2 visits. After "Replace my data" the page reported "Every record was read back and matches the backup". Independently, a SHA-256 fingerprint of every IndexedDB store was taken before and after: 17 of 18 stores were identical, and the activity log had exactly one new entry, "Restored backup exported …". The safety copy `gymbook-before-restore-2026-11-06-19-07-44.json` (42,899 bytes) was found in Downloads. Limits: the browser already held the same records, so this shows the restore path runs and writes correctly against Google, not that an empty device gets its data back; and finding an existing backup by listing the app folder after a fresh sign-in was not exercised (the file did not exist yet at sign-in) |
 | R4 | Real second Google account sees nothing | **NOT TESTED** | |
-| R5 | The Cloud Console steps as written | **NOT TESTED** | Written from documentation |
+| R5 | The Cloud Console steps as written | **PASS for the console part** (6 Nov 2026) | Project, Drive API and app name set by the owner; the `drive.appdata` scope, the web client with both origins and one test user were then added and read back from the console after a reload. The client ID is set as the repository variable and is in the deployed build; Google accepted a sign-in with it (row R1) |
 
 | Check | Result |
 | --- | --- |
@@ -382,3 +384,88 @@ Changed: `src/pages/Settings.tsx` (new section; file backup renamed "Backup file
 ### Who can access the backup, and what it contains
 
 Contents: every member (with photo and health notes), plan, membership, invoice, payment, visit, follow-up, workout plan, the activity log and the settings. Access: only someone signed in to the Google account that made it, through this site; GymBook itself has no server and no copy. It is not encrypted beyond what Google Drive does for every file.
+
+## Full test run and volume test (2026-11-07)
+
+Everything was run, then the app was loaded with made-up gyms of growing size to see what slows down and where it stops. The volume test is new: `npm run test:volume` (`e2e-volume/`), kept out of the normal run because one pass takes minutes and writes files of tens to hundreds of MB.
+
+### How the volume test works
+
+- `e2e-volume/generate.ts` writes a GymBook backup file for a made-up gym: members (named "Vol …"), 1 to 6 years of memberships, invoices, payments, visits and the activity log, with forty different real 256 px JPEG photos of about 14 KB each (the size the app itself stores).
+- The file is imported through Settings → Import backup, the way a person would. From then on the test only does what a person does: opens each page, searches, adds a member with a plan, checks them in, records a payment, runs a year's report, exports CSVs and the backup, backs up to Google Drive and restores.
+- It runs against the **production build** in a real Chrome profile folder. Times are measured inside the page, on every frame, from the start of the page load until the real content is on screen. "Slow phone" is the same computer with the processor slowed four times (Chrome's CPU throttle); it is an imitation, not a real phone.
+- Google Drive is the same stand-in used by the other tests, reached over a local HTTP server so a backup of any size goes through a real network request. **No volume test touched real Google.**
+- Correctness is checked, not only speed: the dashboard's active members, total members, visits today, people in the gym now and members who owe money must equal the numbers the generator knows to be true, and record counts are read from the database after every step.
+
+### Sizes tested
+
+| Size | Members | Visits | Activity lines | Backup file | Result |
+| --- | --- | --- | --- | --- | --- |
+| gym (ordinary gym, 2 years) | 300 | 14,695 | 16,567 | 12 MB | PASS |
+| busy (about 100 visits a day, 3 years) | 1,500 | 84,312 | 94,012 | 64 MB | PASS |
+| large (5 years) | 5,000 | 319,083 | 353,142 | 182 MB | PASS |
+| xlarge (5 years) | 10,000 | 637,892 | 706,754 | 327 MB | PASS, but slow (below) |
+| huge (6 years) | 20,000 | 1,323,388 | 1,463,071 | 635 MB | **Cannot be imported**: a browser cannot read a file over about 500 MB in one piece. The app now says so and changes nothing; before it said "not valid JSON" |
+
+Dashboard numbers matched the generator exactly at every size that loaded (for example at 5,000 members: 674 active, 4,786 in total, 207 visits today, 112 in the gym, 1,525 owing money). No uncaught error appeared in the page at any size.
+
+### What was slow, and what was changed
+
+1. **Dates.** Every visit and payment was turned into a calendar date through the browser's date formatter, several times per page. `instantToDateInTz` now looks the timezone's offset up once per day and reuses it; days with a clock change still take the exact path. A new unit test compares it with the formatter every 37 minutes over three years in 13 timezones.
+2. **Pages that never show visits read every visit.** Payments, Invoice, Plans, Follow-ups and Workouts now leave the visit store out; a member's page reads only that member's visits.
+3. **Payments looked through every payment for every invoice.** Grouped once now (the same in the invoice CSV export).
+4. **Opening the app with Drive backup on read and fingerprinted the whole database** to learn whether anything had changed. A counter that goes up on every saved change answers that now. As a side effect, a change saved while a backup is uploading is no longer forgotten.
+5. **The Drive backup is gzip-compressed** before upload, after the compressed copy has been opened again and found identical. Plain backups made earlier are still read. Browsers without `CompressionStream` upload plain JSON as before.
+6. **A backup file too large to read** gets an honest message (above).
+
+### Page load, old build against new (seconds; same data, same computer)
+
+| Page | 300 members | 1,500 | 5,000 | 5,000 on "slow phone" | 10,000 (new only) |
+| --- | --- | --- | --- | --- | --- |
+| Dashboard | 0.28 → 0.18 | 1.07 → 0.83 | 3.77 → 1.78 | 12.1 → 3.9 | 4.1 |
+| Members | 0.49 → 0.49 | 0.84 → 0.82 | 1.89 → 1.89 | 3.4 → 3.1 | 3.7 |
+| Member's page | 0.55 → 0.50 | 1.11 → 0.78 | 3.06 → 1.82 | 5.1 → 3.0 | 3.6 |
+| Attendance | 0.57 → 0.52 | 1.15 → 0.86 | 3.09 → 2.04 | 7.8 → 4.1 | 3.7 |
+| Payments | 0.48 → 0.45 | 1.01 → 0.55 | 4.37 → 0.76 | 12.8 → 1.4 | 1.1 |
+| Invoice | 0.48 → 0.43 | 0.76 → 0.51 | 1.91 → 0.70 | 2.8 → 1.2 | 0.9 |
+| Follow-ups | 0.48 → 0.43 | 0.84 → 0.54 | 1.87 → 0.73 | 3.3 → 1.4 | 1.0 |
+| Reports | 0.54 → 0.51 | 1.11 → 0.85 | 3.05 → 1.95 | 7.9 → 4.0 | 3.8 |
+| Activity | 0.46 → 0.46 | 0.71 → 0.71 | 1.80 → 1.70 | 3.1 → 3.4 | 3.3 |
+
+Everyday actions on the new build (seconds): search by name or phone 0.01 at every size; check-in 0.02 / 0.04 / 0.07 / 0.09; record a payment 0.01 to 0.03; add a member with a plan and land on their page 0.14 / 0.67 / 1.58 / 3.16; a year's report 0.04 / 0.07 / 0.16 / 0.30 (was 1.14 at 5,000).
+
+### Backup, export, restore (new build unless marked)
+
+| | 300 | 1,500 | 5,000 | 10,000 |
+| --- | --- | --- | --- | --- |
+| Import the file | 3 s | 17 s | 67 s | 156 s |
+| Export backup file | 0.5 s, 15 MB | 1.8 s, 80 MB | 5.5 s, 240 MB | 11.8 s, 444 MB |
+| Drive backup: size uploaded, old → new | 12 → 4.5 MB | 64 → 23 MB | 182 → 44 MB | 62 MB |
+| Drive backup: time, old → new | 1.4 → 1.3 s | 6.7 → 4.9 s | 51 → 12 s | 23 s |
+| "Back up now" with nothing changed | 0.4 s | 1.8 s | 5.1 s | 15 s |
+| Restore from Drive, read back and matched | 5 s | 24 s | 110 s | 283 s |
+| App frozen in its first seconds with Drive on, old → new | 0.2 → 0 s | 1.4 → 0.2 s | 5.3 → 0.7 s | 1.6 s |
+| Browser storage used | 31 MB | 141 MB | 417 MB | 572 MB |
+
+### Still slow or limited (not changed)
+
+- **Photos dominate the Drive backup.** Records shrink about ten times, photos do not: at 1,500 members with a photo each, 21 MB of the 23 MB is photos. The whole file is sent again on every automatic backup, which runs up to every 15 minutes while data is changing. On mobile data that is a lot. Two possible changes, not made because they alter how the backup behaves: back up automatically less often, or keep photos in a second Drive file that is sent only when a photo changes.
+- Dashboard, Members, Attendance, Reports and Activity still read every visit or activity line; they take 2 to 4 s at 5,000 members and more on a slow device.
+- The attendance CSV for a year takes 2.5 s at 1,500 members and 5.5 s at 5,000.
+- A restore replaces everything in one transaction and reads it back, so it takes minutes at the largest sizes; the app is busy during it.
+- The backup file must stay under about 500 MB to be imported, which was reached between 10,000 and 20,000 members with years of visits.
+- During the first measurement, in a throw-away test window, a restore at 5,000 members stopped with "Browser storage is full" and correctly left the data unchanged. A throw-away window gets a small storage allowance; in a real profile folder the same restore passed. A device that is nearly out of space would see the same message.
+
+### Results
+
+| Check | Result |
+| --- | --- |
+| Vitest | 191 passed (14 new: compression against Node's gzip, compressed and plain backups restored, damaged compressed file refused, browser without compression, the change counter, date conversion against the formatter) |
+| Playwright, every suite, after the last source change | 123 passed (15.6 min) |
+| An earlier full run | 120 passed, 3 failed. The 3 were caused by this session: volume runs started in the middle cleared the shared trace folder. The volume test now has its own folder; the 3 passed when re-run, and the full run above is clean |
+| Volume: gym, busy, large, xlarge on the new build | PASS |
+| Volume: huge | Import refused with the size message; nothing changed (expected) |
+| Typecheck, build | clean. Lint: no new warnings |
+| Compressed backup against **real Google Drive** | **NOT TESTED**. Only the stand-in. The backup made on 7 November with the real account is a plain one, which the new code still reads (tested against the stand-in) |
+| Real phone | **NOT TESTED**. "Slow phone" numbers come from a slowed desktop processor |
+| Safari and Firefox | **NOT TESTED** |

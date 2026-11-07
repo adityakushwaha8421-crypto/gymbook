@@ -47,7 +47,8 @@ export function MemberDetailPage() {
   const [share, setShare] = useState<'welcome' | 'details' | null>(null)
   const [params, setParams] = useSearchParams()
   const tab: Tab = TABS.find((t) => t === params.get('tab')) ?? 'overview'
-  const snap = useLiveQuery(loadSnapshot, [...SNAPSHOT_STORES])
+  // Only this member's visits are read; the full visit history of the gym is not needed here.
+  const snap = useLiveQuery(() => loadSnapshot({ attendance: { memberId: id } }), [...SNAPSHOT_STORES], [id])
   const activity = useLiveQuery(() => listActivityForMember(id), ['activity'], [id])
   const [dialog, setDialog] = useState<'membership' | 'payment' | 'archive' | null>(null)
   const [voidTarget, setVoidTarget] = useState<{ kind: 'payment' | 'invoice'; id: string; rev: number; label: string } | null>(null)

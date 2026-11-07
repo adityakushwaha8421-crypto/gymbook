@@ -36,7 +36,8 @@ export interface FakeRequest {
 export interface FakeResponse {
   status: number
   headers: Record<string, string>
-  body: string
+  /** Text for JSON answers; the stored bytes, untouched, for a file download. */
+  body: string | Uint8Array
 }
 
 type Failure = 'network' | { status: number; reason?: string; message?: string }
@@ -135,7 +136,7 @@ export class FakeDrive {
       const file = folder.get(decodeURIComponent(fileMatch[1]))
       // A file in another account's folder does not exist as far as this account can tell.
       if (!file) return this.error(404, 'notFound', 'File not found.')
-      if (url.searchParams.get('alt') === 'media') return ok(dec.decode(file.content))
+      if (url.searchParams.get('alt') === 'media') return { status: 200, headers: { 'content-type': 'application/octet-stream' }, body: file.content }
       return ok({ ...this.resource(file), trashed: false })
     }
 
@@ -187,7 +188,7 @@ export class FakeDrive {
     for (const [k, v] of Object.entries((init.headers ?? {}) as Record<string, string>)) headers[k.toLowerCase()] = v
     const res = this.handle({ method: init.method ?? 'GET', url: String(input), headers, body: bytes })
     if (res === 'network-error') throw new TypeError('Failed to fetch')
-    return new Response(res.body, { status: res.status, headers: res.headers })
+    return new Response(res.body as BodyInit, { status: res.status, headers: res.headers })
   }
 }
 

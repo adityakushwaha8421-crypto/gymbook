@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import 'fake-indexeddb/auto'
 import { IDBFactory } from 'fake-indexeddb'
 import { createHash } from 'node:crypto'
@@ -9,9 +9,12 @@ import { createMemberWithMembership } from '../services/memberships'
 import { validateBackup } from '../backup'
 import { FakeDrive } from '@/test/fakeDrive'
 import { createDriveClient, DriveError, SINGLE_REQUEST_LIMIT } from './driveApi'
-import { assessSignIn, BackupBlocked, BACKUP_FILE_NAME, findRemoteBackup, isBackupOverdue, loadRemoteBackup, restoreFromDrive, runBackup, takeSnapshot } from './driveBackup'
+import { assessSignIn, BackupBlocked, BACKUP_FILE_NAME, changedSinceBackup, decodeBackupBytes, encodeForUpload, findRemoteBackup, isBackupOverdue, loadRemoteBackup, restoreFromDrive, runBackup, takeSnapshot } from './driveBackup'
 import { clearLink, loadLink, saveLink } from './driveState'
 import { md5Hex, sha256Hex } from './md5'
+import { canGzip, gunzip, gzip, isGzip } from './gzip'
+import { dataRevision } from '../events'
+import { gunzipSync, gzipSync } from 'node:zlib'
 
 const today = '2026-11-06'
 const PHOTO = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q=='
@@ -70,7 +73,7 @@ describe('backing up', () => {
     const files = drive.files(A.id)
     expect(files).toHaveLength(1)
     expect(files[0].name).toBe(BACKUP_FILE_NAME)
-    const stored = validateBackup(new TextDecoder().decode(files[0].content))
+    const stored = validateBackup(await decodeBackupBytes(files[0].content))
     expect(stored.ok).toBe(true)
     expect(stored.counts).toMatchObject({ members: 1, plans: 1, memberships: 1, invoices: 1, payments: 1 })
     expect(stored.backup!.data.members[0]).toMatchObject({ id: sold.member.id, name: 'Rahul Patil', photoDataUrl: PHOTO, heightCm: 172, weightKg: 68.5 })
@@ -103,22 +106,33 @@ describe('backing up', () => {
     expect(second.file.id).toBe(first.file.id)
     expect(second.file.modifiedTime > first.file.modifiedTime).toBe(true)
     expect(drive.files(A.id)).toHaveLength(1)
-    expect(validateBackup(new TextDecoder().decode(drive.files(A.id)[0].content)).backup!.data.members[0]).toMatchObject({ id: sold.member.id, name: 'Rahul S. Patil' })
+    expect(validateBackup(await decodeBackupBytes(drive.files(A.id)[0].content)).backup!.data.members[0]).toMatchObject({ id: sold.member.id, name: 'Rahul S. Patil' })
     expect(loadLink()!.lastBackupAt).toBe(second.file.modifiedTime)
   })
 
   it('a backup larger than the single-request limit goes through an upload session and is still verified', async () => {
     await seedGym()
-    const big = `data:image/jpeg;base64,${'A'.repeat(390_000)}`
-    for (let i = 0; i < 15; i++) await createMember({ name: `Member ${i}`, phone: `98200${String(10000 + i)}`, joiningDate: today, photoDataUrl: big })
+    // Photos that do not compress, as real ones do not, so the file stays large after gzip.
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+    let seed = 12345
+    const noise = (length: number) => {
+      let out = ''
+      for (let i = 0; i < length; i++) {
+        seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0
+        out += alphabet[seed >>> 26]
+      }
+      return out
+    }
+    for (let i = 0; i < 24; i++) await createMember({ name: `Member ${i}`, phone: `98200${String(10000 + i)}`, joiningDate: today, photoDataUrl: `data:image/jpeg;base64,${noise(390_000)}` })
     const client = clientFor('token-a')
     const snapshot = await takeSnapshot()
-    expect(snapshot.bytes.length).toBeGreaterThan(SINGLE_REQUEST_LIMIT)
+    expect((await encodeForUpload(snapshot.bytes)).bytes.length).toBeGreaterThan(SINGLE_REQUEST_LIMIT)
     const result = await runBackup(client, await client.account())
     expect(result.status).toBe('uploaded')
     expect(drive.log.some((l) => l.method === 'PUT' && l.path.startsWith('/upload/'))).toBe(true)
     expect(drive.files(A.id)[0].content.length).toBe(result.file.size)
-    expect(validateBackup(new TextDecoder().decode(drive.files(A.id)[0].content)).counts.members).toBe(16)
+    expect(result.file.size).toBeGreaterThan(SINGLE_REQUEST_LIMIT)
+    expect(validateBackup(await decodeBackupBytes(drive.files(A.id)[0].content)).counts.members).toBe(25)
   })
 })
 
@@ -220,9 +234,9 @@ describe('keeping Google accounts apart', () => {
     const stopped = await runBackup(a, account).catch((e) => e)
     expect(stopped).toMatchObject({ reason: 'shrink', localMembers: 1 })
     expect(stopped.message).toContain('has 1 member but the backup in Google Drive has 6')
-    expect(validateBackup(new TextDecoder().decode(drive.files(A.id)[0].content)).counts.members).toBe(6)
+    expect(validateBackup(await decodeBackupBytes(drive.files(A.id)[0].content)).counts.members).toBe(6)
     await runBackup(a, account, { replace: true })
-    expect(validateBackup(new TextDecoder().decode(drive.files(A.id)[0].content)).counts.members).toBe(1)
+    expect(validateBackup(await decodeBackupBytes(drive.files(A.id)[0].content)).counts.members).toBe(1)
   })
 })
 
@@ -385,6 +399,185 @@ describe('failures are reported and leave the last good backup in place', () => 
     expect(result).toMatchObject({ status: 'uploaded', created: true })
     expect(drive.files(A.id)).toHaveLength(1)
     expect(loadLink()!.fileId).toBe(result.file.id)
+  })
+})
+
+describe('compression', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('this test environment can compress, so the tests below exercise the compressed path', () => {
+    expect(canGzip()).toBe(true)
+  })
+
+  it('gzip and gunzip agree with Node in both directions, for empty, small, non-ASCII and multi-megabyte data', async () => {
+    const enc = new TextEncoder()
+    const big = enc.encode(JSON.stringify(Array.from({ length: 60_000 }, (_, i) => ({ id: `att_${i}`, memberId: `mem_${i % 500}`, checkInAt: '2026-11-06T04:30:00.000Z', note: 'नमस्कार' }))))
+    expect(big.length).toBeGreaterThan(4_000_000)
+    for (const bytes of [new Uint8Array(), enc.encode('abc'), enc.encode('₹1,500 नमस्कार 👋'), big]) {
+      const packed = await gzip(bytes)
+      expect(isGzip(packed)).toBe(true)
+      expect(Buffer.from(gunzipSync(packed)).equals(Buffer.from(bytes))).toBe(true)
+      expect(Buffer.from(await gunzip(new Uint8Array(gzipSync(bytes)))).equals(Buffer.from(bytes))).toBe(true)
+    }
+    expect((await gzip(big)).length).toBeLessThan(big.length / 10)
+    expect(isGzip(enc.encode('{"format":"gymbook-backup"}'))).toBe(false)
+  })
+
+  it('the backup is stored compressed, marked as such, verified against Drive, and restores to identical records', async () => {
+    const sold = await seedGym()
+    const a = clientFor('token-a')
+    const account = await a.account()
+    const result = await runBackup(a, account)
+    const [file] = drive.files(A.id)
+    expect(isGzip(file.content)).toBe(true)
+    expect(file.appProperties.encoding).toBe('gzip')
+    expect(result.file.size).toBe(file.content.length)
+    expect(result.file.md5Checksum).toBe(createHash('md5').update(file.content).digest('hex'))
+    const plain = (await takeSnapshot()).bytes
+    expect(file.content.length).toBeLessThan(plain.length)
+    // What Drive holds, opened by Node's own gzip, is a valid backup with the member and the photo.
+    const stored = validateBackup(gunzipSync(file.content).toString('utf8'))
+    expect(stored.ok).toBe(true)
+    expect(stored.backup!.data.members[0]).toMatchObject({ id: sold.member.id, photoDataUrl: PHOTO })
+
+    await freshDatabase()
+    clearLink()
+    const preview = await loadRemoteBackup(a, (await findRemoteBackup(a, null))!)
+    expect(preview.preview.ok).toBe(true)
+    expect(await restoreFromDrive(account, preview, () => undefined)).toEqual({ safetyCopySaved: false, mismatches: [] })
+    expect((await listMembers())[0]).toMatchObject({ id: sold.member.id, name: 'Rahul Patil', photoDataUrl: PHOTO })
+  })
+
+  it('a plain JSON backup made before compression existed is still found and restored', async () => {
+    const sold = await seedGym('Made Before')
+    const old = await takeSnapshot()
+    drive.seed(A.id, BACKUP_FILE_NAME, JSON.stringify(old.backup), { contentHash: old.hash, members: '1' })
+    await freshDatabase()
+    clearLink()
+    const a = clientFor('token-a')
+    const account = await a.account()
+    const remote = (await findRemoteBackup(a, null))!
+    expect(isGzip(drive.files(A.id)[0].content)).toBe(false)
+    const preview = await loadRemoteBackup(a, remote)
+    expect(preview.preview.ok).toBe(true)
+    expect(await restoreFromDrive(account, preview, () => undefined)).toEqual({ safetyCopySaved: false, mismatches: [] })
+    expect((await listMembers())[0]).toMatchObject({ id: sold.member.id, name: 'Made Before', photoDataUrl: PHOTO })
+    // The next backup replaces that same file, now compressed.
+    await updateMember(sold.member.id, sold.member.rev, { name: 'Made Before, Renamed', phone: '9820012345', joiningDate: today })
+    await expect(runBackup(a, account)).resolves.toMatchObject({ status: 'uploaded', created: false })
+    expect(drive.files(A.id)).toHaveLength(1)
+    expect(isGzip(drive.files(A.id)[0].content)).toBe(true)
+  })
+
+  it('a compressed backup that was cut short or damaged is refused and nothing is restored', async () => {
+    await seedGym('In Drive')
+    const a = clientFor('token-a')
+    const account = await a.account()
+    await runBackup(a, account)
+    const [file] = drive.files(A.id)
+    await freshDatabase()
+    clearLink()
+    await createMember({ name: 'Keep Me', phone: '9811100005', joiningDate: today })
+    const whole = file.content
+    const flipped = whole.slice()
+    flipped[Math.floor(flipped.length / 2)] ^= 0xff
+    for (const damaged of [whole.slice(0, Math.floor(whole.length / 2)), flipped]) {
+      file.content = damaged
+      const preview = await loadRemoteBackup(a, (await a.get(file.id))!)
+      expect(preview.preview.ok).toBe(false)
+      expect(preview.preview.errors[0]).toMatch(/damaged|not valid JSON|invalid/i)
+      await expect(restoreFromDrive(account, preview, () => undefined)).rejects.toMatchObject({ kind: 'verify' })
+    }
+    expect((await listMembers()).map((m) => m.name)).toEqual(['Keep Me'])
+  })
+
+  it('a browser that cannot compress uploads plain JSON, which is read back the same way', async () => {
+    vi.stubGlobal('CompressionStream', undefined)
+    expect(canGzip()).toBe(false)
+    const json = new TextEncoder().encode('{"a":1}')
+    expect(await encodeForUpload(json)).toMatchObject({ encoding: 'identity', contentType: 'application/json', bytes: json })
+    await seedGym()
+    const a = clientFor('token-a')
+    const account = await a.account()
+    await runBackup(a, account)
+    const [file] = drive.files(A.id)
+    expect(isGzip(file.content)).toBe(false)
+    expect(file.appProperties.encoding).toBe('identity')
+    expect(validateBackup(await decodeBackupBytes(file.content)).ok).toBe(true)
+  })
+
+  it('a compressor that produces something it cannot read back is not trusted: the plain copy is sent', async () => {
+    class Broken {
+      readable: ReadableStream<Uint8Array>
+      writable: WritableStream<Uint8Array>
+      constructor() {
+        // Looks like gzip, but is not.
+        const t = new TransformStream<Uint8Array, Uint8Array>({ transform: (_chunk, c) => c.enqueue(Uint8Array.from([0x1f, 0x8b, 8, 0, 1, 2, 3])) })
+        this.readable = t.readable
+        this.writable = t.writable
+      }
+    }
+    vi.stubGlobal('CompressionStream', Broken)
+    const json = new TextEncoder().encode(JSON.stringify({ hello: 'world' }))
+    expect(await encodeForUpload(json)).toMatchObject({ encoding: 'identity', bytes: json })
+  })
+})
+
+describe('knowing whether anything changed, without reading the database', () => {
+  it('the revision counter goes up with every saved change and a backup remembers the number it saw', async () => {
+    expect(dataRevision()).toBe(0)
+    const sold = await seedGym()
+    const afterSeed = dataRevision()
+    expect(afterSeed).toBeGreaterThan(0)
+    const a = clientFor('token-a')
+    const account = await a.account()
+    expect(changedSinceBackup(null)).toBe(false)
+    await runBackup(a, account)
+    expect(loadLink()!.lastBackupRev).toBe(afterSeed)
+    expect(changedSinceBackup(loadLink())).toBe(false)
+
+    await updateMember(sold.member.id, sold.member.rev, { name: 'Rahul S. Patil', phone: '9820012345', joiningDate: today })
+    expect(dataRevision()).toBeGreaterThan(afterSeed)
+    expect(changedSinceBackup(loadLink())).toBe(true)
+    await expect(runBackup(a, account)).resolves.toMatchObject({ status: 'uploaded' })
+    expect(changedSinceBackup(loadLink())).toBe(false)
+  })
+
+  it('a change that is undone still triggers a check, which uploads nothing and settles the counter', async () => {
+    const sold = await seedGym()
+    const a = clientFor('token-a')
+    const account = await a.account()
+    await runBackup(a, account)
+    const renamed = await updateMember(sold.member.id, sold.member.rev, { name: 'Someone Else', phone: '9820012345', joiningDate: today })
+    await updateMember(renamed.id, renamed.rev, { name: 'Rahul Patil', phone: '9820012345', joiningDate: today })
+    expect(changedSinceBackup(loadLink())).toBe(true)
+    const uploads = drive.uploads()
+    // The member's own revision number moved, so this is a real difference and is uploaded once.
+    await runBackup(a, account)
+    expect(changedSinceBackup(loadLink())).toBe(false)
+    await expect(runBackup(a, account)).resolves.toMatchObject({ status: 'unchanged' })
+    expect(drive.uploads()).toBe(uploads + 1)
+  })
+
+  it('a link saved before the counter existed gives no answer, so the caller compares the data instead', () => {
+    saveLink({ accountId: A.id, email: A.email, auto: true, lastBackupHash: 'abc' })
+    expect(changedSinceBackup(loadLink())).toBeUndefined()
+    saveLink({ accountId: A.id, email: A.email, auto: true })
+    expect(changedSinceBackup(loadLink())).toBe(true)
+  })
+
+  it('a restore that was read back and matches leaves nothing to back up', async () => {
+    await seedGym('In Drive')
+    const a = clientFor('token-a')
+    const account = await a.account()
+    await runBackup(a, account)
+    await freshDatabase()
+    clearLink()
+    const preview = await loadRemoteBackup(a, (await findRemoteBackup(a, null))!)
+    await restoreFromDrive(account, preview, () => undefined)
+    expect(changedSinceBackup(loadLink())).toBe(false)
+    await createMember({ name: 'After Restore', phone: '9811100009', joiningDate: today })
+    expect(changedSinceBackup(loadLink())).toBe(true)
   })
 })
 

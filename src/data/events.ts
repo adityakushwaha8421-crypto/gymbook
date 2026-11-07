@@ -46,8 +46,32 @@ export function subscribe(listener: Listener): () => void {
   return () => listeners.delete(listener)
 }
 
+const REVISION_KEY = 'gymbook-data-rev'
+
+/**
+ * A counter that goes up every time this browser changes its data. Code that needs to know whether
+ * anything changed since some earlier moment (the Drive backup does) can compare two numbers
+ * instead of reading the whole database. It lives in localStorage so every tab shares it.
+ */
+export function dataRevision(): number {
+  try {
+    return Number(localStorage.getItem(REVISION_KEY)) || 0
+  } catch {
+    return 0
+  }
+}
+
+function bumpRevision(): void {
+  try {
+    localStorage.setItem(REVISION_KEY, String(dataRevision() + 1))
+  } catch {
+    // Storage blocked: callers fall back to comparing the data itself.
+  }
+}
+
 /** Notify this tab and every other open tab that stores changed. */
 export function emitChange(stores: StoreName[]): void {
+  bumpRevision()
   for (const l of listeners) l({ stores, origin: 'local' })
   getChannel()?.postMessage({ stores })
 }

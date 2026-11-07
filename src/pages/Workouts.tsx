@@ -3,7 +3,7 @@ import { appUrl } from '@/lib/appUrl'
 import { Plus, Pencil, Archive, ArchiveRestore, Dumbbell, Copy, ChevronDown, ChevronUp, Trash2, Printer } from 'lucide-react'
 import { usePage } from '@/app/AppContext'
 import { useLiveQuery } from '@/hooks/useLiveQuery'
-import { loadSnapshot, SNAPSHOT_STORES } from '@/data/snapshot'
+import { loadSnapshotWithoutVisits, SNAPSHOT_STORES_WITHOUT_VISITS } from '@/data/snapshot'
 import { createWorkout, createWorkoutFromTemplate, updateWorkout, setWorkoutArchived } from '@/data/services/workouts'
 import { WORKOUT_LIBRARY } from '@/domain/workoutLibrary'
 import { workoutForm, type WorkoutFormValues } from '@/domain/validation'
@@ -24,7 +24,7 @@ import { cn } from '@/lib/cn'
 export function WorkoutsPage() {
   usePage('Workout plans', 'Reusable training programmes you can assign to members, from the library or your own')
   const toast = useToast()
-  const snap = useLiveQuery(loadSnapshot, [...SNAPSHOT_STORES])
+  const snap = useLiveQuery(loadSnapshotWithoutVisits, [...SNAPSHOT_STORES_WITHOUT_VISITS])
   const [editing, setEditing] = useState<WorkoutPlan | 'new' | null>(null)
   const [showArchived, setShowArchived] = useState(false)
   const [expanded, setExpanded] = useState<string | null>(null)

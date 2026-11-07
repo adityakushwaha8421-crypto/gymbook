@@ -22,6 +22,7 @@ npm run build      # production build into dist/
 npm run preview    # serve the production build
 npm test           # unit tests (vitest + fake-indexeddb)
 npm run test:e2e   # Playwright end-to-end tests (starts its own dev server on port 4173)
+npm run test:volume  # load a large made-up gym and time every page (VOLUME_TIER=gym|busy|large|huge; minutes, not part of test:e2e)
 npm run typecheck  # tsc
 npm run lint       # oxlint
 ```

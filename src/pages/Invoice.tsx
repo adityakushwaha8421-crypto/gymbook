@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { Printer, ArrowLeft, Receipt, SlidersHorizontal, MessageCircle } from 'lucide-react'
 import { useApp } from '@/app/AppContext'
 import { useLiveQuery } from '@/hooks/useLiveQuery'
-import { loadSnapshot, SNAPSHOT_STORES } from '@/data/snapshot'
+import { loadSnapshotWithoutVisits, SNAPSHOT_STORES_WITHOUT_VISITS } from '@/data/snapshot'
 import { addAdjustment } from '@/data/services/payments'
 import { invoiceBalance } from '@/domain/membership'
 import { formatINR, parseRupees } from '@/domain/money'
@@ -24,7 +24,7 @@ import { invoiceMessage, type MessageLang } from '@/domain/whatsapp'
 export function InvoicePage() {
   const { id = '' } = useParams()
   const { settings, timezone, today } = useApp()
-  const snap = useLiveQuery(loadSnapshot, [...SNAPSHOT_STORES])
+  const snap = useLiveQuery(loadSnapshotWithoutVisits, [...SNAPSHOT_STORES_WITHOUT_VISITS])
   const [payOpen, setPayOpen] = useState(false)
   const [adjOpen, setAdjOpen] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)

@@ -4,7 +4,7 @@ Google Drive backup stays switched off until the site is given a **Google OAuth 
 
 Nothing secret is involved. The client ID is a public identifier; the app has no client secret, API key or stored token.
 
-> The names of Google Cloud Console pages change from time to time. The steps below were written from Google's documentation and were **not** walked through in a real console while building this feature, so a label may differ slightly from what you see.
+> The names of Google Cloud Console pages change from time to time. These steps were carried out in a real console on 6 November 2026 for this site (project `GymBook`, owned by the gym's Google account). At that time the console called the pages *Google Auth Platform* → *Branding*, *Audience*, *Data Access* and *Clients*; a label may differ slightly from what you see later.
 
 ## What you will end up with
 
@@ -79,7 +79,7 @@ To try it locally, copy `.env.example` to `.env.local`, put the client ID after 
 
 ## What the backup is, and who can reach it
 
-- **Contents:** one file, `gymbook-backup.json`, holding every member (with photo), plan, membership, invoice, payment, visit, follow-up, workout plan, the activity log and the settings. Same format as *Export backup* in Settings.
+- **Contents:** one file, `gymbook-backup.json`, holding every member (with photo), plan, membership, invoice, payment, visit, follow-up, workout plan, the activity log and the settings. It is the same data as *Export backup* in Settings, gzip-compressed to save upload data and Drive space (records shrink to about a tenth; photos barely shrink). GymBook opens it itself on restore; backups made before compression was added are still read.
 - **Where:** the hidden app folder of the Google account that signed in. Each Google account has its own; one account cannot list or read another's.
 - **Who can read it:** only someone signed in to that Google account, through this GymBook site. GymBook cannot see any other file in the Drive.
 - **One copy:** each backup replaces the one before. Older versions are not kept.
