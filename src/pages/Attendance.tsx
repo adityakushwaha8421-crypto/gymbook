@@ -118,7 +118,7 @@ export function AttendancePage() {
               <Button icon={<ClipboardCheck className="h-4 w-4" aria-hidden />} disabled={!selected} loading={busy} onClick={() => selected && doCheckIn(selected)}>
                 Check in
               </Button>
-              {selected ? <Link to={`/members/${selected.id}`} className="text-sm font-medium text-ink underline decoration-line-strong underline-offset-[3px] hover:decoration-ink">Open profile</Link> : null}
+              {selected ? <Link to={`/members/${selected.id}`} className="text-sm text-accent-ink hover:underline">Open profile</Link> : null}
             </div>
             <p className="flex items-start gap-1.5 text-xs text-muted"><Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />Check-ins are recorded manually by staff. This version has no QR or card scanner; search by name or phone instead.</p>
           </CardBody>

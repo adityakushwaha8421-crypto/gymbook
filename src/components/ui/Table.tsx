@@ -20,7 +20,7 @@ export function Th({ className, children, sort, onSort, active, ...rest }: ThHTM
     children
   )
   return (
-    <th scope="col" className={cn('sticky top-0 z-[1] whitespace-nowrap border-b border-line bg-surface px-2.5 py-2.5 text-left text-xs font-medium text-muted first:pl-5 last:pr-5', className)} {...rest}>
+    <th scope="col" className={cn('sticky top-0 z-[1] whitespace-nowrap border-b border-line bg-surface px-2.5 py-2.5 text-left text-xs text-muted first:pl-5 last:pr-5', className)} {...rest}>
       {content}
     </th>
   )
@@ -31,13 +31,13 @@ export function Td({ className, ...rest }: TdHTMLAttributes<HTMLTableCellElement
 }
 
 export function Tr({ className, ...rest }: HTMLAttributes<HTMLTableRowElement>) {
-  return <tr className={cn('transition-colors duration-150 hover:bg-raised/70 [&:last-child>td]:border-b-0', className)} {...rest} />
+  return <tr className={cn('transition-colors duration-150 hover:bg-sunken/50 [&:last-child>td]:border-b-0', className)} {...rest} />
 }
 
 /** Mobile replacement for a table row: label/value pairs in a card. */
 export function RowCard({ children, className, onClick }: { children: ReactNode; className?: string; onClick?: () => void }) {
   return (
-    <div className={cn('border-b border-line px-4 py-3.5 last:border-b-0', onClick && 'pressable cursor-pointer hover:bg-raised/70', className)} onClick={onClick}>
+    <div className={cn('border-b border-line px-4 py-3.5 last:border-b-0', onClick && 'pressable cursor-pointer hover:bg-sunken/50', className)} onClick={onClick}>
       {children}
     </div>
   )

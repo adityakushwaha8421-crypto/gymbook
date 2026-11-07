@@ -166,7 +166,7 @@ export function PaymentsPage() {
                         <Td><Link to={`/members/${p.memberId}?tab=payments`} className="flex items-center gap-2 font-medium hover:underline">{m?.name ?? 'Unknown'}{p.sample ? <SampleBadge /> : null}</Link></Td>
                         <Td className={`tabular text-right font-medium ${p.status === 'void' ? 'line-through' : ''}`}>{formatINR(p.amountPaise)}</Td>
                         <Td>{labelFor(PAYMENT_METHODS, p.method)}{p.status === 'void' ? <Badge tone="muted" className="ml-2">Void</Badge> : null}</Td>
-                        <Td>{inv ? <Link to={`/invoices/${inv.id}`} className="font-medium text-ink underline decoration-line-strong underline-offset-[3px] hover:decoration-ink">{inv.number}</Link> : <span className="text-muted">Credit</span>}</Td>
+                        <Td>{inv ? <Link to={`/invoices/${inv.id}`} className="text-accent-ink hover:underline">{inv.number}</Link> : <span className="text-muted">Credit</span>}</Td>
                         <Td className="max-w-[14rem] truncate text-muted">{[p.reference, p.note, p.voidReason ? `Void: ${p.voidReason}` : ''].filter(Boolean).join(' · ')}</Td>
                       </Tr>
                     )

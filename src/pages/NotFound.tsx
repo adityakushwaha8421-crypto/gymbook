@@ -15,8 +15,8 @@ export function NotFound() {
         </span>
         <span className="text-xl font-medium">GymBook</span>
       </Link>
-      <p className="led text-[44px] text-faint">404</p>
-      <h1 className="mt-2 text-2xl font-semibold">This page doesn’t exist</h1>
+      <p className="text-sm font-medium text-muted">404</p>
+      <h1 className="mt-1 text-2xl font-medium">This page doesn’t exist</h1>
       <p className="mt-2 max-w-sm text-muted">The link may be out of date, or the record it pointed to was never created in this browser.</p>
       <LinkButton to="/" className="mt-6">
         Go to the dashboard

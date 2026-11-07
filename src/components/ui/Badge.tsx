@@ -31,7 +31,7 @@ export function Badge({ tone = 'neutral', children, className, title, dot }: { t
 
 export function SampleBadge() {
   return (
-    <Badge tone="muted" title="This record is part of the labelled sample data">
+    <Badge tone="info" title="This record is part of the labelled sample data">
       Sample
     </Badge>
   )

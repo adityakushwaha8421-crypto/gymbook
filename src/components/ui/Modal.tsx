@@ -135,7 +135,7 @@ function SheetHeader({ title, description, isDesktop, onHandlePointerDown }: { t
     <div className={cn('flex items-start gap-3 px-4 pt-3 pb-3 sm:px-5 sm:pt-4', !isDesktop && 'touch-none cursor-grab active:cursor-grabbing')} onPointerDown={onHandlePointerDown}>
       <div className="min-w-0 flex-1">
         {!isDesktop ? <div className="mx-auto mb-2 h-1 w-9 rounded-full bg-line-strong" aria-hidden /> : null}
-        <Dialog.Title className="text-lg font-semibold leading-6">{title}</Dialog.Title>
+        <Dialog.Title className="text-lg font-medium leading-6">{title}</Dialog.Title>
         {description ? <Dialog.Description className="mt-0.5 text-sm text-muted">{description}</Dialog.Description> : <Dialog.Description className="sr-only">Dialog</Dialog.Description>}
       </div>
       <Dialog.Close asChild>

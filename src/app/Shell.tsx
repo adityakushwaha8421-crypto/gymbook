@@ -45,7 +45,7 @@ function Logo({ name, logo, collapsed }: { name: string; logo?: string; collapse
       )}
       {!collapsed ? (
         <span className="min-w-0">
-          <span className="block truncate text-base font-semibold leading-4">{name}</span>
+          <span className="block truncate text-sm font-medium leading-4">{name}</span>
           <span className="block text-2xs leading-3 text-faint">GymBook</span>
         </span>
       ) : null}
@@ -58,7 +58,7 @@ function NavList({ onNavigate, collapsed }: { onNavigate?: () => void; collapsed
     <nav aria-label="Main" className="flex flex-col">
       {GROUPS.map((group) => (
         <div key={group} className={cn('flex flex-col gap-0.5', group !== GROUPS[0] && (collapsed ? 'mt-2 border-t border-line pt-2' : 'mt-6'))}>
-          {!collapsed ? <p className="px-2.5 pb-1.5 text-xs text-faint">{group}</p> : null}
+          {!collapsed ? <p className="px-2.5 pb-2 text-xs text-faint">{group}</p> : null}
           {NAV.filter((n) => n.group === group).map((item) => (
         <NavLink
           key={item.to}
@@ -68,15 +68,15 @@ function NavList({ onNavigate, collapsed }: { onNavigate?: () => void; collapsed
           title={collapsed ? item.label : undefined}
           className={({ isActive }) =>
             cn(
-              'pressable group relative flex h-10 items-center gap-2.5 rounded-xl text-base font-medium',
+              'pressable group relative flex h-9 items-center gap-2.5 rounded-xl text-sm font-medium',
               collapsed ? 'justify-center px-0' : 'px-2.5',
-              isActive ? 'bg-raised text-ink shadow-[inset_0_0_0_1px_rgb(var(--c-line-strong))]' : 'text-muted hover:bg-raised/70 hover:text-ink',
+              isActive ? 'bg-sunken text-ink shadow-[inset_0_0_0_1px_rgb(var(--c-line))]' : 'text-muted hover:bg-sunken/70 hover:text-ink',
             )
           }
         >
           {({ isActive }) => (
             <>
-              <item.icon className={cn('h-[18px] w-[18px] shrink-0', isActive ? 'text-ink' : 'text-faint group-hover:text-muted')} aria-hidden />
+              <item.icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-ink' : 'text-faint group-hover:text-muted')} aria-hidden />
               {!collapsed ? <span className="truncate">{item.label}</span> : <span className="sr-only">{item.label}</span>}
             </>
           )}
@@ -200,24 +200,26 @@ export function Shell() {
         <div className={cn('flex-1 overflow-y-auto py-3 scrollbar-thin', collapsed ? 'px-2' : 'px-2.5')}>
           <NavList collapsed={collapsed} />
         </div>
-        <div className={cn('flex gap-1 border-t border-line py-2', collapsed ? 'flex-col items-center px-2' : 'items-center px-2.5')}>
-          <button type="button" onClick={() => setHelp(true)} title="Keyboard shortcuts (?)" className="pressable flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-raised hover:text-ink">
-            <Keyboard className="h-[18px] w-[18px]" aria-hidden />
-            <span className="sr-only">Shortcuts</span>
+        <div className={cn('flex flex-col gap-1 border-t border-line py-2', collapsed ? 'items-center px-2' : 'px-2.5')}>
+          <button type="button" onClick={() => setHelp(true)} title="Keyboard shortcuts" className={cn('pressable flex h-9 items-center gap-2.5 rounded-lg text-sm text-muted hover:bg-sunken hover:text-ink', collapsed ? 'w-9 justify-center' : 'px-2.5')}>
+            <Keyboard className="h-4 w-4 shrink-0" aria-hidden />
+            {!collapsed ? <span className="flex-1 text-left">Shortcuts</span> : <span className="sr-only">Keyboard shortcuts</span>}
+            {!collapsed ? <Kbd>?</Kbd> : null}
           </button>
-          <button type="button" onClick={theme.toggle} title={`Switch to ${theme.resolved === 'dark' ? 'light' : 'dark'} theme`} className="pressable flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-raised hover:text-ink">
-            {theme.resolved === 'dark' ? <Sun className="h-[18px] w-[18px]" aria-hidden /> : <Moon className="h-[18px] w-[18px]" aria-hidden />}
-            <span className="sr-only">{theme.resolved === 'dark' ? 'Light theme' : 'Dark theme'}</span>
+          <button type="button" onClick={theme.toggle} title={`Switch to ${theme.resolved === 'dark' ? 'light' : 'dark'} theme`} className={cn('pressable flex h-9 items-center gap-2.5 rounded-lg text-sm text-muted hover:bg-sunken hover:text-ink', collapsed ? 'w-9 justify-center' : 'px-2.5')}>
+            {theme.resolved === 'dark' ? <Sun className="h-4 w-4 shrink-0" aria-hidden /> : <Moon className="h-4 w-4 shrink-0" aria-hidden />}
+            {!collapsed ? <span className="flex-1 text-left">{theme.resolved === 'dark' ? 'Light theme' : 'Dark theme'}</span> : <span className="sr-only">Toggle theme</span>}
           </button>
-          <button type="button" onClick={toggleCollapsed} title={collapsed ? 'Expand sidebar ([)' : 'Collapse sidebar ([)'} aria-expanded={!collapsed} className={cn('pressable flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-raised hover:text-ink', !collapsed && 'ml-auto')}>
-            {collapsed ? <PanelLeftOpen className="h-[18px] w-[18px]" aria-hidden /> : <PanelLeftClose className="h-[18px] w-[18px]" aria-hidden />}
-            <span className="sr-only">{collapsed ? 'Expand sidebar' : 'Collapse'}</span>
+          <button type="button" onClick={toggleCollapsed} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={!collapsed} className={cn('pressable flex h-9 items-center gap-2.5 rounded-lg text-sm text-muted hover:bg-sunken hover:text-ink', collapsed ? 'w-9 justify-center' : 'px-2.5')}>
+            {collapsed ? <PanelLeftOpen className="h-4 w-4 shrink-0" aria-hidden /> : <PanelLeftClose className="h-4 w-4 shrink-0" aria-hidden />}
+            {!collapsed ? <span className="flex-1 text-left">Collapse</span> : <span className="sr-only">Expand sidebar</span>}
+            {!collapsed ? <Kbd>[</Kbd> : null}
           </button>
         </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="no-print bg-canvas/95 sticky top-0 z-30 border-b border-line backdrop-blur-sm supports-[backdrop-filter]:bg-canvas/85">
+        <header className="no-print bg-canvas sticky top-0 z-30 border-b border-line">
           <div className="flex h-14 items-center gap-2 px-3 sm:px-5 lg:h-16">
             <div className="min-w-0 lg:hidden">
               <Logo name={settings.gymName} logo={settings.logoDataUrl} />
@@ -271,21 +273,21 @@ export function Shell() {
                 </Banner>
               </div>
             ) : null}
-            {showHeader ? <PageHeader title={meta.title} description={meta.description} slot className={meta.header === 'desktop' ? 'max-lg:hidden' : undefined} /> : null}
-            {settings.dataMode === 'sample' && showHeader && meta.header !== 'desktop' ? (
+            {showHeader ? <PageHeader title={meta.title} description={meta.description} slot /> : null}
+            {settings.dataMode === 'sample' && showHeader ? (
               <p className="-mt-3 mb-5 text-xs text-muted sm:hidden">
-                Showing <Link to="/settings#data" className="font-medium text-ink underline decoration-line-strong underline-offset-[3px] hover:decoration-ink">labelled sample data</Link>.
+                Showing <Link to="/settings#data" className="font-medium text-info underline-offset-2 hover:underline">labelled sample data</Link>.
               </p>
             ) : null}
             <Outlet />
           </motion.div>
         </main>
-        <footer className="no-print hidden px-5 py-4 text-center text-xs text-faint lg:block">Data is stored in this browser only · © {new Date().getFullYear()} GymBook</footer>
+        <footer className="no-print hidden px-5 py-4 text-center text-2xs text-faint lg:block">Data is stored in this browser only · © {new Date().getFullYear()} GymBook</footer>
       </div>
 
       {/* Bottom tab bar (phones and tablets) */}
       <nav aria-label="Quick navigation" className="no-print bg-canvas fixed inset-x-0 bottom-0 z-30 border-t border-line pb-safe lg:hidden">
-        <ul className="grid h-[60px] grid-cols-5">
+        <ul className="grid h-14 grid-cols-5">
           {[
             { to: '/', label: 'Home', icon: LayoutDashboard, end: true },
             { to: '/members', label: 'Members', icon: Users },
@@ -300,8 +302,8 @@ export function Shell() {
               >
                 {({ isActive }) => (
                   <>
-                    <span className={cn('flex h-7 w-12 items-center justify-center rounded-lg', isActive && 'bg-raised shadow-[inset_0_0_0_1px_rgb(var(--c-line-strong))]')}>
-                      <item.icon className="h-5 w-5" aria-hidden />
+                    <span className={cn('flex h-7 w-11 items-center justify-center rounded-lg', isActive && 'bg-sunken shadow-[inset_0_0_0_1px_rgb(var(--c-line))]')}>
+                      <item.icon className="h-[18px] w-[18px]" aria-hidden />
                     </span>
                     {item.label}
                   </>
@@ -311,8 +313,8 @@ export function Shell() {
           ))}
           <li>
             <button type="button" onClick={() => setDrawer(true)} className={cn('pressable flex h-full w-full flex-col items-center justify-center gap-0.5 text-2xs font-medium', drawer ? 'text-ink' : 'text-muted')} aria-label="Open navigation" aria-expanded={drawer} aria-controls="mobile-nav">
-              <span className={cn('flex h-7 w-12 items-center justify-center rounded-lg', drawer && 'bg-raised shadow-[inset_0_0_0_1px_rgb(var(--c-line-strong))]')}>
-                <MoreHorizontal className="h-5 w-5" aria-hidden />
+              <span className={cn('flex h-7 w-11 items-center justify-center rounded-lg', drawer && 'bg-sunken shadow-[inset_0_0_0_1px_rgb(var(--c-line))]')}>
+                <MoreHorizontal className="h-[18px] w-[18px]" aria-hidden />
               </span>
               More
             </button>

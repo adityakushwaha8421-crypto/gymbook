@@ -61,7 +61,7 @@ export function AppProvider({ children, fallback, onStorageError }: { children: 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>
 }
 
-export function usePage(title: string, description?: string, opts: { header?: boolean | 'desktop' } = {}): void {
+export function usePage(title: string, description?: string, opts: { header?: boolean } = {}): void {
   const { setMeta } = useContext(HeaderContext)
   const header = opts.header
   useEffect(() => {

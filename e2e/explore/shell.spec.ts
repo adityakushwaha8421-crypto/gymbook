@@ -125,12 +125,9 @@ test.describe('1. onboarding', () => {
     await expect(page.getByRole('heading', { name: 'Nobody checked in' })).toBeVisible()
     await page.goto('/reports')
     await expect(page.getByText('No data for this period').first()).toBeVisible()
-    // An empty gym gets the three set-up steps on the home screen instead of empty stats.
     await page.goto('/')
-    await expect(page.getByRole('heading', { name: 'Set up the desk' })).toBeVisible()
-    await expect(page.getByRole('main').getByRole('link', { name: 'Plans' })).toBeVisible()
-    await expect(page.getByRole('main').getByRole('link', { name: 'Add member' })).toBeVisible()
-    await expect(page.getByRole('main').getByRole('link', { name: 'Attendance' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'No activity yet' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Nothing expiring this week' })).toBeVisible()
 
     // Every button in the main area of each empty page should do something (no dead buttons): check that none is disabled without reason.
     for (const route of ['/members', '/plans', '/follow-ups']) {
@@ -640,46 +637,54 @@ test.describe('6. shell', () => {
     expect(await page.evaluate(() => localStorage.getItem('gymbook-sidebar'))).toBe('open')
   })
 
-  test('theme: the dark board is the default; light is the stored opt-out and survives reload and system changes', async ({ page, browser }) => {
+  test('theme toggle sets data-theme and persists; system dark is honoured without a preference', async ({ page, browser }) => {
     await onboard(page, 'empty')
     const html = page.locator('html')
-    const DARK = 'rgb(12, 14, 17)'
-    const LIGHT = 'rgb(236, 239, 243)'
-    // No preference stored: the board, with the toggle offering light.
     await expect(html).not.toHaveAttribute('data-theme', /.+/)
-    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(DARK)
-    expect(await page.locator('meta[name=theme-color]').getAttribute('content')).toBe('#0c0e11')
-    await page.getByRole('button', { name: 'Light theme' }).click()
-    await expect(html).toHaveAttribute('data-theme', 'light')
-    expect(await page.evaluate(() => localStorage.getItem('gymbook-theme'))).toBe('light')
-    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(LIGHT)
-    expect(await page.locator('meta[name=theme-color]').getAttribute('content')).toBe('#eceff3')
-    await page.reload()
-    await expect(html).toHaveAttribute('data-theme', 'light')
-    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(LIGHT)
-    const metaBoot = await page.locator('meta[name=theme-color]').getAttribute('content')
-    if (metaBoot !== '#eceff3') log('bug', `stored light theme after reload: meta theme-color is ${metaBoot}`)
-    expect.soft(metaBoot, 'meta theme-color should match the stored light theme after reload').toBe('#eceff3')
     await page.getByRole('button', { name: 'Dark theme' }).click()
     await expect(html).toHaveAttribute('data-theme', 'dark')
     expect(await page.evaluate(() => localStorage.getItem('gymbook-theme'))).toBe('dark')
+    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(20, 20, 21)')
+    expect(await page.locator('meta[name=theme-color]').getAttribute('content')).toBe('#141415')
+    await page.reload()
+    await expect(html).toHaveAttribute('data-theme', 'dark')
+    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(20, 20, 21)')
+    const metaBoot = await page.locator('meta[name=theme-color]').getAttribute('content')
+    if (metaBoot !== '#141415') log('bug', `stored dark theme after reload: meta theme-color is ${metaBoot}`)
+    expect.soft(metaBoot, 'meta theme-color should match stored dark theme after reload').toBe('#141415')
+    await page.getByRole('button', { name: 'Light theme' }).click()
+    await expect(html).toHaveAttribute('data-theme', 'light')
+    expect(await page.evaluate(() => localStorage.getItem('gymbook-theme'))).toBe('light')
 
     // Command palette theme command
     await page.keyboard.press('ControlOrMeta+k')
     await page.getByRole('combobox').fill('theme')
     await page.keyboard.press('Enter')
-    await expect(html).toHaveAttribute('data-theme', 'light')
+    await expect(html).toHaveAttribute('data-theme', 'dark')
 
-    // A light OS preference does not change the default: the board stays until the owner chooses light.
-    const ctx = await browser.newContext({ colorScheme: 'light' })
+    // System dark, no stored preference → dark without data-theme
+    const ctx = await browser.newContext({ colorScheme: 'dark' })
     const p2 = await ctx.newPage()
     await onboard(p2, 'empty')
     await expect(p2.locator('html')).not.toHaveAttribute('data-theme', /.+/)
-    expect(await p2.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(DARK)
+    expect(await p2.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(20, 20, 21)')
     await expect(p2.getByRole('button', { name: 'Light theme' })).toBeVisible()
-    await p2.emulateMedia({ colorScheme: 'dark' })
-    await p2.waitForTimeout(200)
-    expect(await p2.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(DARK)
+    const metaSys = await p2.locator('meta[name=theme-color]').getAttribute('content')
+    if (metaSys !== '#141415') log('bug', `system-dark without preference: meta theme-color is ${metaSys}, body is dark`)
+    expect.soft(metaSys, 'meta theme-color should follow system dark at boot').toBe('#141415')
+    // A stored light preference beats system dark
+    await p2.getByRole('button', { name: 'Light theme' }).click()
+    expect(await p2.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(250, 250, 250)')
+    await p2.reload()
+    expect(await p2.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(250, 250, 250)')
+    // Live media change while on 'system'
+    await p2.getByRole('button', { name: 'Dark theme' }).click()
+    await p2.evaluate(() => localStorage.removeItem('gymbook-theme'))
+    await p2.reload()
+    await expect(p2.locator('html')).not.toHaveAttribute('data-theme', /.+/)
+    await p2.emulateMedia({ colorScheme: 'light' })
+    await expect.poll(() => p2.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(250, 250, 250)')
+    await expect(p2.getByRole('button', { name: 'Dark theme' })).toBeVisible()
     await ctx.close()
   })
 
@@ -872,8 +877,8 @@ test.describe('6. shell', () => {
     await expect(drawer).toBeHidden()
     // Theme toggle inside the drawer
     await more.click()
-    await drawer.getByRole('button', { name: 'Light' }).click()
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+    await drawer.getByRole('button', { name: 'Dark' }).click()
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
     await page.keyboard.press('Escape')
 
     // Page actions are in the flow under the title: never fixed over content, never under the tab bar
