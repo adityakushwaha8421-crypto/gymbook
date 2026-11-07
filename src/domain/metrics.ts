@@ -91,6 +91,11 @@ export interface DashboardMetrics {
   checkedInNow: number
   outstandingPaise: number
   membersWithBalance: number
+  /** Members who owe money, largest balance first. */
+  owing: MemberRow[]
+  /** Recorded payments received today, in paise. */
+  receivedTodayPaise: Paise
+  paymentsToday: number
 }
 
 export function dashboardMetrics(snap: Snapshot, today: ISODate, timezone: string): DashboardMetrics {
@@ -105,7 +110,11 @@ export function dashboardMetrics(snap: Snapshot, today: ISODate, timezone: strin
   const attendanceToday = snap.attendance.filter((a) => instantToDateInTz(a.checkInAt, timezone) === today).length
   const checkedInNow = snap.attendance.filter((a) => a.checkOutAt === null).length
   const withBalance = rows.filter((r) => r.balancePaise > 0)
+  const todays = snap.payments.filter((p) => p.status === 'recorded' && instantToDateInTz(p.receivedAt, timezone) === today)
   return {
+    owing: [...withBalance].sort((a, b) => b.balancePaise - a.balancePaise || a.member.name.localeCompare(b.member.name)),
+    receivedTodayPaise: todays.reduce((s, p) => s + p.amountPaise, 0),
+    paymentsToday: todays.length,
     totalMembers: rows.length,
     activeMembers,
     expiringSoon,

@@ -8,7 +8,7 @@ export function StorageProblem({ error, retry }: { error: StorageError; retry: (
       <span className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-accent-fg">
         <Dumbbell className="h-6 w-6" aria-hidden />
       </span>
-      <h1 className="text-2xl font-medium">GymBook can’t open its storage</h1>
+      <h1 className="text-2xl font-semibold">GymBook can’t open its storage</h1>
       <p className="mt-2 max-w-md text-muted">{error.message}</p>
       <ul className="mt-4 max-w-md list-disc space-y-1 text-left text-sm text-muted">
         <li>Private or incognito windows often block IndexedDB. Try a normal window.</li>

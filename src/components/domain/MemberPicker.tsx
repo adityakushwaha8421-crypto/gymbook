@@ -92,7 +92,8 @@ export function MemberPicker({ rows, value, onChange, placeholder = 'Search by n
           setTerm(e.target.value)
           setOpen(true)
         }}
-        onFocus={() => setOpen(true)}
+        // Focus alone keeps the page readable; the list opens once there is something to match, or on ArrowDown.
+        onFocus={() => setOpen(term.trim().length > 0)}
         onBlur={() => setTimeout(() => setOpen(false), 120)}
         onKeyDown={(e) => {
           if (e.key === 'ArrowDown') {

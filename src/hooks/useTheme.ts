@@ -16,24 +16,16 @@ export function applyTheme(pref: ThemePreference): void {
   const root = document.documentElement
   if (pref === 'system') root.removeAttribute('data-theme')
   else root.setAttribute('data-theme', pref)
-  const dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
-  document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.setAttribute('content', dark ? '#141415' : '#fafafa')
+  // The board is the default; only an explicit 'light' preference leaves it.
+  const dark = pref !== 'light'
+  document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0c0e11' : '#eceff3')
 }
 
-/** Theme preference persisted per browser; 'system' follows prefers-color-scheme. */
+/** Theme preference persisted per browser. 'system' (nothing stored) means the default dark board; 'light' is the one opt-out. */
 export function useTheme(): { preference: ThemePreference; resolved: 'light' | 'dark'; setPreference: (p: ThemePreference) => void; toggle: () => void } {
   const [preference, setPref] = useState<ThemePreference>(read)
-  const [systemDark, setSystemDark] = useState(() => (typeof window !== 'undefined' ? window.matchMedia('(prefers-color-scheme: dark)').matches : false))
-
   useEffect(() => {
     applyTheme(read())
-    const mql = window.matchMedia('(prefers-color-scheme: dark)')
-    const onChange = () => {
-      setSystemDark(mql.matches)
-      applyTheme(read())
-    }
-    mql.addEventListener('change', onChange)
-    return () => mql.removeEventListener('change', onChange)
   }, [])
 
   const setPreference = useCallback((p: ThemePreference) => {
@@ -47,7 +39,7 @@ export function useTheme(): { preference: ThemePreference; resolved: 'light' | '
     applyTheme(p)
   }, [])
 
-  const resolved: 'light' | 'dark' = preference === 'system' ? (systemDark ? 'dark' : 'light') : preference
+  const resolved: 'light' | 'dark' = preference === 'light' ? 'light' : 'dark'
   const toggle = useCallback(() => setPreference(resolved === 'dark' ? 'light' : 'dark'), [resolved, setPreference])
   return { preference, resolved, setPreference, toggle }
 }

@@ -5,9 +5,9 @@ import { cn } from '@/lib/cn'
 import { Input } from './Field'
 import { PAGE_ACTIONS_ID } from './PageActions'
 
-export function PageHeader({ title, description, actions, back, slot }: { title: ReactNode; description?: ReactNode; actions?: ReactNode; back?: { to: string; label: string }; slot?: boolean }) {
+export function PageHeader({ title, description, actions, back, slot, className }: { title: ReactNode; description?: ReactNode; actions?: ReactNode; back?: { to: string; label: string }; slot?: boolean; className?: string }) {
   return (
-    <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
+    <div className={cn('mb-5 flex flex-col gap-3 sm:mb-7 sm:flex-row sm:items-end sm:justify-between', className)}>
       <div className="min-w-0">
         {back ? (
           <Link to={back.to} className="mb-1.5 inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-ink">
@@ -15,8 +15,8 @@ export function PageHeader({ title, description, actions, back, slot }: { title:
             {back.label}
           </Link>
         ) : null}
-        <h1 className="text-3xl font-medium leading-tight sm:text-4xl">{title}</h1>
-        {description ? <p className="mt-1 max-w-2xl text-sm text-muted">{description}</p> : null}
+        <h1 className="text-3xl font-semibold leading-tight sm:text-4xl">{title}</h1>
+        {description ? <p className="sr-only">{description}</p> : null}
       </div>
       {actions || slot ? (
         <div
@@ -80,15 +80,17 @@ export function LiveDot() {
 export function Stat({ label, value, hint, tone, to }: { label: ReactNode; value: ReactNode; hint?: ReactNode; tone?: 'danger' | 'warn' | 'success'; to?: string }) {
   // Long amounts step down a size so a five-up row never breaks "−" away from its number.
   const len = typeof value === 'string' ? value.length : 0
-  const size = len >= 12 ? 'text-lg' : len >= 10 ? 'text-xl' : 'text-3xl'
+  // LED numerals for figures; a plan name or other words stay in the text face.
+  const numeric = typeof value === 'number' || /\d/.test(String(value))
+  const size = !numeric ? 'text-xl font-semibold leading-7' : len >= 12 ? 'text-[20px]' : len >= 9 ? 'text-[24px]' : len >= 7 ? 'text-[26px]' : 'text-[30px]'
   const body = (
     <>
-      <p className="text-xs text-muted">{label}</p>
-      <p className={cn('tabular mt-2 font-medium !leading-none [overflow-wrap:anywhere]', size, tone === 'danger' && 'text-danger', tone === 'warn' && 'text-warn', tone === 'success' && 'text-success')}>{value}</p>
+      <p className="text-sm text-muted">{label}</p>
+      <p className={cn('mt-2 [overflow-wrap:anywhere]', numeric && 'led', size, tone === 'danger' && 'text-danger', tone === 'warn' && 'text-warn', tone === 'success' && 'text-success')}>{value}</p>
       {hint ? <p className="mt-2 text-xs text-muted">{hint}</p> : null}
     </>
   )
-  const cls = 'surface-card block min-w-0 rounded-2xl px-5 py-4'
+  const cls = 'surface-card block min-w-0 rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4'
   if (to) return <Link to={to} className={cn(cls, 'pressable hover:border-line-strong')}>{body}</Link>
   return <div className={cls}>{body}</div>
 }
@@ -99,7 +101,7 @@ export function KeyValue({ items }: { items: { label: ReactNode; value: ReactNod
       {items.map((it, i) => (
         <div key={i} className="min-w-0">
           <dt className="text-xs font-medium text-muted">{it.label}</dt>
-          <dd className="mt-0.5 break-words text-base">{it.value}</dd>
+          <dd className="mt-0.5 break-words text-md">{it.value}</dd>
         </div>
       ))}
     </dl>
@@ -128,11 +130,11 @@ export function Tabs<T extends string>({ value, onChange, items, className, 'ari
           onClick={() => onChange(it.value)}
           className={cn(
             'pressable flex h-8 min-w-0 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 text-sm font-medium',
-            value === it.value ? 'bg-surface text-ink shadow-card' : 'text-muted hover:text-ink',
+            value === it.value ? 'bg-raised text-ink shadow-card ring-1 ring-inset ring-line' : 'text-muted hover:text-ink',
           )}
         >
           {it.label}
-          {it.count !== undefined ? <span className={cn('tabular font-mono text-xs', value === it.value ? 'text-muted' : 'text-faint')}>{it.count}</span> : null}
+          {it.count !== undefined ? <span className={cn('tabular text-xs', value === it.value ? 'text-muted' : 'text-faint')}>{it.count}</span> : null}
         </button>
       ))}
     </div>
@@ -144,7 +146,7 @@ export function ContactLinks({ phone, className }: { phone?: string; className?:
   return (
     <span className={cn('flex flex-wrap items-center gap-x-3 gap-y-0.5', className)}>
       {phone ? (
-        <a href={`tel:${tel}`} className="tabular text-ink hover:text-accent-ink hover:underline">
+        <a href={`tel:${tel}`} className="tabular text-ink hover:underline">
           {phone}
         </a>
       ) : null}

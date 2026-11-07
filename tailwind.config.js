@@ -1,7 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
-  darkMode: ['selector', '[data-theme="dark"]'],
+  // The board (dark) is the default, so 'dark:' variants apply whenever light is not chosen.
+  darkMode: ['selector', ':root:not([data-theme="light"])'],
   theme: {
     extend: {
       colors: {
@@ -28,20 +29,21 @@ export default {
         info: { DEFAULT: 'rgb(var(--c-info) / <alpha-value>)', soft: 'rgb(var(--c-info-soft) / <alpha-value>)' },
       },
       fontFamily: {
-        sans: ['"IBM Plex Sans Variable"', '"IBM Plex Sans"', 'ui-sans-serif', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
-        mono: ['"IBM Plex Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        sans: ['"Barlow Semi Condensed"', 'ui-sans-serif', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
+        led: ['"Doto Variable"', 'Doto', 'ui-monospace', 'monospace'],
       },
       fontSize: {
-        '2xs': ['11px', { lineHeight: '16px' }],
-        xs: ['12px', { lineHeight: '16px' }],
-        sm: ['13px', { lineHeight: '20px' }],
-        base: ['14px', { lineHeight: '20px' }],
-        md: ['15px', { lineHeight: '22px' }],
-        lg: ['17px', { lineHeight: '24px' }],
-        xl: ['20px', { lineHeight: '28px' }],
-        '2xl': ['24px', { lineHeight: '30px' }],
-        '3xl': ['28px', { lineHeight: '34px' }],
-        '4xl': ['32px', { lineHeight: '38px' }],
+        '2xs': ['12px', { lineHeight: '16px' }],
+        xs: ['13px', { lineHeight: '18px' }],
+        sm: ['14px', { lineHeight: '20px' }],
+        base: ['15px', { lineHeight: '22px' }],
+        md: ['16px', { lineHeight: '22px' }],
+        lg: ['18px', { lineHeight: '24px' }],
+        xl: ['22px', { lineHeight: '28px' }],
+        '2xl': ['26px', { lineHeight: '32px' }],
+        '3xl': ['30px', { lineHeight: '36px' }],
+        '4xl': ['36px', { lineHeight: '40px' }],
       },
       boxShadow: {
         card: 'var(--shadow-card)',

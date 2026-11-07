@@ -13,7 +13,7 @@ export function ErrorPage() {
         </span>
         <span className="text-xl font-medium">GymBook</span>
       </Link>
-      <h1 className="text-2xl font-medium">Something went wrong</h1>
+      <h1 className="text-2xl font-semibold">Something went wrong</h1>
       <p className="mt-2 max-w-md text-muted">Your data is stored safely in this browser; this screen only means the page failed to draw.</p>
       <pre className="mt-4 max-w-full overflow-x-auto rounded-xl bg-sunken px-4 py-3 text-left text-xs text-muted">{message}</pre>
       <div className="mt-6 flex gap-2">

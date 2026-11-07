@@ -29,16 +29,18 @@ export function BarChart({ labels, series, height: maxHeight = 200, className, e
   const height = width < 480 ? Math.min(maxHeight, 220) : maxHeight
   const max = Math.max(0, ...series.flatMap((s) => s.values))
   const n = labels.length
-  const padL = 8
-  const padR = 8
+  const padL = 4
+  const padR = 4
   const padT = 12
-  const padB = 24
+  const padB = 26
   const innerW = width - padL - padR
   const innerH = height - padT - padB
   const groupW = n > 0 ? innerW / n : innerW
-  const barGap = 2
-  const barW = Math.max(2, (groupW - 6) / series.length - barGap)
-  const tickEvery = Math.max(1, Math.ceil(n / Math.max(1, Math.floor(innerW / 48))))
+  // Bars fill their slot: a quarter of the slot is air, the rest is split between the series.
+  const slotPad = Math.max(1, groupW * 0.14)
+  const barGap = series.length > 1 ? Math.max(1, groupW * 0.06) : 0
+  const barW = Math.max(2, (groupW - slotPad * 2 - barGap * (series.length - 1)) / series.length)
+  const tickEvery = Math.max(1, Math.ceil(n / Math.max(1, Math.floor(innerW / 56))))
 
   if (max === 0) {
     return (
@@ -63,11 +65,20 @@ export function BarChart({ labels, series, height: maxHeight = 200, className, e
               {series.map((s, si) => {
                 const v = s.values[i] ?? 0
                 const h = max > 0 ? (v / max) * innerH : 0
-                const x = gx + 3 + si * (barW + barGap)
-                return <rect key={s.key} x={x} y={padT + innerH - h} width={barW} height={h} rx={2} fill={s.color} opacity={hover === null || hover === i ? 1 : 0.6} />
+                const x = gx + slotPad + si * (barW + barGap)
+                return <rect key={s.key} x={x} y={padT + innerH - Math.max(h, v > 0 ? 2 : 0)} width={barW} height={Math.max(h, v > 0 ? 2 : 0)} rx={Math.min(3, barW / 2)} fill={s.color} opacity={hover === null || hover === i ? 1 : 0.55} />
               })}
               {i % tickEvery === 0 ? (
-                <text x={gx + groupW / 2} y={height - 6} textAnchor="middle" fontSize={11} fontFamily="'IBM Plex Mono', ui-monospace, monospace" fill="rgb(var(--c-faint))">
+                <text
+                  x={i === 0 ? gx + slotPad : i >= n - tickEvery ? Math.min(gx + groupW / 2, width - padR) : gx + groupW / 2}
+                  y={height - 7}
+                  textAnchor={i === 0 ? 'start' : i >= n - tickEvery ? 'end' : 'middle'}
+                  fontSize={12}
+                  fontFamily="'Barlow Semi Condensed', ui-sans-serif, sans-serif"
+                  fontWeight={500}
+                  fill="rgb(var(--c-muted))"
+                  style={{ fontVariantNumeric: 'tabular-nums' }}
+                >
                   {label}
                 </text>
               ) : null}

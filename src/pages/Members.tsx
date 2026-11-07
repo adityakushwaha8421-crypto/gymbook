@@ -7,7 +7,7 @@ import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { loadSnapshot, SNAPSHOT_STORES } from '@/data/snapshot'
 import { memberRows, type MemberRow } from '@/domain/metrics'
 import { formatDate, formatDateTime, compareDates } from '@/domain/dates'
-import { formatINR } from '@/domain/money'
+import { formatINR, formatINRCompact } from '@/domain/money'
 import { Card } from '@/components/ui/Card'
 import { LinkButton } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Field'
@@ -185,21 +185,26 @@ export function MembersPage() {
           <div>
             {slice.map((r) => (
               <RowCard key={r.member.id} onClick={() => navigate(`/members/${r.member.id}`)}>
-                <div className="flex items-start gap-3">
+                <div className="flex items-center gap-3">
                   <Avatar name={r.member.name} src={r.member.photoDataUrl} />
                   <div className="min-w-0 flex-1">
-                    <p className="flex flex-wrap items-center gap-2 font-medium">
-                      {r.member.name}
+                    <p className="truncate text-md font-medium">{r.member.name}</p>
+                    <p className="flex min-w-0 items-center gap-2 text-sm text-muted">
+                      <span className="tabular">{r.member.phone}</span>
                       {r.member.sample ? <SampleBadge /> : null}
                       {r.member.status === 'archived' ? <Badge tone="muted">Archived</Badge> : null}
                     </p>
-                    <p className="tabular text-sm text-muted">{r.member.phone}</p>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted">
+                    <div className="mt-1.5 flex min-w-0 items-center gap-2 text-xs text-muted">
                       <MembershipStateBadge state={r.state} />
-                      {r.current ? <span>{r.current.planName} · to {formatDate(r.current.endDate)}</span> : null}
+                      {r.current ? <span className="truncate">{r.current.planName} · {r.state === 'upcoming' ? `from ${formatDate(r.current.startDate)}` : `to ${formatDate(r.current.endDate)}`}</span> : null}
                     </div>
                   </div>
-                  {r.balancePaise > 0 ? <span className="tabular shrink-0 text-sm font-medium text-danger">{formatINR(r.balancePaise)}</span> : null}
+                  {r.balancePaise > 0 ? (
+                    <span className="shrink-0 text-right text-danger">
+                      <span className="led block text-[22px]">{formatINRCompact(r.balancePaise)}</span>
+                      <span className="mt-0.5 block text-2xs font-medium uppercase tracking-[0.08em]">pending</span>
+                    </span>
+                  ) : null}
                 </div>
               </RowCard>
             ))}

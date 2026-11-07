@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
+import { cn } from '@/lib/cn'
 import { appUrl } from '@/lib/appUrl'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Pencil, Archive, ArchiveRestore, Receipt, CreditCard, ClipboardCheck, LogOut, FileText, Ban, Printer, MessageCircle } from 'lucide-react'
@@ -149,7 +150,7 @@ export function MemberDetailPage() {
             <Avatar name={member.name} src={member.photoDataUrl} size="xl" />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-3xl font-medium leading-tight">{member.name}</h1>
+                <h1 className="text-3xl font-semibold leading-tight">{member.name}</h1>
                 {member.memberCode ? <Badge tone="neutral" title="Member code: search this at check-in"><span className="font-mono">{member.memberCode}</span></Badge> : null}
                 {member.sample ? <SampleBadge /> : null}
                 {archived ? <Badge tone="muted">Archived</Badge> : <MembershipStateBadge state={data.state} />}
@@ -209,7 +210,7 @@ export function MemberDetailPage() {
       ]} />
 
       {tab === 'overview' ? (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid items-start gap-4 lg:grid-cols-2">
           <Card>
             <CardHeader title="Details" />
             <CardBody>
@@ -222,17 +223,33 @@ export function MemberDetailPage() {
             </CardBody>
             <CardHeader title="Profile" description="Health notes are for staff only" />
             <CardBody>
-              <KeyValue items={[
-                { label: 'Member code', value: member.memberCode ? <span className="font-mono">{member.memberCode}</span> : '—' },
-                { label: 'Date of birth', value: member.dateOfBirth ? `${formatDate(member.dateOfBirth)} (${ageOn(member.dateOfBirth, today)} years)` : '—' },
-                { label: 'Gender', value: member.gender ? labelOf(GENDERS, member.gender) : '—' },
-                { label: 'Height', value: member.heightCm !== undefined ? <span className="tabular">{member.heightCm} cm</span> : '—' },
-                { label: 'Weight', value: member.weightKg !== undefined ? <span className="tabular">{member.weightKg} kg</span> : '—' },
-                { label: 'Fitness goal', value: member.goal || '—' },
-                { label: 'Health notes', value: member.healthNotes ? <span className="whitespace-pre-wrap text-warn">{member.healthNotes}</span> : '—' },
-              ]} />
+              {(() => {
+                const candidates: ({ label: string; value: ReactNode } | null)[] = [
+                  member.memberCode ? { label: 'Member code', value: <span className="font-mono">{member.memberCode}</span> } : null,
+                  member.dateOfBirth ? { label: 'Date of birth', value: `${formatDate(member.dateOfBirth)} (${ageOn(member.dateOfBirth, today)} years)` } : null,
+                  member.gender ? { label: 'Gender', value: labelOf(GENDERS, member.gender) } : null,
+                  member.heightCm !== undefined ? { label: 'Height', value: <span className="tabular">{member.heightCm} cm</span> } : null,
+                  member.weightKg !== undefined ? { label: 'Weight', value: <span className="tabular">{member.weightKg} kg</span> } : null,
+                  member.goal ? { label: 'Fitness goal', value: member.goal } : null,
+                  member.healthNotes ? { label: 'Health notes', value: <span className="whitespace-pre-wrap text-warn">{member.healthNotes}</span> } : null,
+                ]
+                const items = candidates.filter((x): x is { label: string; value: ReactNode } => x !== null)
+                const missing = items.length <= (member.memberCode ? 1 : 0)
+                return (
+                  <>
+                    <KeyValue items={items} />
+                    {missing || items.length < 4 ? (
+                      <p className={cn('text-sm text-muted', items.length ? 'mt-4' : '')}>
+                        {missing ? 'No profile details yet. ' : 'Add date of birth, height, weight or a goal: '}
+                        <Link to={`/members/${member.id}/edit`} className="font-medium text-ink underline-offset-2 hover:underline">Add profile details</Link>
+                      </p>
+                    ) : null}
+                  </>
+                )
+              })()}
             </CardBody>
           </Card>
+          <div className="flex flex-col gap-4">
           <Card>
             <CardHeader title="Workout plan" description="Assigned programme; print a sheet for the floor" action={data.workout ? <Button size="sm" variant="secondary" icon={<Printer className="h-4 w-4" aria-hidden />} onClick={() => window.open(appUrl(`/workouts/${data.workout!.id}/print?member=${member.id}`), '_blank', 'noopener')}>Print sheet</Button> : undefined} />
             <CardBody className="flex flex-col gap-3">
@@ -252,14 +269,14 @@ export function MemberDetailPage() {
                       <option key={w.id} value={w.id}>{w.name} · {w.goal}{w.archived ? ' (archived)' : ''}</option>
                     ))}
                   </Select>
-                  <Link to="/workouts" className="text-sm text-accent-ink hover:underline">Manage plans</Link>
+                  <Link to="/workouts" className="text-sm font-medium text-ink underline decoration-line-strong underline-offset-[3px] hover:decoration-ink">Manage plans</Link>
                 </div>
               ) : null}
             </CardBody>
           </Card>
           <Card>
             <CardHeader title="Activity" description="Changes to this member’s records" />
-            {activity.data && activity.data.length === 0 ? <EmptyState compact title="No activity yet" /> : (
+            {activity.data && activity.data.length === 0 ? <EmptyState compact title="No activity yet" description="Payments, renewals and check-ins recorded for this member will show here" /> : (
               <ul className="divide-y divide-line">
                 {(activity.data ?? []).slice(0, 15).map((a) => (
                   <li key={a.id} className="px-4 py-2.5 sm:px-5">
@@ -270,6 +287,7 @@ export function MemberDetailPage() {
               </ul>
             )}
           </Card>
+          </div>
         </div>
       ) : null}
 
@@ -302,7 +320,7 @@ export function MemberDetailPage() {
                     <div className="flex flex-wrap items-center gap-2 text-sm">
                       {bal ? <PaymentStatusBadge status={bal.status} /> : null}
                       {bal && bal.balancePaise > 0 ? <span className="tabular text-danger">{formatINR(bal.balancePaise)} due</span> : null}
-                      {inv ? <Link to={`/invoices/${inv.id}`} className="inline-flex items-center gap-1 text-accent-ink hover:underline"><FileText className="h-4 w-4" aria-hidden />{inv.number}</Link> : null}
+                      {inv ? <Link to={`/invoices/${inv.id}`} className="inline-flex items-center gap-1 font-medium text-ink underline decoration-line-strong underline-offset-[3px] hover:decoration-ink"><FileText className="h-4 w-4" aria-hidden />{inv.number}</Link> : null}
                     </div>
                   </li>
                 )

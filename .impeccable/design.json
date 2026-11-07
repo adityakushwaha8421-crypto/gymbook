@@ -1,0 +1,233 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-07T00:00:00+05:30",
+  "title": "Design System: GymBook",
+  "extensions": {
+    "source": {
+      "tokens": "src/index.css (:root RGB triplets; :root[data-theme='light'] opt-out), tailwind.config.js",
+      "note": "Every colour is an RGB triplet custom property (--c-*) consumed as rgb(var(--c-x) / alpha). The hex values in DESIGN.md frontmatter are exact conversions of the dark board (default); light-* keys are the light opt-out."
+    },
+    "colorMeta": {
+      "crimson": { "role": "primary", "displayName": "Crimson", "canonical": "rgb(200 30 46)", "cssVar": "--c-accent", "tonalRamp": ["#2a070b", "#4a0c14", "#6e111e", "#961827", "#c81e2e", "#e04a58", "#f08a93", "#fbd6da"] },
+      "crimson-hover": { "role": "primary", "displayName": "Crimson hover", "canonical": "rgb(224 46 62)", "cssVar": "--c-accent-hover", "light": "rgb(170 22 38)" },
+      "crimson-soft": { "role": "primary", "displayName": "Crimson soft", "canonical": "rgb(58 20 26)", "cssVar": "--c-accent-soft", "light": "rgb(253 232 234)" },
+      "crimson-ink": { "role": "primary", "displayName": "Crimson ink", "canonical": "rgb(255 128 138)", "cssVar": "--c-accent-ink", "light": "rgb(158 18 34)" },
+      "crimson-fg": { "role": "primary", "displayName": "On crimson", "canonical": "rgb(255 255 255)", "cssVar": "--c-accent-fg" },
+      "signal-red": { "role": "signal", "displayName": "Signal red (money pending)", "canonical": "rgb(255 72 58)", "cssVar": "--c-danger", "light": "rgb(198 34 24)", "tonalRamp": ["#2e0906", "#5a120c", "#8a1c14", "#c62218", "#ff483a", "#ff7a6f", "#ffb0a8", "#fee8e4"] },
+      "signal-red-soft": { "role": "signal", "displayName": "Signal red soft", "canonical": "rgb(64 24 22)", "cssVar": "--c-danger-soft", "light": "rgb(254 232 228)" },
+      "signal-amber": { "role": "signal", "displayName": "Signal amber (ending within 7 days)", "canonical": "rgb(255 176 32)", "cssVar": "--c-warn", "light": "rgb(140 90 0)", "tonalRamp": ["#2a1c02", "#4e3300", "#8c5a00", "#c48400", "#ffb020", "#ffc558", "#ffdc96", "#fff2cc"] },
+      "signal-amber-soft": { "role": "signal", "displayName": "Signal amber soft", "canonical": "rgb(58 44 12)", "cssVar": "--c-warn-soft", "light": "rgb(255 242 204)" },
+      "signal-green": { "role": "signal", "displayName": "Signal green (active / in the gym now)", "canonical": "rgb(47 211 106)", "cssVar": "--c-success", "light": "rgb(15 122 66)", "tonalRamp": ["#06240f", "#0a4a20", "#0f7a42", "#1aa857", "#2fd36a", "#66e091", "#a3edba", "#e0f4e8"] },
+      "signal-green-soft": { "role": "signal", "displayName": "Signal green soft", "canonical": "rgb(14 48 30)", "cssVar": "--c-success-soft", "light": "rgb(224 244 232)" },
+      "signal-blue": { "role": "signal", "displayName": "Signal blue (starts later)", "canonical": "rgb(96 170 255)", "cssVar": "--c-info", "light": "rgb(24 92 170)", "tonalRamp": ["#071a33", "#0d3260", "#185caa", "#2e80dc", "#60aaff", "#8cc2ff", "#bcdaff", "#e4effc"] },
+      "signal-blue-soft": { "role": "signal", "displayName": "Signal blue soft", "canonical": "rgb(20 38 64)", "cssVar": "--c-info-soft", "light": "rgb(228 239 252)" },
+      "board-deep": { "role": "neutral", "displayName": "Board deep", "canonical": "rgb(9 11 14)", "cssVar": "--c-deep", "light": "rgb(226 230 236)", "tonalRamp": ["#090b0e", "#0c0e11", "#101318", "#15191f", "#1b2028", "#242a33", "#3c4450", "#808b98"] },
+      "board-canvas": { "role": "neutral", "displayName": "Board canvas", "canonical": "rgb(12 14 17)", "cssVar": "--c-canvas", "light": "rgb(236 239 243)" },
+      "panel-surface": { "role": "neutral", "displayName": "Panel surface", "canonical": "rgb(21 25 31)", "cssVar": "--c-surface", "light": "rgb(255 255 255)" },
+      "panel-raised": { "role": "neutral", "displayName": "Panel raised", "canonical": "rgb(27 32 40)", "cssVar": "--c-raised", "light": "rgb(255 255 255)" },
+      "panel-sunken": { "role": "neutral", "displayName": "Panel sunken", "canonical": "rgb(16 19 24)", "cssVar": "--c-sunken", "light": "rgb(243 245 248)" },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "rgb(237 241 244)", "cssVar": "--c-ink", "light": "rgb(16 20 26)", "tonalRamp": ["#10141a", "#242a33", "#3c4450", "#606a78", "#808b98", "#a3adb9", "#cdd4dc", "#edf1f4"] },
+      "ink-muted": { "role": "neutral", "displayName": "Ink muted", "canonical": "rgb(163 173 185)", "cssVar": "--c-muted", "light": "rgb(82 92 106)", "highContrast": { "dark": "rgb(205 212 220)", "light": "rgb(50 58 70)" } },
+      "ink-faint": { "role": "neutral", "displayName": "Ink faint", "canonical": "rgb(128 139 152)", "cssVar": "--c-faint", "light": "rgb(96 106 120)", "highContrast": { "dark": "rgb(180 188 198)", "light": "rgb(80 90 104)" } },
+      "hairline": { "role": "neutral", "displayName": "Hairline", "canonical": "rgb(36 42 51)", "cssVar": "--c-line", "light": "rgb(222 226 232)", "highContrast": { "dark": "rgb(70 78 90)", "light": "rgb(170 178 190)" } },
+      "hairline-strong": { "role": "neutral", "displayName": "Hairline strong", "canonical": "rgb(60 68 80)", "cssVar": "--c-line-strong", "light": "rgb(194 200 210)", "highContrast": { "dark": "rgb(110 120 134)", "light": "rgb(120 130 144)" } }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Desktop page title (30px, 36px at >=640px). Hidden on the phone home screen." },
+      "headline": { "displayName": "Headline", "purpose": "Card and dialog titles; the Due next heading." },
+      "title": { "displayName": "Title", "purpose": "Member names in rows, settings section titles, first-run step titles." },
+      "body": { "displayName": "Body", "purpose": "Default text, buttons (600), inputs, nav items (500)." },
+      "label": { "displayName": "Label", "purpose": "Field labels, tabs, strip labels (muted), table cells." },
+      "small": { "displayName": "Small", "purpose": "Badges (500), hints, table headers (500 muted), timestamps." },
+      "caption": { "displayName": "Caption", "purpose": "The one uppercase element: PENDING / ENDING / LAPSED under a board numeral (tracking 0.08em). Also 12px for tab-bar labels and avatar initials without caps or tracking." },
+      "led": { "displayName": "LED numeral", "purpose": "Doto 900 'ROND' 20, tabular, line-height 1. Amounts due, days left, counts on the board and stat figures only. Sizes: 24px board rows, 26px strip, 28px strip at >=640px, 22px member list, 18-30px stat figures stepping down with length." },
+      "mono": { "displayName": "Mono", "purpose": "Keyboard hints (.kbd) only." }
+    },
+    "shadows": [
+      { "name": "shadow-card", "value": "0 0 0 0 rgb(0 0 0 / 0)", "light": "0 1px 2px rgb(16 20 26 / 0.06)", "purpose": "Content cards, secondary buttons, header search. Flat on the dark board." },
+      { "name": "shadow-pop", "value": "0 12px 32px rgb(0 0 0 / 0.5), 0 1px 0 rgb(255 255 255 / 0.04) inset", "light": "0 12px 32px rgb(16 20 26 / 0.14), 0 1px 2px rgb(16 20 26 / 0.06)", "purpose": "Every floating layer: dialogs, drawer, toasts, palette, fixed phone actions." },
+      { "name": "shadow-sheet", "value": "0 -12px 32px rgb(0 0 0 / 0.5)", "light": "0 -12px 32px rgb(16 20 26 / 0.14)", "purpose": "Layers rising from the bottom edge." },
+      { "name": "button-primary", "value": "inset 0 1px 0 rgb(255 255 255 / 0.18), 0 1px 2px rgb(0 0 0 / 0.16), 0 6px 14px -8px rgb(0 0 0 / 0.28)", "purpose": "Key-cap highlight and short drop on the crimson button." },
+      { "name": "inset-ring-active", "value": "inset 0 0 0 1px rgb(var(--c-line-strong))", "purpose": "Active nav item and active tab-bar slot." },
+      { "name": "focus-ring", "value": "0 0 0 2px rgb(var(--c-canvas)), 0 0 0 4px rgb(var(--c-accent) / 0.7)", "purpose": ":focus-visible on every control (Tailwind ring-2 ring-accent/70 ring-offset-2 ring-offset-canvas)." },
+      { "name": "input-focus", "value": "0 0 0 3px rgb(var(--c-ink) / 0.1)", "purpose": "Input focus ring with border at ink/60." },
+      { "name": "overlay", "value": "rgb(0 0 0 / 0.4)", "purpose": "Scrim behind dialogs and the drawer." }
+    ],
+    "motion": [
+      { "name": "ease", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Default easing (--ease, Tailwind DEFAULT, pageEnter)." },
+      { "name": "press", "value": "transform 120ms var(--ease); scale(0.97) on :active", "purpose": ".pressable on every button, row, nav item. Reduced motion: scale 1, 0ms." },
+      { "name": "state-transition", "value": "150ms var(--ease)", "purpose": "background, border, color, box-shadow, opacity on .pressable; input border and ring." },
+      { "name": "springDefault", "value": "{ type: 'spring', duration: 0.3, bounce: 0 }", "purpose": "Desktop dialog enter/exit (opacity + scale 0.98), toasts." },
+      { "name": "springSheet", "value": "{ type: 'spring', duration: 0.4, bounce: 0 }", "purpose": "Bottom sheets and the drawer sliding in; drag snap-back." },
+      { "name": "fadeReduced", "value": "{ duration: 0.15, ease: 'easeOut' }", "purpose": "Overlay fades, and the replacement for every transition under prefers-reduced-motion." },
+      { "name": "pageEnter", "value": "{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }", "purpose": "Route change: opacity 0 -> 1, y 6px -> 0." },
+      { "name": "shimmer", "value": "shimmer 1.6s ease-in-out infinite (opacity 0.55 -> 1 -> 0.55)", "purpose": "Skeleton placeholders." },
+      { "name": "reduced-motion", "value": "@media (prefers-reduced-motion: reduce) { animation-duration: 0.01ms; transition-duration: 0.01ms; --press-scale: 1 }", "purpose": "Global collapse; motion/react paths also switch to fadeReduced and disable drag." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px", "purpose": "Display 30 -> 36px, strip LED 26 -> 28px, page padding 16 -> 24px, tables replace row cards, toasts move bottom-right, dialogs centre." },
+      { "name": "md", "value": "768px", "purpose": "Header search field appears." },
+      { "name": "lg", "value": "1024px", "purpose": "Sidebar + page header appear; bottom tab bar, drawer and fixed phone actions disappear; home grid becomes 2/3 + 1/3." },
+      { "name": "pointer-coarse", "value": "(pointer: coarse)", "purpose": "Controls 44/40/48px, inputs 16px, tabs 40px, options 44px." },
+      { "name": "contrast-more", "value": "(prefers-contrast: more)", "purpose": "Muted, faint and hairlines step up in contrast." }
+    ],
+    "layout": {
+      "grid": "8px",
+      "cardPadding": "20px",
+      "cardGap": "24px",
+      "contentMax": "1200px",
+      "boardRowMinHeight": "52px",
+      "sidebar": "240px / 64px collapsed",
+      "header": "56px phone / 64px desktop",
+      "tabBar": "60px + safe-area",
+      "mainMobilePad": "84px + safe-area",
+      "fixedActionsBottom": "72px + safe-area"
+    },
+    "theme": {
+      "default": "dark (no data-theme attribute)",
+      "optOut": "data-theme='light' stored in localStorage 'gymbook-theme'",
+      "systemFollow": false,
+      "themeColor": { "dark": "#0c0e11", "light": "#eceff3" }
+    }
+  },
+  "components": [
+    {
+      "name": "Primary button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one crimson action per view: Record payment, Add member, Save.",
+      "html": "<button class=\"ds-btn ds-btn-primary\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z\"/><path d=\"M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8\"/><path d=\"M12 17.5v-11\"/></svg>Record payment</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 10px; border: 0; font-family: 'Barlow Semi Condensed', ui-sans-serif, sans-serif; font-size: 15px; font-weight: 600; line-height: 22px; white-space: nowrap; cursor: pointer; user-select: none; transition: transform 120ms cubic-bezier(0.22,1,0.36,1), background-color 150ms cubic-bezier(0.22,1,0.36,1), border-color 150ms cubic-bezier(0.22,1,0.36,1), box-shadow 150ms cubic-bezier(0.22,1,0.36,1); } .ds-btn:active { transform: scale(0.97); } .ds-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px rgb(var(--c-canvas, 12 14 17)), 0 0 0 4px rgb(var(--c-accent, 200 30 46) / 0.7); } .ds-btn:disabled { opacity: 0.5; cursor: not-allowed; } @media (pointer: coarse) { .ds-btn { height: 44px; } } .ds-btn-primary { background: rgb(var(--c-accent, 200 30 46)); color: rgb(var(--c-accent-fg, 255 255 255)); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 1px 2px rgb(0 0 0 / 0.16), 0 6px 14px -8px rgb(0 0 0 / 0.28); } .ds-btn-primary:hover { background: rgb(var(--c-accent-hover, 224 46 62)); }"
+    },
+    {
+      "name": "Secondary button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Surface-filled, hairline-bordered companion action (Check in, Cancel).",
+      "html": "<button class=\"ds-btn ds-btn-secondary\">Check in</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 10px; font-family: 'Barlow Semi Condensed', ui-sans-serif, sans-serif; font-size: 15px; font-weight: 600; line-height: 22px; white-space: nowrap; cursor: pointer; transition: transform 120ms cubic-bezier(0.22,1,0.36,1), background-color 150ms, border-color 150ms; } .ds-btn:active { transform: scale(0.97); } .ds-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px rgb(var(--c-canvas, 12 14 17)), 0 0 0 4px rgb(var(--c-accent, 200 30 46) / 0.7); } .ds-btn-secondary { background: rgb(var(--c-surface, 21 25 31)); color: rgb(var(--c-ink, 237 241 244)); border: 1px solid rgb(var(--c-line, 36 42 51)); box-shadow: var(--shadow-card, none); } .ds-btn-secondary:hover { border-color: rgb(var(--c-line-strong, 60 68 80)); background: rgb(var(--c-sunken, 16 19 24) / 0.6); }"
+    },
+    {
+      "name": "Ghost button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Transparent, muted text; icon buttons in the header and sidebar footer.",
+      "html": "<button class=\"ds-btn ds-btn-ghost\">Cancel</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 10px; border: 0; font-family: 'Barlow Semi Condensed', ui-sans-serif, sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 120ms cubic-bezier(0.22,1,0.36,1), background-color 150ms, color 150ms; } .ds-btn:active { transform: scale(0.97); } .ds-btn-ghost { background: transparent; color: rgb(var(--c-muted, 163 173 185)); } .ds-btn-ghost:hover { background: rgb(var(--c-sunken, 16 19 24) / 0.8); color: rgb(var(--c-ink, 237 241 244)); } .ds-btn-ghost:focus-visible { outline: none; box-shadow: 0 0 0 2px rgb(var(--c-canvas, 12 14 17)), 0 0 0 4px rgb(var(--c-accent, 200 30 46) / 0.7); }"
+    },
+    {
+      "name": "Danger button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Signal red destructive action inside confirm dialogs. Not crimson.",
+      "html": "<button class=\"ds-btn ds-btn-danger\">Delete member</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 10px; border: 0; font-family: 'Barlow Semi Condensed', ui-sans-serif, sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 120ms cubic-bezier(0.22,1,0.36,1), filter 150ms; } .ds-btn:active { transform: scale(0.97); } .ds-btn-danger { background: rgb(var(--c-danger, 255 72 58)); color: #fff; box-shadow: 0 1px 0 rgb(0 0 0 / 0.1); } .ds-btn-danger:hover { filter: brightness(1.1); } .ds-btn-danger:focus-visible { outline: none; box-shadow: 0 0 0 2px rgb(var(--c-canvas, 12 14 17)), 0 0 0 4px rgb(var(--c-accent, 200 30 46) / 0.7); }"
+    },
+    {
+      "name": "Text field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Label above, strong-hairline control, ink-tinted focus ring; 16px text on touch.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Phone <span class=\"ds-field-req\" aria-hidden=\"true\">*</span></span><input class=\"ds-input\" placeholder=\"98765 43210\" /><span class=\"ds-field-hint\">Name and phone are enough</span></label>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 6px; font-family: 'Barlow Semi Condensed', ui-sans-serif, sans-serif; } .ds-field-label { font-size: 14px; line-height: 20px; font-weight: 500; color: rgb(var(--c-ink, 237 241 244)); } .ds-field-req { margin-left: 2px; color: rgb(var(--c-danger, 255 72 58)); } .ds-input { width: 100%; height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid rgb(var(--c-line-strong, 60 68 80)); background: rgb(var(--c-surface, 21 25 31)); color: rgb(var(--c-ink, 237 241 244)); font: inherit; font-size: 15px; box-shadow: 0 1px 2px rgb(0 0 0 / 0.03); transition: border-color 150ms, box-shadow 150ms; } .ds-input::placeholder { color: rgb(var(--c-faint, 128 139 152)); } .ds-input:hover { border-color: rgb(var(--c-faint, 128 139 152) / 0.6); } .ds-input:focus { outline: none; border-color: rgb(var(--c-ink, 237 241 244) / 0.6); box-shadow: 0 0 0 3px rgb(var(--c-ink, 237 241 244) / 0.1); } .ds-input[aria-invalid='true'] { border-color: rgb(var(--c-danger, 255 72 58)); } .ds-input:disabled { background: rgb(var(--c-sunken, 16 19 24)); color: rgb(var(--c-muted, 163 173 185)); box-shadow: none; } .ds-field-hint { font-size: 13px; line-height: 18px; color: rgb(var(--c-muted, 163 173 185)); } @media (pointer: coarse) { .ds-input { height: 44px; font-size: 16px; } }"
+    },
+    {
+      "name": "Status badge",
+      "kind": "chip",
+      "refersTo": "badge-success",
+      "description": "20px chip; tone is the meaning. Shown here in all five tones.",
+      "html": "<span class=\"ds-badges\"><span class=\"ds-badge ds-badge-success\">Active</span><span class=\"ds-badge ds-badge-warn\">Expiring soon</span><span class=\"ds-badge ds-badge-danger\">Unpaid</span><span class=\"ds-badge ds-badge-info\">Starts later</span><span class=\"ds-badge ds-badge-muted\">Sample</span></span>",
+      "css": ".ds-badges { display: inline-flex; gap: 8px; flex-wrap: wrap; } .ds-badge { display: inline-flex; align-items: center; gap: 6px; height: 20px; padding: 0 6px; border-radius: 6px; font-family: 'Barlow Semi Condensed', ui-sans-serif, sans-serif; font-size: 13px; line-height: 18px; font-weight: 500; white-space: nowrap; box-shadow: inset 0 0 0 1px var(--ds-ring); } .ds-badge-success { background: rgb(var(--c-success-soft, 14 48 30)); color: rgb(var(--c-success, 47 211 106)); --ds-ring: rgb(var(--c-success, 47 211 106) / 0.2); } .ds-badge-warn { background: rgb(var(--c-warn-soft, 58 44 12)); color: rgb(var(--c-warn, 255 176 32)); --ds-ring: rgb(var(--c-warn, 255 176 32) / 0.25); } .ds-badge-danger { background: rgb(var(--c-danger-soft, 64 24 22)); color: rgb(var(--c-danger, 255 72 58)); --ds-ring: rgb(var(--c-danger, 255 72 58) / 0.2); } .ds-badge-info { background: rgb(var(--c-info-soft, 20 38 64)); color: rgb(var(--c-info, 96 170 255)); --ds-ring: rgb(var(--c-info, 96 170 255) / 0.2); } .ds-badge-muted { background: rgb(var(--c-sunken, 16 19 24)); color: rgb(var(--c-muted, 163 173 185)); --ds-ring: rgb(var(--c-line, 36 42 51)); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Panel surface with a hairline, 14px radius, no shadow on the dark board.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-head\"><h2 class=\"ds-card-title\">This month so far</h2><p class=\"ds-card-desc\">Against the same days last month</p></div><div class=\"ds-card-body\">Body text at 15px.</div></div>",
+      "css": ".ds-card { min-width: 0; border-radius: 14px; background: rgb(var(--c-surface, 21 25 31)); border: 1px solid rgb(var(--c-line, 36 42 51)); box-shadow: var(--shadow-card, none); color: rgb(var(--c-ink, 237 241 244)); font-family: 'Barlow Semi Condensed', ui-sans-serif, sans-serif; } .ds-card-head { padding: 20px 20px 0; } .ds-card-title { margin: 0; font-size: 18px; line-height: 24px; font-weight: 600; } .ds-card-desc { margin: 2px 0 0; font-size: 14px; line-height: 20px; color: rgb(var(--c-muted, 163 173 185)); } .ds-card-body { padding: 20px; font-size: 15px; line-height: 22px; }"
+    },
+    {
+      "name": "Sidebar navigation",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "Deep-board sidebar: faint sentence-case group caption, 40px items, active item raised with a strong-hairline inset ring.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Main\"><p class=\"ds-nav-group\">Front desk</p><a class=\"ds-nav-item ds-nav-item-active\" href=\"#\" aria-current=\"page\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect width=\"7\" height=\"9\" x=\"3\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"5\" x=\"14\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"9\" x=\"14\" y=\"12\" rx=\"1\"/><rect width=\"7\" height=\"5\" x=\"3\" y=\"16\" rx=\"1\"/></svg>Dashboard</a><a class=\"ds-nav-item\" href=\"#\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/></svg>Members</a><a class=\"ds-nav-item\" href=\"#\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"/><path d=\"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2\"/><path d=\"m9 14 2 2 4-4\"/></svg>Attendance</a></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 2px; width: 220px; padding: 10px; background: rgb(var(--c-deep, 9 11 14)); border-right: 1px solid rgb(var(--c-line, 36 42 51)); font-family: 'Barlow Semi Condensed', ui-sans-serif, sans-serif; } .ds-nav-group { margin: 0; padding: 0 10px 6px; font-size: 13px; line-height: 18px; color: rgb(var(--c-faint, 128 139 152)); } .ds-nav-item { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 10px; border-radius: 10px; font-size: 15px; font-weight: 500; color: rgb(var(--c-muted, 163 173 185)); text-decoration: none; transition: transform 120ms cubic-bezier(0.22,1,0.36,1), background-color 150ms, color 150ms; } .ds-nav-item svg { color: rgb(var(--c-faint, 128 139 152)); flex-shrink: 0; } .ds-nav-item:hover { background: rgb(var(--c-raised, 27 32 40) / 0.7); color: rgb(var(--c-ink, 237 241 244)); } .ds-nav-item:hover svg { color: rgb(var(--c-muted, 163 173 185)); } .ds-nav-item:active { transform: scale(0.97); } .ds-nav-item:focus-visible { outline: none; box-shadow: 0 0 0 2px rgb(var(--c-canvas, 12 14 17)), 0 0 0 4px rgb(var(--c-accent, 200 30 46) / 0.7); } .ds-nav-item-active, .ds-nav-item-active:hover { background: rgb(var(--c-raised, 27 32 40)); color: rgb(var(--c-ink, 237 241 244)); box-shadow: inset 0 0 0 1px rgb(var(--c-line-strong, 60 68 80)); } .ds-nav-item-active svg { color: rgb(var(--c-ink, 237 241 244)); }"
+    },
+    {
+      "name": "Tabs",
+      "kind": "nav",
+      "refersTo": "tab-active",
+      "description": "Sunken track, raised active chip with a hairline ring, tabular counts.",
+      "html": "<div class=\"ds-tabs\" role=\"tablist\"><button class=\"ds-tab\" role=\"tab\">7 days</button><button class=\"ds-tab ds-tab-active\" role=\"tab\" aria-selected=\"true\">30 days <span class=\"ds-tab-count\">12</span></button><button class=\"ds-tab\" role=\"tab\">This month</button></div>",
+      "css": ".ds-tabs { display: inline-flex; gap: 2px; padding: 4px; border-radius: 10px; background: rgb(var(--c-sunken, 16 19 24)); font-family: 'Barlow Semi Condensed', ui-sans-serif, sans-serif; } .ds-tab { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--c-muted, 163 173 185)); font: inherit; font-size: 14px; font-weight: 500; white-space: nowrap; cursor: pointer; transition: transform 120ms cubic-bezier(0.22,1,0.36,1), color 150ms, background-color 150ms; } .ds-tab:hover { color: rgb(var(--c-ink, 237 241 244)); } .ds-tab:active { transform: scale(0.97); } .ds-tab:focus-visible { outline: none; box-shadow: 0 0 0 2px rgb(var(--c-canvas, 12 14 17)), 0 0 0 4px rgb(var(--c-accent, 200 30 46) / 0.7); } .ds-tab-active, .ds-tab-active:hover { background: rgb(var(--c-raised, 27 32 40)); color: rgb(var(--c-ink, 237 241 244)); box-shadow: inset 0 0 0 1px rgb(var(--c-line, 36 42 51)); } .ds-tab-count { font-size: 13px; font-variant-numeric: tabular-nums; color: rgb(var(--c-faint, 128 139 152)); } .ds-tab-active .ds-tab-count { color: rgb(var(--c-muted, 163 173 185)); } @media (pointer: coarse) { .ds-tab { height: 40px; } }"
+    },
+    {
+      "name": "Due next board",
+      "kind": "custom",
+      "refersTo": "board-row",
+      "description": "The signature: name and reason on the left, LED numeral with uppercase caption on the right; red PENDING, amber ENDING, faint LAPSED.",
+      "html": "<div class=\"ds-board\"><ol class=\"ds-board-list\"><li><a class=\"ds-row\" href=\"#\"><span class=\"ds-avatar ds-avatar-crimson\">DM</span><span class=\"ds-row-main\"><span class=\"ds-row-name\">Dev Malhotra</span><span class=\"ds-row-why\">Quarterly · ends in 3 days</span></span><span class=\"ds-row-fig ds-tone-due\"><span class=\"ds-led\">₹2,000</span><span class=\"ds-cap\">pending</span></span></a></li><li><a class=\"ds-row\" href=\"#\"><span class=\"ds-avatar ds-avatar-amber\">AD</span><span class=\"ds-row-main\"><span class=\"ds-row-name\">Arjun Das</span><span class=\"ds-row-why\">Quarterly · ends 10 Nov 2026</span></span><span class=\"ds-row-fig ds-tone-ending\"><span class=\"ds-led\">3 d</span><span class=\"ds-cap\">ending</span></span></a></li><li><a class=\"ds-row\" href=\"#\"><span class=\"ds-avatar ds-avatar-blue\">VR</span><span class=\"ds-row-main\"><span class=\"ds-row-name\">Vihaan Reddy</span><span class=\"ds-row-why\">10-day trial · ended 4 Nov 2026</span></span><span class=\"ds-row-fig ds-tone-lapsed\"><span class=\"ds-led\">3 d</span><span class=\"ds-cap\">lapsed</span></span></a></li></ol></div>",
+      "css": ".ds-board { border-radius: 14px; background: rgb(var(--c-surface, 21 25 31)); border: 1px solid rgb(var(--c-line, 36 42 51)); overflow: hidden; font-family: 'Barlow Semi Condensed', ui-sans-serif, sans-serif; color: rgb(var(--c-ink, 237 241 244)); } .ds-board-list { list-style: none; margin: 0; padding: 0; } .ds-board-list li + li { border-top: 1px solid rgb(var(--c-line, 36 42 51)); } .ds-row { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 6px 16px; color: inherit; text-decoration: none; transition: transform 120ms cubic-bezier(0.22,1,0.36,1), background-color 150ms; } .ds-row:hover { background: rgb(var(--c-raised, 27 32 40)); } .ds-row:active { transform: scale(0.97); } .ds-row:focus-visible { outline: none; box-shadow: inset 0 0 0 2px rgb(var(--c-accent, 200 30 46) / 0.7); } .ds-avatar { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; flex-shrink: 0; border-radius: 9999px; font-size: 13px; font-weight: 500; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1); } .ds-avatar-crimson { background: rgb(var(--c-accent-soft, 58 20 26)); color: rgb(var(--c-accent-ink, 255 128 138)); } .ds-avatar-amber { background: rgb(var(--c-warn-soft, 58 44 12)); color: rgb(var(--c-warn, 255 176 32)); } .ds-avatar-blue { background: rgb(var(--c-info-soft, 20 38 64)); color: rgb(var(--c-info, 96 170 255)); } .ds-row-main { min-width: 0; flex: 1; display: flex; flex-direction: column; } .ds-row-name { font-size: 16px; line-height: 22px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-row-why { font-size: 14px; line-height: 20px; color: rgb(var(--c-muted, 163 173 185)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-row-fig { flex-shrink: 0; text-align: right; display: flex; flex-direction: column; align-items: flex-end; } .ds-led { font-family: 'Doto Variable', 'Doto', ui-monospace, monospace; font-weight: 900; font-variation-settings: 'ROND' 20; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; line-height: 1; font-size: 24px; } .ds-cap { margin-top: 2px; font-size: 12px; line-height: 16px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.9; } .ds-tone-due { color: rgb(var(--c-danger, 255 72 58)); } .ds-tone-ending { color: rgb(var(--c-warn, 255 176 32)); } .ds-tone-lapsed { color: rgb(var(--c-muted, 163 173 185)); }"
+    },
+    {
+      "name": "Totals strip cell",
+      "kind": "custom",
+      "refersTo": "board-figure-due",
+      "description": "One card split by hairlines into LED figures; Outstanding lights red when non-zero, Attendance carries the green live dot.",
+      "html": "<div class=\"ds-strip\"><a class=\"ds-cell\" href=\"#\"><p class=\"ds-cell-label\">Outstanding</p><p class=\"ds-cell-fig ds-tone-due\">₹4,900</p><p class=\"ds-cell-hint\">4 members owe money</p></a><a class=\"ds-cell\" href=\"#\"><p class=\"ds-cell-label\">Attendance today</p><p class=\"ds-cell-fig\">4</p><p class=\"ds-cell-hint\"><span class=\"ds-live\"></span>1 in the gym now</p></a></div>",
+      "css": ".ds-strip { display: grid; grid-template-columns: 1fr 1fr; border-radius: 14px; background: rgb(var(--c-surface, 21 25 31)); border: 1px solid rgb(var(--c-line, 36 42 51)); overflow: hidden; font-family: 'Barlow Semi Condensed', ui-sans-serif, sans-serif; color: rgb(var(--c-ink, 237 241 244)); } .ds-cell { display: block; min-width: 0; padding: 14px 16px; color: inherit; text-decoration: none; transition: background-color 150ms; } .ds-cell + .ds-cell { border-left: 1px solid rgb(var(--c-line, 36 42 51)); } .ds-cell:hover { background: rgb(var(--c-raised, 27 32 40)); } .ds-cell p { margin: 0; } .ds-cell-label { font-size: 14px; line-height: 20px; color: rgb(var(--c-muted, 163 173 185)); } .ds-cell-fig { margin-top: 8px !important; font-family: 'Doto Variable', 'Doto', ui-monospace, monospace; font-weight: 900; font-variation-settings: 'ROND' 20; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; line-height: 1; font-size: 26px; } .ds-cell-hint { margin-top: 6px !important; display: flex; align-items: center; gap: 6px; font-size: 13px; line-height: 18px; color: rgb(var(--c-muted, 163 173 185)); } .ds-live { display: inline-block; width: 6px; height: 6px; border-radius: 9999px; background: rgb(var(--c-success, 47 211 106)); } .ds-tone-due { color: rgb(var(--c-danger, 255 72 58)); } @media (min-width: 640px) { .ds-cell-fig { font-size: 28px; } }"
+    },
+    {
+      "name": "Keyboard hint",
+      "kind": "chip",
+      "refersTo": "kbd",
+      "description": "20px mono key cap in the header search and shortcuts dialog.",
+      "html": "<span class=\"ds-kbd\">⌘K</span>",
+      "css": ".ds-kbd { display: inline-flex; align-items: center; justify-content: center; height: 20px; min-width: 20px; padding: 0 6px; border-radius: 6px; border: 1px solid rgb(var(--c-line, 36 42 51)); background: rgb(var(--c-surface, 21 25 31)); box-shadow: 0 1px 0 rgb(var(--c-line, 36 42 51)); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; line-height: 1; color: rgb(var(--c-muted, 163 173 185)); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Platform Indicator Board",
+    "overview": "GymBook is the departures board the gym owner reads every morning at the desk, usually on a phone, one-handed. The ground is near-black; panels are a step lighter charcoal separated by hairlines rather than shadows; the ink is off-white. Nothing on the board is decorative: a row is a name, a reason, and a number that counts down, and the number is set in a dot-matrix face so it reads like a lit display. Colour is reserved for signal. Each signal colour has exactly one meaning (red is money pending, amber is a plan ending inside seven days, green is active or in the gym right now, blue is a plan that starts later), and brand crimson appears only on the primary action and the logo.\n\nDensity is a desk register, not a marketing page: 52 px rows, 20 px card padding, a single 8 px grid, right-aligned numerals in one column. Hierarchy comes from size and ink level (ink, muted, faint), never from colour or weight alone; headings sit at 600, labels at 500, body at 400. Controls are the standard web controls, 36 px on a pointer device and 44 px on a touch screen.\n\nThe board is the default and the only theme the system follows on its own. The light theme is the same roles translated to a cool light board (white panels, cool grey canvas, darker signal colours) and is reached only by the owner's stored opt-out; the app does not follow the operating system's colour scheme. Rejected: four equal stat cards above a chart, uppercase kickers and eyebrow labels, and decorative gradients or glows.",
+    "keyCharacteristics": [
+      "Near-black board with charcoal panels and 1 px hairlines; tonal steps carry depth, floating layers get one soft shadow.",
+      "One interface face (Barlow Semi Condensed) and one signature numeral face (Doto dot-matrix, weight 900) used only where the board counts down.",
+      "Signal colours are jobs, not moods: red, amber, green, blue each mean one thing everywhere.",
+      "Crimson is brand and primary action only; it never carries status.",
+      "Sentence case throughout; the only uppercase in the system is the 12 px caption under a board numeral.",
+      "8 px spacing grid, 52 px board rows, 36/44 px controls, 10 px control radius, 14 px card radius.",
+      "Motion is a critically damped spring (no overshoot) or a 150 ms ease-out; reduced motion collapses it all to a 150 ms cross-fade."
+    ],
+    "rules": [
+      { "name": "The One Job Rule", "body": "Red means money pending, amber means ending within 7 days, green means active or present now, blue means starts later. A signal colour never appears for any other reason, and no second colour is ever added to say the same thing.", "section": "colors" },
+      { "name": "The Crimson Is Not a Signal Rule", "body": "Brand crimson belongs to the primary action, the logo and the focus ring. Status, errors and overdue amounts use signal red, which is a different hue.", "section": "colors" },
+      { "name": "The Soft Tint Rule", "body": "A -soft colour only ever sits directly behind its own signal colour (badge, banner, error box). It is not a card, section or hover background.", "section": "colors" },
+      { "name": "The Lit Numeral Rule", "body": "The dot-matrix face is for what the board counts: amounts due, days left, counts on the board and stat figures. Money in prose, invoice totals, deltas and table cells stay in Barlow with tabular figures.", "section": "typography" },
+      { "name": "The Sentence Case Rule", "body": "Every heading, button, label, badge and nav item is sentence case. The only uppercase is the 12 px tracked caption under a board numeral; no kickers, eyebrows or section-label caps anywhere else.", "section": "typography" },
+      { "name": "The Ink Level Rule", "body": "Hierarchy inside a component is ink → muted → faint, with size; weight stays within 400–600 and is never pushed to 700+.", "section": "typography" },
+      { "name": "The Hairline Depth Rule", "body": "Surfaces at rest are flat and bordered; a shadow means the layer floats above the page and can be dismissed.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do give each signal colour one job only: red for money pending, amber for ending within 7 days, green for active or in the gym now, blue for starts later.",
+      "Do keep crimson for the primary action, the logo and the focus ring; use signal red, not crimson, for anything overdue or destructive.",
+      "Do set amounts due, days left, board counts and stat figures in the .led numeral face (Doto 900, 'ROND' 20), right-aligned in one column, and keep every other number in Barlow with tabular figures.",
+      "Do build depth from the tonal steps (deep → canvas → surface → raised) and 1 px hairlines; reserve the pop shadow for layers that float and dismiss.",
+      "Do keep controls at 36 px on a fine pointer and 44 px on a coarse pointer, with 16 px input text on touch; use .h-control* rather than hard-coded heights.",
+      "Do write everything in sentence case, 400–600 weight, with hierarchy from size and ink level.",
+      "Do ship the dark board as the default and keep light as a stored opt-out via data-theme='light'; translate roles, never invent light-only colours.",
+      "Do use the motion tokens (0.3 s / 0.4 s springs with zero bounce, 150 ms ease-out, cubic-bezier(0.22, 1, 0.36, 1)) and let prefers-reduced-motion collapse them to a cross-fade."
+    ],
+    "donts": [
+      "Don't add uppercase kickers, eyebrows or tracked section labels; the only uppercase is the caption under a board numeral.",
+      "Don't use a -soft tint as a card, section or hover background, or colour a whole row or card by status; status lives in the numeral, the badge or the summary text.",
+      "Don't arrange the home screen as four equal stat cards above a chart; the board leads and today's figures sit in one hairline-divided strip.",
+      "Don't put shadows on content cards on the dark board, and never use hard offset or coloured shadows anywhere.",
+      "Don't use the dot-matrix face for prose amounts, invoice totals, deltas, table cells or decorative numbers.",
+      "Don't follow prefers-color-scheme; the board is the default and only the stored preference changes it.",
+      "Don't introduce a second icon set, filled icons or a stroke other than 1.5 px; everything is Lucide.",
+      "Don't push weight past 600 or use colour alone to carry hierarchy."
+    ]
+  }
+}

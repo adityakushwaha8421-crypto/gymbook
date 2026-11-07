@@ -14,8 +14,8 @@ export const AppCtx = createContext<AppState | null>(null)
 export interface PageMeta {
   title: string
   description?: string
-  /** When false the page draws its own header (detail pages). */
-  header?: boolean
+  /** When false the page draws its own header (detail pages); 'desktop' keeps the title on wide screens only. */
+  header?: boolean | 'desktop'
 }
 export interface HeaderState {
   meta: PageMeta

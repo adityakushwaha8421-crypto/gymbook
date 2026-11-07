@@ -16,15 +16,15 @@ const variants: Record<ButtonVariant, string> = {
 
 const sizes: Record<ButtonSize, string> = {
   sm: 'h-control-sm px-3 text-sm rounded-lg gap-1.5',
-  md: 'h-control px-4 text-sm rounded-xl gap-2',
-  lg: 'h-control-lg px-5 text-base rounded-xl gap-2',
+  md: 'h-control px-4 text-base rounded-xl gap-2',
+  lg: 'h-control-lg px-5 text-md rounded-xl gap-2',
   icon: 'h-control w-9 rounded-xl',
   'icon-sm': 'h-control-sm w-8 rounded-lg',
 }
 
 export const buttonClasses = (variant: ButtonVariant = 'primary', size: ButtonSize = 'md', className?: string) =>
   cn(
-    'pressable inline-flex items-center justify-center font-medium whitespace-nowrap select-none',
+    'pressable inline-flex items-center justify-center font-semibold whitespace-nowrap select-none',
     'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
     variants[variant],
     sizes[size],
